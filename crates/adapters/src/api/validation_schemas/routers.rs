@@ -52,7 +52,7 @@ pub async fn create_validation_schema(
         e
     })?;
     use_case
-        .create_validation_schema(&schema_data.name, &schema_data.json_schema)
+        .create_validation_schema(&schema_data.name, &schema_data.json_schema_str()?)
         .await
         .map_err(|e| {
             LOGGER.error(&format!("Failed to create validation schema: {e}"));
@@ -207,7 +207,7 @@ pub async fn update_validation_schema_json(
         e
     })?;
     use_case
-        .update_validation_schema(id as u32, schema_data.json_schema())
+        .update_validation_schema(id as u32, &schema_data.json_schema())
         .await
         .map_err(|e| {
             LOGGER.error(&format!("Failed to update schema json id={id}: {e}"));

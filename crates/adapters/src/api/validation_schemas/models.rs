@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{Value};
 
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
@@ -15,21 +14,13 @@ use std::collections::HashMap;
 
 pub type SchemaId = u32;
 
-fn validate_json_schema(json_str: &str) -> Result<(), validator::ValidationError> {
-    serde_json::from_str::<HashMap<String, FieldSchema>>(json_str)
-        .map_err(|e| {
-            let mut err = validator::ValidationError::new("invalid_json_schema");
-            err.message = Some(std::borrow::Cow::Owned(format!("Invalid JSON schema: {}", e)));
-            err
-        })?;
-    Ok(())
-}
-
 
 #[derive(Deserialize, Validate, ToSchema)]
 #[schema(example = json!({
     "name": "sensor_ambiental",
-    "schema": "{\"temperatura\":{\"type\":\"float\",\"required\":true,\"default\":null,\"validation\":{\"min\":-50.0,\"max\":150.0},\"operation\":{\"type\":\"bin_op\",\"op\":\"Add\",\"left\":{\"type\":\"bin_op\",\"op\":\"Mul\",\"left\":{\"type\":\"var\",\"name\":\"temperatura\"},\"right\":{\"type\":\"num\",\"value\":1.8}},\"right\":{\"type\":\"num\",\"value\":32.0}}},\"humedad\":{\"type\":\"float\",\"required\":true,\"default\":null,\"validation\":{\"min\":0.0,\"max\":100.0},\"operation\":{\"type\":\"bin_op\",\"op\":\"Mul\",\"left\":{\"type\":\"var\",\"name\":\"humedad\"},\"right\":{\"type\":\"num\",\"value\":2.0}}},\"presion\":{\"type\":\"float\",\"required\":false,\"default\":1013.25,\"validation\":{\"min\":800.0,\"max\":1200.0},\"operation\":null}}"
+    "schema": {
+        "temperatura": {"type": "float", "required": true, "default": null, "validation": {"min": -50.0, "max": 150.0}, "operation": null}
+    }
 }))]
 pub struct CreateValidationSchemaRequest {
     #[serde(rename = "name")]
@@ -37,7 +28,6 @@ pub struct CreateValidationSchemaRequest {
     pub name: String,
 
     #[serde(rename = "schema")]
-    #[validate(custom(function = "validate_json_schema"))]
     #[schema(
         value_type = Object,
         example = json!({
@@ -46,37 +36,18 @@ pub struct CreateValidationSchemaRequest {
                 "required": true,
                 "default": null,
                 "validation": { "min": -50.0, "max": 150.0 },
-                "operation": {
-                    "type": "bin_op", "op": "Add",
-                    "left": {
-                        "type": "bin_op", "op": "Mul",
-                        "left":  { "type": "var", "name": "temperatura" },
-                        "right": { "type": "num", "value": 1.8 }
-                    },
-                    "right": { "type": "num", "value": 32.0 }
-                }
+                "operation": null
             },
             "humedad": {
                 "type": "float",
                 "required": true,
                 "default": null,
                 "validation": { "min": 0.0, "max": 100.0 },
-                "operation": {
-                    "type": "bin_op", "op": "Mul",
-                    "left":  { "type": "var", "name": "humedad" },
-                    "right": { "type": "num", "value": 2.0 }
-                }
-            },
-            "presion": {
-                "type": "float",
-                "required": false,
-                "default": 1013.25,
-                "validation": { "min": 800.0, "max": 1200.0 },
                 "operation": null
             }
         })
     )]
-    pub json_schema: String,
+    pub json_schema: HashMap<String, FieldSchema>,
 }
 
 impl CreateValidationSchemaRequest {
@@ -87,10 +58,16 @@ impl CreateValidationSchemaRequest {
             })?;
         Ok(())
     }
+
+    pub fn json_schema_str(&self) -> Result<String, PipelinePersistenceError> {
+        serde_json::to_string(&self.json_schema)
+            .map_err(|e| PipelinePersistenceError::InvalidData {
+                reason: e.to_string(),
+            })
+    }
 }
 
 //=====================
-
 
 
 #[derive(Deserialize, Validate, ToSchema)]
@@ -103,7 +80,6 @@ pub struct UpdateValidationSchemaRequestName {
 #[derive(Deserialize, Validate, ToSchema)]
 pub struct UpdateValidationSchemaRequestJson {
     #[serde(rename = "schema")]
-    #[validate(length(min = 2, max = 2048))]
     #[schema(
         value_type = Object,
         example = json!({
@@ -112,15 +88,11 @@ pub struct UpdateValidationSchemaRequestJson {
                 "required": true,
                 "default": null,
                 "validation": { "min": -50.0, "max": 150.0 },
-                "operation": {
-                    "type": "bin_op", "op": "Mul",
-                    "left":  { "type": "var", "name": "temperatura" },
-                    "right": { "type": "num", "value": 1.8 }
-                }
+                "operation": null
             }
         })
     )]
-    pub json_schema: String,
+    pub json_schema: HashMap<String, FieldSchema>,
 }
 
 impl UpdateValidationSchemaRequestJson {
@@ -129,17 +101,12 @@ impl UpdateValidationSchemaRequestJson {
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: e.to_string(),
             })?;
-
-        serde_json::from_str::<Value>(&self.json_schema).map_err(|e| {
-            PipelinePersistenceError::InvalidData {
-                reason: format!("Invalid JSON schema: {}", e),
-            }
-        })?;
-
         Ok(())
     }
-    pub fn json_schema(&self) -> &str {
-        &self.json_schema
+
+    pub fn json_schema(&self) -> String {
+        serde_json::to_string(&self.json_schema)
+            .expect("serialización de HashMap<String, FieldSchema> válido nunca falla")
     }
 }
 
