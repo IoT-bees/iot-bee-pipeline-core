@@ -19,7 +19,7 @@ use async_trait::async_trait;
 // use actix::prelude::*;
 
 use infrastructure::data_source::rabbitmq_data_source::RabbitMQDataSource;
-use infrastructure::data_processor::data_process::PipelineDataProcessor;
+use infrastructure::data_processor::data_process::PipelineDataProcessorCore;
 use iot_bee::config::Config;
 
 
@@ -85,7 +85,7 @@ async fn test_pipeline_lifecycle() {
         Arc::new(tokio::sync::Semaphore::new(0)),
     ));
 
-    let data_processor = Arc::new(PipelineDataProcessor::new(SCHEMA_MULTI).unwrap());
+    let data_processor = Arc::new(PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap());
     
     
     let pipeline_configuration = PipelineConfiguration::new(

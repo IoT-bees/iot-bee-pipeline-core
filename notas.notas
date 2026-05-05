@@ -1,0 +1,24 @@
+{
+  "temperatura": {
+    "type": "float",
+    "required": true,
+    "validation": { "min": -50.0, "max": 150.0 },
+    "operation": {
+      "type": "bin_op",
+      "op": "mul",
+      "left":  { "type": "var", "name": "temperatura" },
+      "right": { "type": "num", "value": 1.8 }
+    }
+  }
+}
+
+
+{
+  "name": "sensor_schema",
+  "schema": "{\"temperatura\":{\"type\":\"float\",\"required\":true,\"default\":null,\"validation\":{\"min\":-50.0,\"max\":150.0},\"operation\":{\"type\":\"bin_op\",\"op\":\"Mul\",\"left\":{\"type\":\"var\",\"name\":\"temperatura\"},\"right\":{\"type\":\"num\",\"value\":1.8}}}}"
+},
+
+{
+  "name": "sensor_ambiental",
+  "schema": "{\"temperatura\":{\"type\":\"float\",\"required\":true,\"default\":null,\"validation\":{\"min\":-50.0,\"max\":150.0},\"operation\":{\"type\":\"bin_op\",\"op\":\"Add\",\"left\":{\"type\":\"bin_op\",\"op\":\"Mul\",\"left\":{\"type\":\"var\",\"name\":\"temperatura\"},\"right\":{\"type\":\"num\",\"value\":1.8}},\"right\":{\"type\":\"num\",\"value\":32.0}}},\"humedad\":{\"type\":\"float\",\"required\":true,\"default\":null,\"validation\":{\"min\":0.0,\"max\":100.0},\"operation\":{\"type\":\"bin_op\",\"op\":\"Mul\",\"left\":{\"type\":\"var\",\"name\":\"humedad\"},\"right\":{\"type\":\"num\",\"value\":2.0}}},\"presion\":{\"type\":\"float\",\"required\":false,\"default\":1013.25,\"validation\":{\"min\":800.0,\"max\":1200.0},\"operation\":null}}"
+}
