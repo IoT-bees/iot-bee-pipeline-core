@@ -3,9 +3,7 @@ use serde::{Deserialize, Serialize};
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
-
 use domain::error::PipelinePersistenceError;
-// use domain::pipeline_schema::schemas::PipelineSchemaMap;
 use domain::ast::schemas::FieldSchema;
 use chrono::{DateTime, Utc};
 use utoipa::ToSchema;

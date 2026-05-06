@@ -1,10 +1,13 @@
 // archivo para crear un test de integracion del sistema de actores. 
 
 
-use adapters::actor_system::supervisor_pipeline_life_time::actor_wrapper::SupervisorPipelineBridge;
+// use adapters::actor_system::supervisor_pipeline_life_time::actor_wrapper::SupervisorPipelineBridge;
+use adapters::actor_system::supervisor_actor_system::actor_wrapper::PipelineActorSupervisorSystemBridge;
 // use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::error::IoTBeeError;
 use domain::outbound::data_external_store::DataExternalStore;
+use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
+use domain::value_objects::pipelines_values::DataStoreId;
 // use domain::outbound::data_source::DataSource;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::entities::pipeline_data::PipelineConfiguration;
@@ -92,21 +95,21 @@ async fn test_pipeline_lifecycle() {
         "Pipeline de prueba".to_string(),
         1
     ).unwrap();
-    
-    let supervisor = SupervisorPipelineBridge::start_new_pipeline_supervisor(
-        1,
+
+    let system_bridge = PipelineActorSupervisorSystemBridge::instance();
+    let id = DataStoreId::new(1).unwrap();
+    let result = system_bridge.start(
+        &id, 
         pipeline_configuration,
-        data_store.clone(),
         data_source.clone(),
         data_processor.clone(),
-    );
+        data_store.clone(),
+    ).await;
 
-    let result =      supervisor.start_pipeline().await;
+
     assert!(result.is_ok(), "Error al iniciar el pipeline: {:?}", result.err());
 
-
-    // tokio::time::sleep(std::time::Duration::from_secs(1000000)).await;
-    // En lugar de sleep enorme, usa canales o señales
+    
     let (tx, rx): (tokio::sync::oneshot::Sender<()>, tokio::sync::oneshot::Receiver<()>) = tokio::sync::oneshot::channel();
     
     tokio::spawn(async move {

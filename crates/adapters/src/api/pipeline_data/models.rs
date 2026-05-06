@@ -102,7 +102,7 @@ impl TryFrom<PipelineDataOutputModel> for PipelineDataResponse {
 
     fn try_from(output_model: PipelineDataOutputModel) -> Result<Self, Self::Error> {
         let response = Self {
-            id: output_model.id(),
+            id: output_model.id().id(),
             name: output_model.name().to_string(),
             data_store: DataStoreInfo {
                 id: output_model.store_id(),

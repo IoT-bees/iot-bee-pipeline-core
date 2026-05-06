@@ -17,20 +17,31 @@ use domain::outbound::{
     data_external_store::DataExternalStore, data_processor_actions::DataProcessorActions,
     data_source::DataSource,
 };
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use super::system_supervisor::SystemActorSupervisor;
 
+// El Addr<SystemActorSupervisor> es el verdadero singleton: un único actor supervisor
+// vive durante todo el programa. OnceLock garantiza que Supervisor::start solo se llama
+// una vez, sin importar cuántas veces se llame a `instance()`.
+static SUPERVISOR_ADDR: OnceLock<Addr<SystemActorSupervisor>> = OnceLock::new();
+
 pub struct PipelineActorSupervisorSystemBridge {
-    pub supervisor_addr: Addr<SystemActorSupervisor>,
+    supervisor_addr: Addr<SystemActorSupervisor>,
 }
 
 impl PipelineActorSupervisorSystemBridge {
-    pub fn new() -> Self {
-        // let supervisor_addr = SystemActorSupervisor::new().start();
-        let system_supervisor = SystemActorSupervisor::new();
-        let supervisor_addr = Supervisor::start(move |_ctx| system_supervisor);
-        Self { supervisor_addr }
+    /// Devuelve un wrapper que apunta al único SystemActorSupervisor del proceso.
+    /// El actor se crea la primera vez que se llama; las llamadas siguientes
+    /// reutilizan el mismo Addr (clonado, sin crear un nuevo actor).
+    pub fn instance() -> Self {
+        let addr = SUPERVISOR_ADDR.get_or_init(|| {
+            let system_supervisor = SystemActorSupervisor::new();
+            Supervisor::start(move |_ctx| system_supervisor)
+        });
+        Self {
+            supervisor_addr: addr.clone(),
+        }
     }
 }
 

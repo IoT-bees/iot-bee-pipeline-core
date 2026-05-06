@@ -106,9 +106,13 @@ impl PipelineDataOutputModel {
         })
     }
 
-    pub fn id(&self) -> u32 {
-        self.id.id()
+    pub fn id(&self) -> &DataStoreId {
+        &self.id
     }
+    pub fn proper_id(&self) -> DataStoreId {
+        self.id.clone()
+    }
+
     pub fn name(&self) -> &str {
         self.name.name()
     }

@@ -45,10 +45,13 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(internal_data_base: Arc<InternalDataBase>) -> Self {
+        Self { internal_data_base }
+    }
+
+    pub async fn build_db() -> Result<Arc<InternalDataBase>, Box<dyn std::error::Error>> {
         let config = Config::get();
-        let internal_data_base = Arc::new(InternalDataBase::new(&config.database_url).await?);
-        Ok(Self { internal_data_base })
+        Ok(Arc::new(InternalDataBase::new(&config.database_url).await?))
     }
 
     pub fn connection_types_app_state(
@@ -130,14 +133,8 @@ use actix_web::{App, HttpServer};
 pub struct ApiComposer;
 
 impl ApiComposer {
-    pub async fn run() -> std::io::Result<()> {
-        let app_state = match AppState::new().await {
-            Ok(state) => state,
-            Err(err) => {
-                LOGGER.error(&format!("Failed to initialize: {err}"));
-                std::process::exit(1);
-            }
-        };
+    pub async fn run(db: Arc<InternalDataBase>) -> std::io::Result<()> {
+        let app_state = AppState::new(db);
 
         let connection_types   = app_state.connection_types_app_state();
         let validation_schemas = app_state.validation_schemas_app_state();

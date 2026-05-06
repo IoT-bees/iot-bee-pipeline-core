@@ -1,4 +1,5 @@
-use iot_bee::composition::api_composition::api_composer::ApiComposer;
+use iot_bee::composition::api_composition::api_composer::{ApiComposer, AppState};
+use iot_bee::composition::pipeline_composition::pipeline_composer::PipelineSystemComposer;
 use logging::init_tracing;
 use tracing::info;
 
@@ -6,7 +7,22 @@ use tracing::info;
 async fn main() -> std::io::Result<()> {
     init_tracing();
     banner();
-    ApiComposer::run().await
+
+    // La conexión a la base de datos se construye una sola vez y se comparte
+    // entre el sistema de actores y la API HTTP.
+    let db = match AppState::build_db().await {
+        Ok(db) => db,
+        Err(e) => {
+            tracing::error!("Failed to connect to database: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    // 1. Actor supervisor: arranca primero y carga los pipelines activos desde DB.
+    PipelineSystemComposer::run(db.clone()).await;
+
+    // 2. API HTTP: arranca después, ya con el supervisor vivo.
+    ApiComposer::run(db).await
 }
 
 
