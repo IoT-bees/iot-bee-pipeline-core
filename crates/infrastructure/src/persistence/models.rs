@@ -31,6 +31,7 @@ pub struct DataSourceRow {
     pub data_source_state: String,
     pub data_source_configuration: String,
     pub data_source_description: String,
+    pub source_type: String,
     pub created_at: String,
     pub updated_at: String,
 }

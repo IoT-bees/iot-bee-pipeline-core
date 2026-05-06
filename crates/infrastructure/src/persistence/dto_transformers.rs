@@ -100,6 +100,7 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
             row.data_source_type_id,
             row.data_source_state,
             row.data_source_configuration,
+            row.source_type,
             row.data_source_description,
             created_at,
             updated_at,

@@ -41,13 +41,14 @@ impl PipelineDataSourceRepository for DataSourceRepository {
 
         let result = sqlx::query(
                 r#"
-                INSERT INTO data_sources (name, data_source_type_id, data_source_configuration, data_source_description, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO data_sources (name, data_source_type_id, data_source_configuration, source_type, data_source_description, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 "#,
             )
             .bind(data_source.name())
             .bind(data_source.data_source_type_id())
             .bind(data_source.data_source_configuration())
+            .bind(data_source.source_type())
             .bind(data_source.description())
             .bind(Utc::now().to_rfc3339())
             .bind(Utc::now().to_rfc3339())
@@ -80,7 +81,7 @@ impl PipelineDataSourceRepository for DataSourceRepository {
         let pool = self.data_base_connection().pool();
         let result = sqlx::query_as::<_, DataSourceRow>(
             r#"
-            SELECT id, name, data_source_type_id, data_source_state, data_source_configuration, data_source_description, created_at, updated_at
+            SELECT id, name, data_source_type_id, data_source_state, data_source_configuration, data_source_description, source_type, created_at, updated_at
             FROM data_sources
             WHERE id = ?
             "#,
@@ -105,7 +106,7 @@ impl PipelineDataSourceRepository for DataSourceRepository {
         let pool = self.data_base_connection().pool();
         let rows = sqlx::query_as::<_, DataSourceRow>(
             r#"
-            SELECT id, name, data_source_type_id, data_source_state, data_source_configuration, data_source_description, created_at, updated_at
+            SELECT id, name, data_source_type_id, data_source_state, data_source_configuration, data_source_description, source_type, created_at, updated_at
             FROM data_sources
             "#,
         )
@@ -161,6 +162,10 @@ impl PipelineDataSourceRepository for DataSourceRepository {
                 "data_source_description".to_string(),
                 data_source_description.to_string(),
             ));
+        }
+        if let Some(source_type) = &data_source.source_type() {
+            query.push_str("source_type = ?, ");
+            params.push(("source_type".to_string(), source_type.to_string()));
         }
         query.push_str("updated_at = ? WHERE id = ?");
         let mut sql_query = sqlx::query(&query);

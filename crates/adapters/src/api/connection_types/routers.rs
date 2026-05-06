@@ -45,3 +45,5 @@ pub async fn get_connection_types(
     ));
     Ok(HttpResponse::Ok().json(connection_types))
 }
+
+
