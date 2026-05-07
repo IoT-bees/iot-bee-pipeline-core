@@ -9,6 +9,7 @@ use domain::outbound::pipeline_persistence::{
 };
 use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
 use domain::entities::pipeline_data::PipelineConfiguration;
+use domain::value_objects::pipelines_values::DataStoreId;
 
 use logging::AppLogger;
 
@@ -58,23 +59,23 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
         let mut skipped = 0u32;
         let mut failed = 0u32;
 
+        
         for pipeline in pipelines {
             let id = pipeline.id().id();
 
-            // if pipeline.pipeline_status().to_lowercase() != "active" {
-            //     LOGGER.info(&format!(
-            //         "[pipeline id={}] skipped — status={}",
-            //         id,
-            //         pipeline.pipeline_status()
-            //     ));
-            //     skipped += 1;
-            //     continue;
-            // }
+            if !pipeline.is_active() {
+                LOGGER.info(&format!(
+                    "[pipeline id={}] skipped — inactive",
+                    id,
+                ));
+                skipped += 1;
+                continue;
+            }
 
 
             let data_source = match self
                 .data_source_repository
-                .get_pipeline_data_source(pipeline.id())
+                .get_pipeline_data_source(&DataStoreId::new(pipeline.data_source_id())?)
                 .await
             {
                 Ok(v) => v,
@@ -87,7 +88,7 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
 
             let validation_schema = match self
                 .validation_schema_repository
-                .get_pipeline_validation_schema(pipeline.id())
+                .get_pipeline_validation_schema(&DataStoreId::new(pipeline.validation_schema_id())?)
                 .await
             {
                 Ok(v) => v,
@@ -100,7 +101,7 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
 
             let data_store = match self
                 .data_store_repository
-                .get_pipeline_data_store_by_id(pipeline.id())
+                .get_pipeline_data_store_by_id(&DataStoreId::new(pipeline.store_id())?)
                 .await
             {
                 Ok(v) => v,
@@ -111,6 +112,14 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                 }
             };
 
+            LOGGER.info(&format!(
+                "[pipeline id={}] dependencies read successfully — data_source={}, validation_schema={}, data_store={}",
+                id,
+                data_source.as_ref().map(|ds| ds.name()).unwrap_or("None"),
+                validation_schema.as_ref().map(|vs| vs.name()).unwrap_or("None"),
+                data_store.as_ref().map(|ds| ds.name()).unwrap_or("None"),
+            ));
+
             let (Some(data_source), Some(validation_schema), Some(data_store)) =
                 (data_source, validation_schema, data_store)
             else {
@@ -118,6 +127,7 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                     "[pipeline id={}] missing dependency — data_source, validation_schema or data_store not found",
                     id
                 ));
+                
                 failed += 1;
                 continue;
             };

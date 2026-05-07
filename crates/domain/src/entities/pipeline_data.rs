@@ -9,6 +9,7 @@ pub struct PipelineDataInputModel {
     data_source_id: DataStoreId,
     validation_schema_id: DataStoreId,
     pipeline_replication: u32,
+    is_active: bool,
 }
 impl PipelineDataInputModel {
     pub fn new(
@@ -18,6 +19,7 @@ impl PipelineDataInputModel {
         data_source_id: u32,
         validation_schema_id: u32,
         pipeline_replication: u32,
+        is_active: bool,
     ) -> Result<Self, IoTBeeError> {
         Ok(Self {
             name: FieldName::new(name)?,
@@ -26,6 +28,7 @@ impl PipelineDataInputModel {
             data_source_id: DataStoreId::new(data_source_id)?,
             validation_schema_id: DataStoreId::new(validation_schema_id)?,
             pipeline_replication,
+            is_active,
         })
     }
 
@@ -47,6 +50,9 @@ impl PipelineDataInputModel {
     pub fn pipeline_replication(&self) -> u32 {
         self.pipeline_replication
     }
+    pub fn is_active(&self) -> bool {
+        self.is_active
+    }
 }
 
 pub struct PipelineDataOutputModel {
@@ -66,7 +72,7 @@ pub struct PipelineDataOutputModel {
     validation_schema_name: FieldName,
 
     pipeline_replication: u32,
-    pipeline_status: String,
+    pipeline_status: bool,
 
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -84,7 +90,7 @@ impl PipelineDataOutputModel {
         validation_schema_id: u32,
         validation_schema_name: impl Into<String>,
         pipeline_replication: u32,
-        pipeline_status: impl Into<String>,
+        is_active: bool,
         created_at: DateTime<Utc>,
         updated_at: DateTime<Utc>,
     ) -> Result<Self, IoTBeeError> {
@@ -100,7 +106,7 @@ impl PipelineDataOutputModel {
             validation_schema_id: DataStoreId::new(validation_schema_id)?,
             validation_schema_name: FieldName::new(validation_schema_name)?,
             pipeline_replication,
-            pipeline_status: pipeline_status.into(),
+            pipeline_status: is_active,
             created_at,
             updated_at,
         })
@@ -143,8 +149,8 @@ impl PipelineDataOutputModel {
     pub fn pipeline_replication(&self) -> u32 {
         self.pipeline_replication
     }
-    pub fn pipeline_status(&self) -> &str {
-        &self.pipeline_status
+    pub fn is_active(&self) -> bool {
+        self.pipeline_status
     }
     pub fn created_at(&self) -> DateTime<Utc> {
         self.created_at

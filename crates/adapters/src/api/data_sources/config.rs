@@ -12,7 +12,7 @@ pub enum DataSourceConfig {
 impl DataSourceConfig {
     pub fn source_type_name(&self) -> &'static str {
         match self {
-            DataSourceConfig::RabbitMq(_) => "RABBIT_MQ",
+            DataSourceConfig::RabbitMq(_) => "RABBITMQ",
             DataSourceConfig::Mqtt(_) => "MQTT",
             DataSourceConfig::Kafka(_) => "KAFKA",
         }

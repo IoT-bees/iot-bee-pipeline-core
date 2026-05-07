@@ -31,10 +31,11 @@ pub fn validation_schemas_scope(use_case: web::Data<UseCase>) -> actix_web::Scop
 #[utoipa::path(
     post,
     path = "/validation-schemas",
+    description = "Creates a new validation schema. The `schema` object maps field names to their type (`float`, `int`, `bool`), constraints (`validation.min/max`) and an optional transformation `operation`. The name must be unique (1–32 chars).",
     request_body = CreateValidationSchemaRequest,
     responses(
         (status = 201, description = "Schema created successfully"),
-        (status = 400, description = "Invalid data", body = ErrorResponse),
+        (status = 400, description = "Invalid data — name too long/empty or malformed schema field", body = ErrorResponse),
         (status = 409, description = "Schema name already exists", body = ErrorResponse)
     ),
     tag = "Validation Schemas"
@@ -66,12 +67,13 @@ pub async fn create_validation_schema(
 #[utoipa::path(
     get,
     path = "/validation-schemas/{id}",
+    description = "Returns the full validation schema for the given ID. The `schema` field in the response is a serialized JSON string of the field map.",
     params(
-        ("id" = u32, Path, description = "Schema ID")
+        ("id" = u32, Path, description = "Numeric schema ID")
     ),
     responses(
         (status = 200, description = "Schema found", body = ValidationSchemaByIdResponse),
-        (status = 404, description = "Schema not found")
+        (status = 404, description = "No schema with that ID exists")
     ),
     tag = "Validation Schemas"
 )]
@@ -98,6 +100,7 @@ pub async fn get_validation_schema(
 #[utoipa::path(
     get,
     path = "/validation-schemas",
+    description = "Returns the list of all registered validation schemas. The `schema` field in each item is a serialized JSON string.",
     responses(
         (status = 200, description = "List of all schemas", body = Vec<ValidationSchemaResponse>)
     ),
@@ -127,14 +130,15 @@ pub async fn list_validation_schemas(
 #[utoipa::path(
     put,
     path = "/validation-schemas/{id}/name",
+    description = "Updates only the name of an existing schema. The new name must be unique and between 1 and 32 characters. The schema fields are not affected.",
     params(
-        ("id" = i32, Path, description = "Schema ID")
+        ("id" = i32, Path, description = "Numeric schema ID")
     ),
     request_body = UpdateValidationSchemaRequestName,
     responses(
-        (status = 200, description = "Schema name updated"),
-        (status = 400, description = "Invalid data", body = ErrorResponse),
-        (status = 404, description = "Schema not found", body = ErrorResponse)
+        (status = 200, description = "Schema name updated successfully"),
+        (status = 400, description = "Name empty or longer than 32 characters", body = ErrorResponse),
+        (status = 404, description = "No schema with that ID exists", body = ErrorResponse)
     ),
     tag = "Validation Schemas"
 )]
@@ -177,14 +181,15 @@ pub async fn update_validation_schema(
 #[utoipa::path(
     put,
     path = "/validation-schemas/{id}/schema",
+    description = "Fully replaces the field definitions of an existing schema. All previous fields are discarded and replaced with the new `schema` object. The schema name is not changed.",
     params(
-        ("id" = i32, Path, description = "Schema ID")
+        ("id" = i32, Path, description = "Numeric schema ID")
     ),
     request_body = UpdateValidationSchemaRequestJson,
     responses(
-        (status = 200, description = "Schema JSON updated"),
-        (status = 400, description = "Invalid data", body = ErrorResponse),
-        (status = 404, description = "Schema not found", body = ErrorResponse)
+        (status = 200, description = "Schema fields replaced successfully"),
+        (status = 400, description = "Malformed schema field definition", body = ErrorResponse),
+        (status = 404, description = "No schema with that ID exists", body = ErrorResponse)
     ),
     tag = "Validation Schemas"
 )]
@@ -222,12 +227,13 @@ pub async fn update_validation_schema_json(
 #[utoipa::path(
     delete,
     path = "/validation-schemas/{id}",
+    description = "Deletes the validation schema with the given ID. This operation is not yet implemented and currently returns 204 without effect.",
     params(
-        ("id" = u32, Path, description = "Schema ID")
+        ("id" = u32, Path, description = "Numeric schema ID")
     ),
     responses(
-        (status = 204, description = "Schema deleted"),
-        (status = 404, description = "Schema not found", body = ErrorResponse)
+        (status = 204, description = "Schema deleted (no content)"),
+        (status = 404, description = "No schema with that ID exists", body = ErrorResponse)
     ),
     tag = "Validation Schemas"
 )]

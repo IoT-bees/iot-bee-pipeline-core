@@ -15,9 +15,6 @@ pub struct CreateDataSourceRequest {
     #[serde(rename = "name")]
     #[validate(length(min = 1, max = 30))]
     pub name: String,
-    #[serde(rename = "dataSourceTypeId")]
-    #[validate(range(min = 1))]
-    pub data_source_type_id: u32,
     #[serde(rename = "dataSourceState")]
     #[validate(length(min = 1))]
     pub data_source_state: String,
@@ -39,7 +36,6 @@ impl TryFrom<CreateDataSourceRequest> for PipelineDataSourceInputModel {
             })?;
         Ok(PipelineDataSourceInputModel::new(
             request.name,
-            request.data_source_type_id,
             config_json,
             source_type,
             request.data_source_description,
@@ -53,8 +49,6 @@ pub struct DataSourceResponse {
     pub id: u32,
     #[serde(rename = "name")]
     pub name: String,
-    #[serde(rename = "dataSourceTypeId")]
-    pub data_source_type_id: u32,
     #[serde(rename = "dataSourceState")]
     pub data_source_state: String,
     #[serde(rename = "dataSourceConfiguration")]
@@ -76,7 +70,6 @@ impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
         Ok(DataSourceResponse {
             id: output_model.id(),
             name: output_model.name().to_string(),
-            data_source_type_id: output_model.data_source_type_id(),
             data_source_state: output_model.data_source_state().to_string(),
             data_source_configuration: output_model.data_source_configuration().to_string(),
             source_type: output_model.source_type().to_string(),
@@ -89,8 +82,6 @@ impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
 
 #[derive(Deserialize, Validate, ToSchema)]
 pub struct UpdateDataSourceRequest {
-    #[serde(rename = "dataSourceTypeId")]
-    pub data_source_type_id: Option<u32>,
     #[serde(rename = "dataSourceState")]
     pub data_source_state: Option<String>,
     #[serde(rename = "dataSourceConfiguration")]
@@ -115,7 +106,6 @@ impl TryFrom<UpdateDataSourceRequest> for PipelineDataSourceUpdateModel {
             None => (None, None),
         };
         PipelineDataSourceUpdateModel::new(
-            request.data_source_type_id,
             request.data_source_state,
             config_json,
             source_type,

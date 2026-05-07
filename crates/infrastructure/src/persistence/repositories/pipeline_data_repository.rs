@@ -39,7 +39,7 @@ impl PipelineControllerRepository for PipelineDataRepository {
         .bind(pipeline.data_source_id())
         .bind(pipeline.validation_schema_id())
         .bind(pipeline.pipeline_replication())
-        .bind("stopped") // Default status when creating a pipeline
+        .bind(pipeline.is_active())
         .bind(Utc::now().to_rfc3339())
         .bind(Utc::now().to_rfc3339())
         .execute(pool)

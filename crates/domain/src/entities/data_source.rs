@@ -4,7 +4,6 @@ use chrono::{DateTime, Utc};
 /// Modelo de entrada para registrar un nuevo data source.
 pub struct PipelineDataSourceInputModel {
     name: FieldName,
-    data_source_type_id: DataStoreId,
     data_source_configuration: String,
     data_source_description: DescriptionField,
     source_type: String,
@@ -12,14 +11,12 @@ pub struct PipelineDataSourceInputModel {
 impl PipelineDataSourceInputModel {
     pub fn new(
         name: impl Into<String>,
-        data_source_type_id: u32,
         data_source_configuration: impl Into<String>,
         source_type: impl Into<String>,
         data_source_description: impl Into<String>,
     ) -> Result<Self, IoTBeeError> {
         Ok(Self {
             name: FieldName::new(name)?,
-            data_source_type_id: DataStoreId::new(data_source_type_id)?,
             data_source_configuration: data_source_configuration.into(),
             data_source_description: DescriptionField::new(data_source_description)?,
             source_type: source_type.into(),
@@ -31,9 +28,6 @@ impl PipelineDataSourceInputModel {
     }
     pub fn description(&self) -> &str {
         self.data_source_description.description()
-    }
-    pub fn data_source_type_id(&self) -> u32 {
-        self.data_source_type_id.id()
     }
     pub fn data_source_configuration(&self) -> &str {
         &self.data_source_configuration
@@ -47,7 +41,6 @@ impl PipelineDataSourceInputModel {
 pub struct PipelineDataSourceOutputModel {
     id: DataStoreId,
     name: FieldName,
-    data_source_type_id: DataStoreId,
     data_source_state: String,
     data_source_configuration: String,
     data_source_description: DescriptionField,
@@ -60,7 +53,6 @@ impl PipelineDataSourceOutputModel {
     pub fn new(
         id: u32,
         name: impl Into<String>,
-        data_source_type_id: u32,
         data_source_state: impl Into<String>,
         data_source_configuration: impl Into<String>,
         source_type: impl Into<String>,
@@ -71,7 +63,6 @@ impl PipelineDataSourceOutputModel {
         Ok(Self {
             id: DataStoreId::new(id)?,
             name: FieldName::new(name)?,
-            data_source_type_id: DataStoreId::new(data_source_type_id)?,
             data_source_state: data_source_state.into(),
             data_source_configuration: data_source_configuration.into(),
             data_source_description: DescriptionField::new(data_source_description)?,
@@ -89,9 +80,6 @@ impl PipelineDataSourceOutputModel {
     }
     pub fn description(&self) -> &str {
         self.data_source_description.description()
-    }
-    pub fn data_source_type_id(&self) -> u32 {
-        self.data_source_type_id.id()
     }
     pub fn data_source_state(&self) -> &str {
         &self.data_source_state
@@ -111,7 +99,6 @@ impl PipelineDataSourceOutputModel {
 }
 
 pub struct PipelineDataSourceUpdateModel {
-    data_source_type_id: Option<DataStoreId>,
     data_source_state: Option<String>,
     data_source_configuration: Option<String>,
     data_source_description: Option<DescriptionField>,
@@ -119,14 +106,12 @@ pub struct PipelineDataSourceUpdateModel {
 }
 impl PipelineDataSourceUpdateModel {
     pub fn new(
-        data_source_type_id: Option<u32>,
         data_source_state: Option<impl Into<String>>,
         data_source_configuration: Option<impl Into<String>>,
         source_type: Option<impl Into<String>>,
         data_source_description: Option<impl Into<String>>,
     ) -> Result<Self, IoTBeeError> {
-        if data_source_type_id.is_none()
-            && data_source_state.is_none()
+        if data_source_state.is_none()
             && data_source_configuration.is_none()
             && data_source_description.is_none()
             && source_type.is_none()
@@ -137,9 +122,6 @@ impl PipelineDataSourceUpdateModel {
         }
 
         Ok(Self {
-            data_source_type_id: data_source_type_id
-                .map(|id| DataStoreId::new(id))
-                .transpose()?,
             data_source_state: data_source_state.map(|s| s.into()),
             data_source_configuration: data_source_configuration.map(|c| c.into()),
             data_source_description: data_source_description
@@ -153,9 +135,6 @@ impl PipelineDataSourceUpdateModel {
         self.data_source_description
             .as_ref()
             .map(|d| d.description())
-    }
-    pub fn data_source_type_id(&self) -> Option<u32> {
-        self.data_source_type_id.as_ref().map(|id| id.id())
     }
     pub fn data_source_state(&self) -> Option<&str> {
         self.data_source_state.as_deref()
