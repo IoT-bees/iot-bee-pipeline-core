@@ -58,6 +58,7 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         pipeline_data_routers::create_pipeline_data,
         pipeline_data_routers::get_pipeline_data,
         pipeline_data_routers::get_pipeline_data_by_id,
+        pipeline_data_routers::delete_pipeline_data_by_id,
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
         pipeline_lifecycle_routers::stop_pipeline

@@ -16,6 +16,7 @@ pub trait PipelineDataUseCases {
         &self,
         pipeline_id: &u32,
     ) -> Result<PipelineDataOutputModel, IoTBeeError>;
+    async fn delete_pipeline_by_id(&self, pipeline_id: &u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
@@ -79,4 +80,41 @@ where
             }
         }
     }
+
+    async fn delete_pipeline_by_id(&self, pipeline_id: &u32) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "delete_pipeline_by_id use case called for id={pipeline_id}"
+        ));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        let pipeline_state = self.repository.get_pipeline_by_id(&pipeline_id).await.map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to get pipeline id={} before deletion: {e}",
+                pipeline_id.id()
+            ));
+            e
+        })?
+        .ok_or_else(|| {
+            LOGGER.warn(&format!("Pipeline id={} not found before deletion", pipeline_id.id()));
+            PipelinePersistenceError::IdNotFound {
+                id: pipeline_id.id(),
+            }
+        })?;
+
+        if pipeline_state.is_active() {
+            LOGGER.warn(&format!("Pipeline id={} is active before deletion, stopping it first", pipeline_id.id()));
+            return Err(PipelinePersistenceError::DeleteFailed { reason: format!("Pipeline id={} is active before deletion", pipeline_id.id()) }.into());      
+        }
+
+
+        self.repository.delete_pipeline_by_id(&pipeline_id).await.map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to delete pipeline id={}: {e}",
+                pipeline_id.id()
+            ));
+            e
+        })?;
+        LOGGER.info(&format!("Pipeline id={} deleted successfully", pipeline_id.id()));
+        Ok(())
+    }
+
 }

@@ -1,7 +1,7 @@
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
-use actix_web::{HttpResponse, get, post, web};
+use actix_web::{HttpResponse, get, post, delete,web};
 use application::pipeline_data_cases::cases::PipelineDataUseCases;
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use domain::error::IoTBeeError;
@@ -20,6 +20,7 @@ pub fn pipeline_data_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_pipeline_data)
         .service(get_pipeline_data)
         .service(get_pipeline_data_by_id)
+        .service(delete_pipeline_data_by_id)
 }
 
 #[utoipa::path(
@@ -111,5 +112,35 @@ pub async fn get_pipeline_data_by_id(
     Ok(HttpResponse::Ok().json(response))
 }
 
-//crear endpoint para habilitar o deshabilitar el pipeline.
-// #[put()]
+
+#[utoipa::path(
+    delete,
+    path = "/pipelines/{id}",
+    params(
+        ("id" = u32, Path, description = "Pipeline ID")
+    ),
+    responses(
+        (status = 204, description = "Pipeline deleted successfully"),
+        (status = 404, description = "Pipeline not found", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[delete("/{id}")]
+pub async fn delete_pipeline_data_by_id(
+    use_case: web::Data<UseCase>,
+    id: web::Path<PipelineDataId>,
+) -> Result<HttpResponse, ApiError> {
+    let pipeline_id: PipelineDataId = id.into_inner();
+    LOGGER.debug(&format!(
+        "delete_pipeline_data_by_id handler called for id={pipeline_id}"
+    ));
+    use_case
+        .delete_pipeline_by_id(&pipeline_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!("Failed to delete pipeline id={pipeline_id}: {e}"));
+            e
+        })?;
+    LOGGER.info(&format!("Pipeline id={pipeline_id} deleted successfully"));
+    Ok(HttpResponse::NoContent().finish())
+}

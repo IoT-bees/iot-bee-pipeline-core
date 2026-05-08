@@ -152,4 +152,76 @@ impl PipelineControllerRepository for PipelineDataRepository {
 
         Ok(result)
     }
+
+    async fn update_pipeline_state(
+        &self,
+        pipeline_id: &DataStoreId,
+        is_active: bool,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        sqlx::query(
+            r#"
+            UPDATE pipelines
+            SET status = ?, updated_at = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(is_active)
+        .bind(Utc::now().to_rfc3339())
+        .bind(pipeline_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::Database {
+                reason: e.to_string(),
+            })
+        })?;
+
+        Ok(())
+    }
+
+    async fn get_pipeline_state_by_id(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<Option<bool>, IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let row_result = sqlx::query_scalar(
+            r#"
+            SELECT status
+            FROM pipelines
+            WHERE id = ?
+            "#,
+        )
+        .bind(pipeline_id.id())
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::Database {
+                reason: e.to_string(),
+            })
+        })?;
+
+        Ok(row_result)
+    }
+
+    async fn delete_pipeline_by_id(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        sqlx::query(
+            r#"
+            DELETE FROM pipelines
+            WHERE id = ?
+            "#,
+        )
+        .bind(pipeline_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::Database {
+                reason: e.to_string(),
+            })
+        })?;
+
+        Ok(())
+    }
+
 }

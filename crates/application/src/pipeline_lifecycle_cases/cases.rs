@@ -280,15 +280,22 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                 data_store_component,
             )
             .await?;
+        
+        let update_pipeline_state = self.pipeline_controller.update_pipeline_state(pipeline.id(), true).await;
+        if update_pipeline_state.is_err() {
+            LOGGER.error(&format!("Failed to update pipeline state to active for pipeline id={}", pipeline_id.id()));
+            self.pipeline_lifecycle.stop(&pipeline_id).await?;
+        }
 
         LOGGER.info(&format!("Pipeline with id={} started successfully", pipeline_id.id()));
 
         Ok(())
     }
 
-
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>{
-        self.pipeline_lifecycle.stop(&DataStoreId::new(id)?).await
+        let pipeline_id = DataStoreId::new(id)?;
+        self.pipeline_controller.update_pipeline_state(&pipeline_id, false).await?;
+        self.pipeline_lifecycle.stop(&pipeline_id).await
     }    
 
 }
