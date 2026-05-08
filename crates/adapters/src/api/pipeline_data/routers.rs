@@ -21,6 +21,7 @@ pub fn pipeline_data_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(get_pipeline_data)
         .service(get_pipeline_data_by_id)
         .service(delete_pipeline_data_by_id)
+        .service(get_pipeline_data_by_group_id)
 }
 
 #[utoipa::path(
@@ -143,4 +144,44 @@ pub async fn delete_pipeline_data_by_id(
         })?;
     LOGGER.info(&format!("Pipeline id={pipeline_id} deleted successfully"));
     Ok(HttpResponse::NoContent().finish())
+}
+
+
+#[utoipa::path(
+    get,
+    path = "/pipelines/group/{group_id}",
+    params(
+        ("group_id" = u32, Path, description = "Pipeline group ID")
+    ),
+    responses(
+        (status = 200, description = "Pipelines retrieved successfully", body = [PipelineDataResponse]),
+        (status = 404, description = "No pipelines found for the group", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[get("/group/{group_id}")]
+pub async fn get_pipeline_data_by_group_id(
+    use_case: web::Data<UseCase>,
+    group_id: web::Path<u32>,
+) -> Result<HttpResponse, ApiError> {
+    let group_id = group_id.into_inner();
+    LOGGER.debug(&format!(
+        "get_pipeline_data_by_group_id handler called for group_id={group_id}"
+    )); 
+    let pipelines: Vec<PipelineDataOutputModel> = use_case
+        .get_pipeline_by_group_id(&group_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!("Failed to get pipelines for group_id={group_id}: {e}"));
+            e
+        })?;
+    let response: Vec<PipelineDataResponse> = pipelines
+        .into_iter()
+        .map(|p| p.try_into())
+        .collect::<Result<_, IoTBeeError>>()?;
+    LOGGER.info(&format!(
+        "Returning {} pipelines for group_id={group_id}",
+        response.len()
+    ));
+    Ok(HttpResponse::Ok().json(response))
 }

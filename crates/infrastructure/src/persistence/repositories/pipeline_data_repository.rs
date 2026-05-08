@@ -224,4 +224,54 @@ impl PipelineControllerRepository for PipelineDataRepository {
         Ok(())
     }
 
+    async fn get_pipeline_by_group_id(&self, group_id: &DataStoreId) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let rows_result = sqlx::query_as::<_, PipelineRowFlat>(
+            r#"
+            SELECT 
+                p.id,
+                p.name,
+
+                pg.id as group_id,
+                pg.name as group_name,
+
+                d.id as db_id,
+                d.name as db_name,
+
+                ds.id as data_source_id,
+                ds.name as data_source_name,
+
+                vs.id as validation_schema_id,
+                vs.json_name as validation_schema_name,
+
+                p.replicas,
+                p.status,
+                p.created_at,
+                p.updated_at
+
+            FROM pipelines p
+            JOIN pipeline_groups pg ON p.group_id = pg.id
+            JOIN databases d ON p.db_id = d.id
+            JOIN data_sources ds ON p.data_source_id = ds.id
+            JOIN validation_schemas vs ON p.validation_schema_id = vs.id
+            WHERE pg.id = ?
+            "#,
+        )
+        .bind(group_id.id())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::Database {
+                reason: e.to_string(),
+            })
+        })?;
+
+        let result = rows_result
+            .into_iter()
+            .map(|row| row.try_into())
+            .collect::<Result<Vec<PipelineDataOutputModel>, _>>()?;
+
+        Ok(result)
+    }
+
 }

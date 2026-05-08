@@ -34,7 +34,6 @@ impl ApiComposer {
     pub async fn run(db: Arc<InternalDataBase>) -> std::io::Result<()> {
         let app_state = AppState::new(db);
 
-        let connection_types = app_state.connection_types_app_state();
         let validation_schemas = app_state.validation_schemas_app_state();
         let data_sources = app_state.data_sources_app_state();
         let pipeline_groups = app_state.pipeline_groups_app_state();
@@ -51,7 +50,7 @@ impl ApiComposer {
                     SwaggerUi::new("/swagger-ui/{_:.*}")
                         .url("/api-docs/openapi.json", ApiDoc::openapi()),
                 )
-                .service(connection_types_scope(connection_types.clone()))
+                .service(connection_types_scope())
                 .service(validation_schemas_scope(validation_schemas.clone()))
                 .service(data_sources_scope(data_sources.clone()))
                 .service(pipeline_groups_scope(pipeline_groups.clone()))

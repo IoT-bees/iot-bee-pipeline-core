@@ -17,6 +17,7 @@ pub trait PipelineDataUseCases {
         pipeline_id: &u32,
     ) -> Result<PipelineDataOutputModel, IoTBeeError>;
     async fn delete_pipeline_by_id(&self, pipeline_id: &u32) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_by_group_id(&self, group_id: &u32) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
 }
 
 pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
@@ -115,6 +116,25 @@ where
         })?;
         LOGGER.info(&format!("Pipeline id={} deleted successfully", pipeline_id.id()));
         Ok(())
+    }
+
+    async fn get_pipeline_by_group_id(&self, group_id: &u32) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError> {
+        LOGGER.debug(&format!(
+            "get_pipeline_by_group_id use case called for group_id={group_id}"
+        ));
+        let result = self
+            .repository
+            .get_pipeline_by_group_id(&DataStoreId::new(*group_id)?)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to get pipelines for group id={}: {e}",
+                    group_id
+                ));
+                e
+            })?;
+        LOGGER.info(&format!("Found {} pipelines for group id={}", result.len(), group_id));
+        Ok(result)
     }
 
 }

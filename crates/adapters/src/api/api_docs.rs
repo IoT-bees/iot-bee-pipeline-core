@@ -46,6 +46,7 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         data_sources_routers::list_data_sources,
         data_sources_routers::update_data_source_name,
         data_sources_routers::update_data_source,
+        data_sources_routers::delete_data_source,
         //pipeline groups
         pipeline_groups_routers::create_pipeline_group,
         pipeline_groups_routers::get_pipeline_groups,
@@ -59,6 +60,7 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         pipeline_data_routers::get_pipeline_data,
         pipeline_data_routers::get_pipeline_data_by_id,
         pipeline_data_routers::delete_pipeline_data_by_id,
+        pipeline_data_routers::get_pipeline_data_by_group_id,
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
         pipeline_lifecycle_routers::stop_pipeline
@@ -93,7 +95,8 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         (name = "Data Sources", description = "CRUD operations for data sources"),
         (name = "Pipeline Groups", description = "CRUD operations for pipeline groups"),
         (name = "Data Stores", description = "CRUD operations for data stores"),
-        (name = "Pipeline Data", description = "CRUD operations for pipeline data")
+        (name = "Pipelines", description = "CRUD operations for pipeline data"),
+        (name = "Pipeline Lifecycle", description = "Endpoints to control the lifecycle of the pipelines")
     )
 )]
 pub struct ApiDoc;
