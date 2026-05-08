@@ -5,7 +5,7 @@ use domain::value_objects::pipelines_values::DataStoreId;
 
 use super::messages::{
     CreatePipelineMessage,
-    DeletePipelineMessage, 
+    DeletePipelineMessage,
     // ListPipelinesMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
 };
@@ -79,9 +79,7 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
             .send(DeletePipelineMessage::new(pipeline_id.id()))
             .await
             .map_err(mailbox_err)?
-
     }
-
 }
 
 fn mailbox_err(e: MailboxError) -> IoTBeeError {

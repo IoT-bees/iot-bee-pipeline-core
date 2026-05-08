@@ -1,7 +1,8 @@
+
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
-use actix_web::{HttpResponse, get, post, delete,web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 use application::pipeline_data_cases::cases::PipelineDataUseCases;
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use domain::error::IoTBeeError;
@@ -22,6 +23,10 @@ pub fn pipeline_data_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(get_pipeline_data_by_id)
         .service(delete_pipeline_data_by_id)
         .service(get_pipeline_data_by_group_id)
+        .service(update_pipeline_data_source)
+        .service(update_pipeline_data_store)
+        .service(update_pipeline_validation_schema)
+        .service(update_pipeline_group)
 }
 
 #[utoipa::path(
@@ -113,7 +118,6 @@ pub async fn get_pipeline_data_by_id(
     Ok(HttpResponse::Ok().json(response))
 }
 
-
 #[utoipa::path(
     delete,
     path = "/pipelines/{id}",
@@ -146,7 +150,6 @@ pub async fn delete_pipeline_data_by_id(
     Ok(HttpResponse::NoContent().finish())
 }
 
-
 #[utoipa::path(
     get,
     path = "/pipelines/group/{group_id}",
@@ -167,12 +170,14 @@ pub async fn get_pipeline_data_by_group_id(
     let group_id = group_id.into_inner();
     LOGGER.debug(&format!(
         "get_pipeline_data_by_group_id handler called for group_id={group_id}"
-    )); 
+    ));
     let pipelines: Vec<PipelineDataOutputModel> = use_case
         .get_pipeline_by_group_id(&group_id)
         .await
         .map_err(|e| {
-            LOGGER.error(&format!("Failed to get pipelines for group_id={group_id}: {e}"));
+            LOGGER.error(&format!(
+                "Failed to get pipelines for group_id={group_id}: {e}"
+            ));
             e
         })?;
     let response: Vec<PipelineDataResponse> = pipelines
@@ -184,4 +189,152 @@ pub async fn get_pipeline_data_by_group_id(
         response.len()
     ));
     Ok(HttpResponse::Ok().json(response))
+}
+
+#[utoipa::path(
+    put,
+    path = "/pipelines/data_source/{pipeline_id}/{data_source_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "ID del pipeline a actualizar"),
+        ("data_source_id" = u32, Path, description = "ID de la fuente de datos que se asignará al pipeline")
+    ),
+    responses(
+        (status = 200, description = "Fuente de datos del pipeline actualizada exitosamente"),
+        (status = 400, description = "Datos inválidos", body = ErrorResponse),
+        (status = 404, description = "Pipeline o fuente de datos no encontrado", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[put("/data_source/{pipeline_id}/{data_source_id}")]
+pub async fn update_pipeline_data_source(
+    use_case: web::Data<UseCase>,
+    path: web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    let (pipeline_id, data_source_id) = path.into_inner();
+    LOGGER.debug(&format!("update_pipeline_data_source handler called for pipeline_id={pipeline_id}, data_source_id={data_source_id}"));
+    use_case
+        .update_data_source(&pipeline_id, &data_source_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update data source for pipeline id={pipeline_id}: {e}"
+            ));
+            e
+        })?;
+    LOGGER.info(&format!(
+        "Data source for pipeline id={pipeline_id} updated successfully"
+    ));
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(
+    put,
+    path = "/pipelines/store/{pipeline_id}/{data_store_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "ID del pipeline a actualizar"),
+        ("data_store_id" = u32, Path, description = "ID del data store que se asignará al pipeline")
+    ),
+    responses(
+        (status = 200, description = "Data store del pipeline actualizado exitosamente"),
+        (status = 400, description = "Datos inválidos", body = ErrorResponse),
+        (status = 404, description = "Pipeline o data store no encontrado", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[put("/store/{pipeline_id}/{data_store_id}")]
+async fn update_pipeline_data_store(
+    use_case: web::Data<UseCase>,
+    path: web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    let (pipeline_id, data_store_id) = path.into_inner();
+    LOGGER.debug(&format!("update_pipeline_data_store handler called for pipeline_id={pipeline_id}, data_store_id={data_store_id}"));
+    use_case
+        .update_store_data_source(&pipeline_id, &data_store_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update store for pipeline id={pipeline_id}: {e}"
+            ));
+            e
+        })?;
+    LOGGER.info(&format!(
+        "Store for pipeline id={pipeline_id} updated successfully"
+    ));
+    Ok(HttpResponse::Ok().finish())
+}
+
+
+#[utoipa::path(
+    put,
+    path = "/pipelines/validation_schema/{pipeline_id}/{schema_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "ID del pipeline a actualizar"),
+        ("schema_id" = u32, Path, description = "ID del esquema de validación que se asignará al pipeline")
+    ),
+    responses(
+        (status = 200, description = "Esquema de validación del pipeline actualizado exitosamente"),
+        (status = 400, description = "Datos inválidos", body = ErrorResponse),
+        (status = 404, description = "Pipeline o esquema de validación no encontrado", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[put("/validation_schema/{pipeline_id}/{schema_id}")]
+async fn update_pipeline_validation_schema(
+    use_case: web::Data<UseCase>,
+    path: web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    let (pipeline_id, schema_id) = path.into_inner();
+    LOGGER.debug(&format!("update_pipeline_validation_schema handler called for pipeline_id={pipeline_id}, schema_id={schema_id}"));
+    use_case
+        .update_validation_schema(&pipeline_id, &schema_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update validation schema for pipeline id={pipeline_id}: {e}"
+            ));
+            e
+        })?;
+    LOGGER.info(&format!(
+        "Validation schema for pipeline id={pipeline_id} updated successfully"
+    ));
+    Ok(HttpResponse::Ok().finish())
+}
+
+
+#[utoipa::path(
+    put,
+    path = "/pipelines/group/{pipeline_id}/{group_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "ID del pipeline a actualizar"),
+        ("group_id" = u32, Path, description = "ID del grupo que se asignará al pipeline")
+    ),
+    responses(
+        (status = 200, description = "Grupo del pipeline actualizado exitosamente"),
+        (status = 400, description = "Datos inválidos", body = ErrorResponse),
+        (status = 404, description = "Pipeline o grupo no encontrado", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[put("/group/{pipeline_id}/{group_id}")]
+async fn update_pipeline_group(
+    use_case: web::Data<UseCase>,
+    path: web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    let (pipeline_id, group_id) = path.into_inner();
+    LOGGER.debug(&format!(
+        "update_pipeline_group handler called for pipeline_id={pipeline_id}, group_id={group_id}"
+    ));
+    use_case
+        .update_group(&pipeline_id, &group_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update group for pipeline id={pipeline_id}: {e}"
+            ));
+            e
+        })?;
+    LOGGER.info(&format!(
+        "Group for pipeline id={pipeline_id} updated successfully"
+    ));
+    Ok(HttpResponse::Ok().finish())
 }

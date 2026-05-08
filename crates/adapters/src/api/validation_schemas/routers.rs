@@ -1,13 +1,10 @@
-use crate::api::error::ApiError;
-use crate::api::error::ErrorResponse;
 use super::models::{
     CreateValidationSchemaRequest, UpdateValidationSchemaRequestJson,
     UpdateValidationSchemaRequestName,
 };
-use super::models::{
-    SchemaId, ValidationSchemaByIdResponse, ValidationSchemaResponse,
-};
-
+use super::models::{SchemaId, ValidationSchemaByIdResponse, ValidationSchemaResponse};
+use crate::api::error::ApiError;
+use crate::api::error::ErrorResponse;
 
 use actix_web::{HttpResponse, delete, get, post, put, web};
 use application::validation_schemas_cases::cases::SchemaValidationUseCases;
@@ -241,16 +238,19 @@ pub async fn update_validation_schema_json(
 )]
 #[delete("/{id}")]
 pub async fn delete_validation_schema(
-    _use_case: web::Data<UseCase>,
-    _path: web::Path<SchemaId>,
+    use_case: web::Data<UseCase>,
+    path: web::Path<SchemaId>,
 ) -> Result<HttpResponse, ApiError> {
-    let id = _path.into_inner();
+    let id = path.into_inner();
     LOGGER.debug(&format!(
         "delete_validation_schema handler called for id={id}"
     ));
-    LOGGER.warn(&format!(
-        "delete_validation_schema id={id}: not yet implemented"
-    ));
+    
+    use_case.delete_validation_schema(id).await.map_err(|e| {
+        LOGGER.error(&format!("Failed to delete validation schema id={id}: {e}"));
+        e
+    })?;
+
     // TODO: llamar use_case.delete_pipeline_validation_schema()
     Ok(HttpResponse::NoContent().finish())
 }

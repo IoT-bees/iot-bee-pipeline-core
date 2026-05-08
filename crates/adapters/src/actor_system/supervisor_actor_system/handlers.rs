@@ -7,7 +7,7 @@ use super::super::supervisor_pipeline_life_time::{
 };
 use super::messages::{
     CreatePipelineMessage,
-     DeletePipelineMessage, 
+    DeletePipelineMessage,
     // ListPipelinesMessage, RestartPipelineMessage,
     // StatusPipelineMessage, StopPipelineMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
@@ -69,36 +69,34 @@ impl Handler<DeletePipelineMessage> for SystemActorSupervisor {
 
     fn handle(&mut self, msg: DeletePipelineMessage, _ctx: &mut Context<Self>) -> Self::Result {
         let pipeline_id = msg.pipeline_id;
-        
+
         let bridge = match self.get_bridge(pipeline_id) {
             Some(b) => b,
             None => {
                 return Box::pin(
                     async move {
-                        Err(PipelineLifecycleError::NotFound { 
-                            pipeline_id: pipeline_id.to_string() 
-                        }.into())
+                        Err(PipelineLifecycleError::NotFound {
+                            pipeline_id: pipeline_id.to_string(),
+                        }
+                        .into())
                     }
                     .into_actor(self)
                     .map(move |result, _actor, _ctx| result),
                 );
             }
         };
-        
+
         Box::pin(
-            async move {
-                bridge.stop_pipeline().await
-            }
-            .into_actor(self)
-            .map(move |result, actor, _ctx| {
-                result?;
-                actor._remove_pipeline(pipeline_id);
-                Ok(())
-            }),
+            async move { bridge.stop_pipeline().await }
+                .into_actor(self)
+                .map(move |result, actor, _ctx| {
+                    result?;
+                    actor._remove_pipeline(pipeline_id);
+                    Ok(())
+                }),
         )
     }
 }
-
 
 // // ── ListPipelines ── síncrono ─────────────────────────────────────────────────
 

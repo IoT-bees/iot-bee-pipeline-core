@@ -30,12 +30,15 @@ pub fn pipeline_lifecycle_scope(use_case: web::Data<UseCase>) -> actix_web::Scop
 #[post("/start/{pipeline_id}")]
 pub async fn start_new_pipeline(
     use_case: web::Data<UseCase>,
-    pipeline_id : web::Path<u32>,
+    pipeline_id: web::Path<u32>,
 ) -> Result<HttpResponse, ApiError> {
     LOGGER.debug("start_new_pipeline handler called");
 
     let pipeline_id = pipeline_id.into_inner();
-    LOGGER.info(&format!("el pipeline id recibido por el endpoint es {}",pipeline_id.clone()));
+    LOGGER.info(&format!(
+        "el pipeline id recibido por el endpoint es {}",
+        pipeline_id.clone()
+    ));
     use_case
         .start_new_pipeline(pipeline_id)
         .await
@@ -46,8 +49,6 @@ pub async fn start_new_pipeline(
     LOGGER.info("Pipeline started successfully");
     Ok(HttpResponse::Ok().finish())
 }
-
-
 
 #[utoipa::path(
     post,
@@ -62,18 +63,18 @@ pub async fn start_new_pipeline(
 #[post("/stop/{pipeline_id}")]
 pub async fn stop_pipeline(
     use_case: web::Data<UseCase>,
-    pipeline_id : web::Path<u32>,
+    pipeline_id: web::Path<u32>,
 ) -> Result<HttpResponse, ApiError> {
     LOGGER.debug("stop_pipeline handler called");
     let pipeline_id = pipeline_id.into_inner();
-    LOGGER.info(&format!("el pipeline id recibido por el endpoint es {}",pipeline_id.clone()));
-    use_case
-        .stop_pipeline(pipeline_id)
-        .await
-        .map_err(|e| {
-            LOGGER.error(&format!("Failed to stop pipeline: {e}"));
-            e
-        })?;
+    LOGGER.info(&format!(
+        "el pipeline id recibido por el endpoint es {}",
+        pipeline_id.clone()
+    ));
+    use_case.stop_pipeline(pipeline_id).await.map_err(|e| {
+        LOGGER.error(&format!("Failed to stop pipeline: {e}"));
+        e
+    })?;
     LOGGER.info("Pipeline stopped successfully");
     Ok(HttpResponse::Ok().finish())
 }

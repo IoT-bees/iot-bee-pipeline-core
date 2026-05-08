@@ -1,5 +1,3 @@
-
-
 use infrastructure::persistence::connection::InternalDataBase;
 use std::sync::Arc;
 

@@ -17,7 +17,30 @@ pub trait PipelineDataUseCases {
         pipeline_id: &u32,
     ) -> Result<PipelineDataOutputModel, IoTBeeError>;
     async fn delete_pipeline_by_id(&self, pipeline_id: &u32) -> Result<(), IoTBeeError>;
-    async fn get_pipeline_by_group_id(&self, group_id: &u32) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn get_pipeline_by_group_id(
+        &self,
+        group_id: &u32,
+    ) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn update_data_source(
+        &self,
+        pipeline_id: &u32,
+        data_source_id: &u32,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_store_data_source(
+        &self,
+        pipeline_id: &u32,
+        data_store_id: &u32,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_validation_schema(
+        &self,
+        pipeline_id: &u32,
+        validation_schema_id: &u32,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_group(
+        &self,
+        pipeline_id: &u32,
+        group_id: &u32,
+    ) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
@@ -87,38 +110,59 @@ where
             "delete_pipeline_by_id use case called for id={pipeline_id}"
         ));
         let pipeline_id = DataStoreId::new(*pipeline_id)?;
-        let pipeline_state = self.repository.get_pipeline_by_id(&pipeline_id).await.map_err(|e| {
-            LOGGER.error(&format!(
-                "Failed to get pipeline id={} before deletion: {e}",
-                pipeline_id.id()
-            ));
-            e
-        })?
-        .ok_or_else(|| {
-            LOGGER.warn(&format!("Pipeline id={} not found before deletion", pipeline_id.id()));
-            PipelinePersistenceError::IdNotFound {
-                id: pipeline_id.id(),
-            }
-        })?;
+        let pipeline_state = self
+            .repository
+            .get_pipeline_by_id(&pipeline_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to get pipeline id={} before deletion: {e}",
+                    pipeline_id.id()
+                ));
+                e
+            })?
+            .ok_or_else(|| {
+                LOGGER.warn(&format!(
+                    "Pipeline id={} not found before deletion",
+                    pipeline_id.id()
+                ));
+                PipelinePersistenceError::IdNotFound {
+                    id: pipeline_id.id(),
+                }
+            })?;
 
         if pipeline_state.is_active() {
-            LOGGER.warn(&format!("Pipeline id={} is active before deletion, stopping it first", pipeline_id.id()));
-            return Err(PipelinePersistenceError::DeleteFailed { reason: format!("Pipeline id={} is active before deletion", pipeline_id.id()) }.into());      
-        }
-
-
-        self.repository.delete_pipeline_by_id(&pipeline_id).await.map_err(|e| {
-            LOGGER.error(&format!(
-                "Failed to delete pipeline id={}: {e}",
+            LOGGER.warn(&format!(
+                "Pipeline id={} is active before deletion, stopping it first",
                 pipeline_id.id()
             ));
-            e
-        })?;
-        LOGGER.info(&format!("Pipeline id={} deleted successfully", pipeline_id.id()));
+            return Err(PipelinePersistenceError::DeleteFailed {
+                reason: format!("Pipeline id={} is active before deletion", pipeline_id.id()),
+            }
+            .into());
+        }
+
+        self.repository
+            .delete_pipeline_by_id(&pipeline_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to delete pipeline id={}: {e}",
+                    pipeline_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} deleted successfully",
+            pipeline_id.id()
+        ));
         Ok(())
     }
 
-    async fn get_pipeline_by_group_id(&self, group_id: &u32) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError> {
+    async fn get_pipeline_by_group_id(
+        &self,
+        group_id: &u32,
+    ) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError> {
         LOGGER.debug(&format!(
             "get_pipeline_by_group_id use case called for group_id={group_id}"
         ));
@@ -133,8 +177,127 @@ where
                 ));
                 e
             })?;
-        LOGGER.info(&format!("Found {} pipelines for group id={}", result.len(), group_id));
+        LOGGER.info(&format!(
+            "Found {} pipelines for group id={}",
+            result.len(),
+            group_id
+        ));
         Ok(result)
+    }
+
+    async fn update_data_source(
+        &self,
+        pipeline_id: &u32,
+        data_source_id: &u32,
+    ) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "update_data_source use case called for pipeline_id={} and data_source_id={}",
+            pipeline_id, data_source_id
+        ));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        let data_source_id = DataStoreId::new(*data_source_id)?;
+        self.repository
+            .update_pipeline_data_source(&pipeline_id, &data_source_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to update pipeline id={} with data source id={}: {e}",
+                    pipeline_id.id(),
+                    data_source_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} updated with data source id={} successfully",
+            pipeline_id.id(),
+            data_source_id.id()
+        ));
+        Ok(())
+    }
+
+    async fn update_store_data_source(
+        &self,
+        pipeline_id: &u32,
+        data_store_id: &u32,
+    ) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "update_store_data_source use case called for pipeline_id={} and data_store_id={}",
+            pipeline_id, data_store_id
+        ));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        let data_store_id = DataStoreId::new(*data_store_id)?;
+        self.repository
+            .update_pipeline_data_store(&pipeline_id, &data_store_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to update pipeline id={} with data store id={}: {e}",
+                    pipeline_id.id(),
+                    data_store_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} updated with data store id={} successfully",
+            pipeline_id.id(),
+            data_store_id.id()
+        ));
+        Ok(())
+    }
+    async fn update_validation_schema(
+        &self,
+        pipeline_id: &u32,
+        validation_schema_id: &u32,
+    ) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "update_validation_schema use case called for pipeline_id={} and validation_schema_id={}",
+            pipeline_id, validation_schema_id
+        ));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        let validation_schema_id = DataStoreId::new(*validation_schema_id)?;
+        self.repository
+            .update_pipeline_validation_schema(&pipeline_id, &validation_schema_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to update pipeline id={} with validation schema id={}: {e}",
+                    pipeline_id.id(),
+                    validation_schema_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} updated with validation schema id={} successfully",
+            pipeline_id.id(),
+            validation_schema_id.id()
+        ));
+        Ok(())
+    }
+    async fn update_group(
+        &self,
+        pipeline_id: &u32,
+        group_id: &u32,
+    ) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!("update_group use case called for pipeline_id={} and group_id={}", pipeline_id, group_id));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        let group_id = DataStoreId::new(*group_id)?;
+        self.repository
+            .update_pipeline_group(&pipeline_id, &group_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to update pipeline id={} with group id={}: {e}",
+                    pipeline_id.id(),
+                    group_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} updated with group id={} successfully",
+            pipeline_id.id(),
+            group_id.id()
+        ));
+        Ok(())
     }
 
 }

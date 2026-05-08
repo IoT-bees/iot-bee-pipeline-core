@@ -18,6 +18,7 @@ pub fn pipeline_groups_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_pipeline_group)
         .service(get_pipeline_groups)
         .service(get_pipeline_group_by_id)
+        // .service()
 }
 
 #[utoipa::path(

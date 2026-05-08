@@ -34,6 +34,7 @@ pub trait SchemaValidationUseCases {
         &self,
         id: u32,
     ) -> Result<PipelineNewValidateSchema, IoTBeeError>;
+    async fn delete_validation_schema(&self, id: u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct SchemaValidationUseCasesImpl<T: PipelineValidationSchemaRepository + Send + Sync> {
@@ -203,6 +204,48 @@ where
             "Validation schema id={schema_id} JSON updated successfully"
         ));
         //TODO: Realizar el reinicio de los pipelines que utilizan este schema de validación, para que tomen el nuevo schema actualizado
+        Ok(())
+    }
+
+    async fn delete_validation_schema(&self, id: u32) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "delete_validation_schema use case called for id={id}"
+        ));
+        let id_to_delete = DataStoreId::new(id)?;
+
+        let pipeline_using_schema = self
+            .repository
+            .get_pipelines_using_validation_schema(&id_to_delete)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to check pipelines using schema id={id} before deletion: {e}"
+                ));
+                e
+            })?;
+            
+        if !pipeline_using_schema.is_empty() {
+            LOGGER.warn(&format!(
+                "Cannot delete validation schema id={id} because it is used by pipelines: {:?}",
+                pipeline_using_schema.iter().map(|ds| ds.id()).collect::<Vec<_>>()
+            ));
+            return Err(PipelinePersistenceError::DeleteFailed {
+                reason: format!(
+                    "Cannot delete validation schema id={id} because it is used by pipelines: {:?}",
+                    pipeline_using_schema.iter().map(|ds| ds.id()).collect::<Vec<_>>()
+                ),
+            }.into());
+        }
+
+        self.repository
+            .delete_pipeline_validation_schema(&id_to_delete)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!("Failed to delete validation schema id={id}: {e}"));
+                e
+            })?;
+
+        LOGGER.info(&format!("Validation schema id={id} deleted successfully"));
         Ok(())
     }
 }

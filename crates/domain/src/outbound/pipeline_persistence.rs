@@ -42,9 +42,14 @@ pub trait PipelineDataSourceRepository {
         data_source_id: &DataStoreId,
         name: &FieldName,
     ) -> Result<(), IoTBeeError>;
-    async fn delete_pipeline_data_source(&self, data_source_id: &DataStoreId) -> Result<(), IoTBeeError>;
-    async fn get_pipelines_using_data_source(&self, data_source_id: &DataStoreId) -> Result<Vec<DataStoreId>, IoTBeeError>;
-
+    async fn delete_pipeline_data_source(
+        &self,
+        data_source_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipelines_using_data_source(
+        &self,
+        data_source_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
 }
 
 // // these methods are for the data store
@@ -98,6 +103,10 @@ pub trait PipelineValidationSchemaRepository {
     async fn list_pipeline_validation_schema(
         &self,
     ) -> Result<Vec<PipelineValidationSchemaModel>, IoTBeeError>;
+    async fn get_pipelines_using_validation_schema(
+        &self,
+        schema_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
 }
 
 #[async_trait]
@@ -142,5 +151,28 @@ pub trait PipelineControllerRepository {
     // async fn update_pipeline();
     //TODO:controlar el ciclo de vida del pipeline cuando se realiza un delete
     async fn delete_pipeline_by_id(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
-    async fn get_pipeline_by_group_id(&self, group_id: &DataStoreId) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn get_pipeline_by_group_id(
+        &self,
+        group_id: &DataStoreId,
+    ) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn update_pipeline_data_source(
+        &self,
+        pipeline_id: &DataStoreId,
+        data_source_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_data_store(
+        &self,
+        pipeline_id: &DataStoreId,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_validation_schema(
+        &self,
+        pipeline_id: &DataStoreId,
+        validation_schema_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_group(
+        &self,
+        pipeline_id: &DataStoreId,
+        group_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
 }

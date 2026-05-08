@@ -53,8 +53,6 @@ impl Actor for DataProcessorActor {
     }
 }
 
-
-
 // ── Bridge ───────────────────────────────────────────────────────────────────
 // Adapta Addr<DataProcessorActor> al trait SendDataToProcessor.
 // El consumer nunca conoce al actor; solo conoce el trait.

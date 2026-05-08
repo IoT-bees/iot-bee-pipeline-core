@@ -1,4 +1,3 @@
-
 // //para los casos de uso de connection types
 use application::connection_types_cases::cases::ConnectionTypesUseCases;
 use application::connection_types_cases::cases::ConnectionTypesUseCasesImpl;
@@ -29,14 +28,12 @@ use application::pipeline_data_cases::cases::PipelineDataUseCases;
 use application::pipeline_data_cases::cases::PipelineDataUseCasesImpl;
 use infrastructure::persistence::repositories::pipeline_data_repository::PipelineDataRepository;
 
-// // para los casos de uso de pipeline lifecycle 
+// // para los casos de uso de pipeline lifecycle
 use application::pipeline_lifecycle_cases::cases::PipelineLifecycleCases;
 use application::pipeline_lifecycle_cases::cases::PipelineLifecycleCasesImpl;
 use infrastructure::pipeline_component_factory::infra_pipeline_component_factory::InfrastructurePipelineComponentFactory;
 
 use adapters::actor_system::supervisor_actor_system::actor_wrapper::PipelineActorSupervisorSystemBridge;
- 
-
 
 use actix_web::web;
 
@@ -90,7 +87,7 @@ impl AppState {
         let pipeline_groups_repo: Arc<GroupRepository> =
             Arc::new(GroupRepository::new(self.internal_data_base.clone()));
         let pipeline_groups_use_case: Arc<dyn PipelineGroupUseCases + Send + Sync> =
-        Arc::new(PipelineGroupUseCasesImpl::new(pipeline_groups_repo));
+            Arc::new(PipelineGroupUseCasesImpl::new(pipeline_groups_repo));
         web::Data::from(pipeline_groups_use_case)
     }
 
@@ -114,10 +111,15 @@ impl AppState {
         &self,
     ) -> web::Data<dyn PipelineLifecycleCases + Send + Sync> {
         let pipeline_lifecycle = Box::new(PipelineActorSupervisorSystemBridge::instance());
-        let pipeline_controller = Box::new(PipelineDataRepository::new(self.internal_data_base.clone()));
-        let data_source_repository = Box::new(DataSourceRepository::new(self.internal_data_base.clone()));
-        let validation_schema_repository = Box::new(ValidationSchemaRepository::new(self.internal_data_base.clone()));
-        let data_store_repository = Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
+        let pipeline_controller =
+            Box::new(PipelineDataRepository::new(self.internal_data_base.clone()));
+        let data_source_repository =
+            Box::new(DataSourceRepository::new(self.internal_data_base.clone()));
+        let validation_schema_repository = Box::new(ValidationSchemaRepository::new(
+            self.internal_data_base.clone(),
+        ));
+        let data_store_repository =
+            Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
         let component_factory = Box::new(InfrastructurePipelineComponentFactory::new());
 
         let use_case = PipelineLifecycleCasesImpl::new(
@@ -134,10 +136,15 @@ impl AppState {
 
     pub async fn start_all_pipelines(&self) {
         let pipeline_lifecycle = Box::new(PipelineActorSupervisorSystemBridge::instance());
-        let pipeline_controller = Box::new(PipelineDataRepository::new(self.internal_data_base.clone()));
-        let data_source_repository = Box::new(DataSourceRepository::new(self.internal_data_base.clone()));
-        let validation_schema_repository = Box::new(ValidationSchemaRepository::new(self.internal_data_base.clone()));
-        let data_store_repository = Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
+        let pipeline_controller =
+            Box::new(PipelineDataRepository::new(self.internal_data_base.clone()));
+        let data_source_repository =
+            Box::new(DataSourceRepository::new(self.internal_data_base.clone()));
+        let validation_schema_repository = Box::new(ValidationSchemaRepository::new(
+            self.internal_data_base.clone(),
+        ));
+        let data_store_repository =
+            Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
         let component_factory = Box::new(InfrastructurePipelineComponentFactory::new());
 
         let use_case = PipelineLifecycleCasesImpl::new(

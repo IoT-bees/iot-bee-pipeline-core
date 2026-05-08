@@ -5,7 +5,7 @@ use super::models::{
 use crate::api::error::ApiError;
 use crate::api::error::ErrorResponse;
 
-use actix_web::{HttpResponse, get, post, put,delete, web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 use application::data_sources_cases::cases::DataSourcesUseCases;
 use domain::entities::data_source::{PipelineDataSourceInputModel, PipelineDataSourceUpdateModel};
 use domain::error::PipelinePersistenceError;
@@ -216,7 +216,6 @@ pub async fn update_data_source(
         })?;
     LOGGER.info(&format!("Data source id={raw_id} updated successfully"));
     Ok(HttpResponse::Ok().finish())
-
 }
 
 #[utoipa::path(
@@ -240,13 +239,10 @@ pub async fn delete_data_source(
     LOGGER.debug(&format!(
         "delete_data_source handler called for id={raw_id}"
     ));
-    use_case
-        .delete_data_source(&id)
-        .await
-        .map_err(|e| {
-            LOGGER.error(&format!("Failed to delete data source id={raw_id}: {e}"));
-            e
-        })?;
+    use_case.delete_data_source(&id).await.map_err(|e| {
+        LOGGER.error(&format!("Failed to delete data source id={raw_id}: {e}"));
+        e
+    })?;
     LOGGER.info(&format!("Data source id={raw_id} deleted successfully"));
     Ok(HttpResponse::NoContent().finish())
 }
