@@ -3,8 +3,8 @@ use domain::error::{IoTBeeError, PipelineLifecycleError};
 use domain::outbound::data_external_store::DataExternalStore;
 use logging::AppLogger;
 
-use async_trait::async_trait;
 use actix::prelude::*;
+use async_trait::async_trait;
 use std::sync::Arc;
 
 use super::super::general_messages::{SendActorActionMessage, SendActorActionMessageResult};
@@ -43,11 +43,7 @@ impl Actor for DataStoreActor {
     }
 }
 
-impl Supervised for DataStoreActor {
-    fn restarting(&mut self, _ctx: &mut Self::Context) {
-        LOGGER.warn("DataStoreActor is restarting.");
-    }
-}
+
 
 //────Bridge────────────────────────────────────────────────────────────────────────────────────────────────
 //
@@ -63,7 +59,7 @@ impl StoreActorBridge {
     ) -> Arc<dyn SendDataToStore + Send + Sync> {
         //iniciar el actor usando supervisor
         let actor = DataStoreActor::new(Arc::clone(&external_store));
-        let addr = Supervisor::start(move |_ctx| actor);
+        let addr = actor.start();
         Arc::new(Self { addr })
     }
 }

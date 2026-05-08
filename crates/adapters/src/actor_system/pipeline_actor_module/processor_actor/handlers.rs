@@ -3,9 +3,9 @@ use crate::actor_system::pipeline_actor_module::processor_actor::messages::{
     ProcessDataMessage, ProcessDataResult,
 };
 
+use actix::prelude::*;
 use domain::error::PipelineLifecycleError;
 use logging::AppLogger;
-use actix::prelude::*;
 
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::adapters::actor_system::pipeline_actor_module::processor_actor::handlers",

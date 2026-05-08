@@ -1,8 +1,6 @@
-use domain::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
-use domain::error::{IoTBeeError, PipelinePersistenceError};
 use chrono::{DateTime, Utc};
+use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
+use domain::error::{IoTBeeError, PipelinePersistenceError};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;

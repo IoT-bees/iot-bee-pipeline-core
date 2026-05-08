@@ -5,9 +5,7 @@ use crate::entities::connection_type::ConnectionTypeModel;
 use crate::entities::data_source::{
     PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
 };
-use crate::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
+use crate::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
 use crate::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use crate::entities::pipeline_groups::{PipelineGroupInputModel, PipelineGroupOutputModel};
 use crate::entities::validation_schema::{

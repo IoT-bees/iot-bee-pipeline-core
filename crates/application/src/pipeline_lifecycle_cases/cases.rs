@@ -1,14 +1,14 @@
-
 use async_trait::async_trait;
-use domain::error::IoTBeeError;
+// use domain::entities::{data_source, data_store};
+use domain::error::{IoTBeeError, PipelineLifecycleError};
 
+use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
+use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
 use domain::outbound::pipeline_persistence::{
     PipelineControllerRepository, PipelineDataSourceRepository, PipelineDataStoreRepository,
     PipelineValidationSchemaRepository,
 };
-use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
-use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::value_objects::pipelines_values::DataStoreId;
 
 use logging::AppLogger;
@@ -18,6 +18,8 @@ static LOGGER: AppLogger = AppLogger::new("iot_bee::application::pipeline_lifecy
 #[async_trait]
 pub trait PipelineLifecycleCases {
     async fn start_all_pipelines_in_system(&self) -> Result<(), IoTBeeError>;
+    async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
+    async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -59,19 +61,14 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
         let mut skipped = 0u32;
         let mut failed = 0u32;
 
-        
         for pipeline in pipelines {
             let id = pipeline.id().id();
 
             if !pipeline.is_active() {
-                LOGGER.info(&format!(
-                    "[pipeline id={}] skipped — inactive",
-                    id,
-                ));
+                LOGGER.info(&format!("[pipeline id={}] skipped — inactive", id,));
                 skipped += 1;
                 continue;
             }
-
 
             let data_source = match self
                 .data_source_repository
@@ -80,7 +77,10 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             {
                 Ok(v) => v,
                 Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] error reading data source: {}", id, e));
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] error reading data source: {}",
+                        id, e
+                    ));
                     failed += 1;
                     continue;
                 }
@@ -93,7 +93,10 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             {
                 Ok(v) => v,
                 Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] error reading validation schema: {}", id, e));
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] error reading validation schema: {}",
+                        id, e
+                    ));
                     failed += 1;
                     continue;
                 }
@@ -106,19 +109,16 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             {
                 Ok(v) => v,
                 Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] error reading data store: {}", id, e));
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] error reading data store: {}",
+                        id, e
+                    ));
                     failed += 1;
                     continue;
                 }
             };
 
-            LOGGER.info(&format!(
-                "[pipeline id={}] dependencies read successfully — data_source={}, validation_schema={}, data_store={}",
-                id,
-                data_source.as_ref().map(|ds| ds.name()).unwrap_or("None"),
-                validation_schema.as_ref().map(|vs| vs.name()).unwrap_or("None"),
-                data_store.as_ref().map(|ds| ds.name()).unwrap_or("None"),
-            ));
+
 
             let (Some(data_source), Some(validation_schema), Some(data_store)) =
                 (data_source, validation_schema, data_store)
@@ -127,7 +127,7 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                     "[pipeline id={}] missing dependency — data_source, validation_schema or data_store not found",
                     id
                 ));
-                
+
                 failed += 1;
                 continue;
             };
@@ -138,27 +138,21 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             ) {
                 Ok(v) => v,
                 Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] invalid pipeline configuration: {}", id, e));
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] invalid pipeline configuration: {}",
+                        id, e
+                    ));
                     failed += 1;
                     continue;
                 }
             };
 
-            let data_source_component = match self.component_factory.create_data_source(&data_source) {
-                Ok(v) => v,
-                Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] failed to build data source component: {}", id, e));
-                    failed += 1;
-                    continue;
-                }
-            };
-
-            let data_processor_component =
-                match self.component_factory.create_data_processor(&validation_schema) {
+            let data_source_component =
+                match self.component_factory.create_data_source(&data_source) {
                     Ok(v) => v,
                     Err(e) => {
                         LOGGER.error(&format!(
-                            "[pipeline id={}] failed to build data processor component: {}",
+                            "[pipeline id={}] failed to build data source component: {}",
                             id, e
                         ));
                         failed += 1;
@@ -166,10 +160,28 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                     }
                 };
 
+            let data_processor_component = match self
+                .component_factory
+                .create_data_processor(&validation_schema)
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] failed to build data processor component: {}",
+                        id, e
+                    ));
+                    failed += 1;
+                    continue;
+                }
+            };
+
             let data_store_component = match self.component_factory.create_data_store(&data_store) {
                 Ok(v) => v,
                 Err(e) => {
-                    LOGGER.error(&format!("[pipeline id={}] failed to build data store component: {}", id, e));
+                    LOGGER.error(&format!(
+                        "[pipeline id={}] failed to build data store component: {}",
+                        id, e
+                    ));
                     failed += 1;
                     continue;
                 }
@@ -204,5 +216,79 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
 
         Ok(())
     }
-}
 
+    async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError> {
+
+        let pipeline_id = DataStoreId::new(id)?;
+
+        let pipeline = self
+            .pipeline_controller
+            .get_pipeline_by_id(&pipeline_id)
+            .await?
+            .ok_or_else(||{
+                LOGGER.error(&format!("Pipeline not found for id={}", pipeline_id.id()));
+                PipelineLifecycleError::NotFound {
+                    pipeline_id: (pipeline_id.id().to_string()),
+                }
+            })?;
+
+
+        let data_source = self
+            .data_source_repository
+            .get_pipeline_data_source(&DataStoreId::new(pipeline.data_source_id())?)
+            .await?
+            .ok_or_else(|| {
+            LOGGER.error(&format!("Data source not found for pipeline id={}", pipeline_id.id()));
+            PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+            })?;
+                
+        let data_store = self
+            .data_store_repository
+            .get_pipeline_data_store_by_id(&DataStoreId::new(pipeline.store_id())?)
+            .await?
+            .ok_or_else(|| {
+                LOGGER.error(&format!("Data store not found for pipeline id={}", pipeline_id.id()));
+                PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+            })?;
+
+        let validation_schema = self
+            .validation_schema_repository
+            .get_pipeline_validation_schema(&DataStoreId::new(pipeline.validation_schema_id())?)
+            .await?
+            .ok_or_else(||{
+                LOGGER.error(&format!("Validation schema not found for pipeline id={}", pipeline_id.id()));
+                PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+            })?;
+
+
+        let pipeline_config = PipelineConfiguration::new(
+            pipeline.name(),
+            pipeline.pipeline_replication(),
+        )?;
+
+        let data_source_component = self.component_factory.create_data_source(&data_source)?;
+        let data_processor_component = self.component_factory.create_data_processor(&validation_schema)?;
+        let data_store_component = self.component_factory.create_data_store(&data_store)?;
+
+        LOGGER.info(&format!("Trying to start pipeline with id={}", pipeline_id.id()));
+        self.pipeline_lifecycle
+            .start(
+                pipeline.id(),
+                pipeline_config,
+                data_source_component,
+                data_processor_component,
+                data_store_component,
+            )
+            .await?;
+
+        LOGGER.info(&format!("Pipeline with id={} started successfully", pipeline_id.id()));
+
+        Ok(())
+    }
+
+
+    async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>{
+        self.pipeline_lifecycle.stop(&DataStoreId::new(id)?).await
+    }    
+
+}

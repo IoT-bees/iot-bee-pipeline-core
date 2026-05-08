@@ -1,6 +1,6 @@
+use async_trait::async_trait;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
-use async_trait::async_trait;
 
 use super::general_messages::SendActorActionMessageResult;
 #[async_trait]

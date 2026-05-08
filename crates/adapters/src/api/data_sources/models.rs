@@ -1,9 +1,9 @@
 use super::config::DataSourceConfig;
+use chrono::{DateTime, Utc};
 use domain::entities::data_source::{
     PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
 };
 use domain::error::{DomainValidationError, IoTBeeError};
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -29,10 +29,15 @@ impl TryFrom<CreateDataSourceRequest> for PipelineDataSourceInputModel {
     type Error = IoTBeeError;
 
     fn try_from(request: CreateDataSourceRequest) -> Result<Self, Self::Error> {
-        let source_type = request.data_source_configuration.source_type_name().to_string();
-        let config_json = serde_json::to_string(&request.data_source_configuration)
-            .map_err(|e| DomainValidationError::DataFormatError {
-                reason: format!("Failed to serialize data source configuration: {}", e),
+        let source_type = request
+            .data_source_configuration
+            .source_type_name()
+            .to_string();
+        let config_json =
+            serde_json::to_string(&request.data_source_configuration).map_err(|e| {
+                DomainValidationError::DataFormatError {
+                    reason: format!("Failed to serialize data source configuration: {}", e),
+                }
             })?;
         Ok(PipelineDataSourceInputModel::new(
             request.name,

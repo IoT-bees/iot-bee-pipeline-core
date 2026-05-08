@@ -1,14 +1,10 @@
-use crate::api::data_store::models::{
-    CreateDataStoreRequest, DataStoreId, DataStoreResponse,
-};
+use crate::api::data_store::models::{CreateDataStoreRequest, DataStoreId, DataStoreResponse};
 use crate::api::error::ErrorResponse;
 
-use application::data_store_cases::cases::DataStoreUseCases;
-use domain::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
-use logging::AppLogger;
 use crate::api::error::ApiError;
+use application::data_store_cases::cases::DataStoreUseCases;
+use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
+use logging::AppLogger;
 
 use actix_web::{HttpResponse, get, post, web};
 

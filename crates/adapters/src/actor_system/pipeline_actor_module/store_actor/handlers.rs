@@ -1,10 +1,10 @@
+use super::data_store_actor::DataStoreActor;
+use super::messages::{SendDataToStoreMessage, StoreActorResult};
 use crate::actor_system::pipeline_actor_module::general_messages::{
     ActorActions, ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
 };
-use super::data_store_actor::DataStoreActor;
-use super::messages::{SendDataToStoreMessage, StoreActorResult};
-use logging::AppLogger;
 use actix::prelude::*;
+use logging::AppLogger;
 
 static LOGGER: AppLogger =
     AppLogger::new("iot_bee::adapters::actor_system::pipeline_actor_module::store_actor::handlers");
@@ -26,7 +26,6 @@ impl Handler<SendDataToStoreMessage> for DataStoreActor {
         })
     }
 }
-
 
 impl Handler<SendActorActionMessage> for DataStoreActor {
     type Result = ResponseFuture<SendActorActionMessageResult>;

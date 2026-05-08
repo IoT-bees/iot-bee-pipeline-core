@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 ///   `{ "type": "num", "value": 3.0 }`    → Expr::Num
 ///   `{ "type": "var", "name": "x" }`     → Expr::Var
 ///   `{ "type": "bin_op", ... }`           → Expr::BinOp
-/// 
+///
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -17,7 +17,11 @@ pub enum Expr {
     Var { name: String },
     /// Operación binaria entre dos sub-expresiones.
     /// `Box<Expr>` rompe la recursión de tamaño infinito.
-    BinOp { op: Op, left: Box<Expr>, right: Box<Expr> },
+    BinOp {
+        op: Op,
+        left: Box<Expr>,
+        right: Box<Expr>,
+    },
 }
 
 /// Operadores aritméticos soportados.

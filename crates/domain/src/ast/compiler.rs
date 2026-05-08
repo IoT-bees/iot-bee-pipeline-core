@@ -1,7 +1,6 @@
 use super::ast::{Expr, Op};
 use super::schemas::{FieldSchema, ValidationRule};
 
-
 pub struct CompiledField {
     pub required: bool,
     pub default: Option<f64>,
@@ -21,7 +20,6 @@ impl From<FieldSchema> for CompiledField {
         }
     }
 }
-
 
 // Una instrucción individual del bytecode
 #[derive(Debug, Clone)]

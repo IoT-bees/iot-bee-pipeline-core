@@ -8,7 +8,7 @@ pub enum PipelineError {
     InvalidName,
     #[error("Pipeline configuration is invalid")]
     InvalidConfig,
-    #[error("Pipeline with id {pipeline_id} does not exist")]
+    #[error("data with id {pipeline_id} does not exist")]
     NotFound { pipeline_id: String },
 }
 
@@ -36,7 +36,7 @@ pub enum DataSourceError {
     InvalidPayload { reason: String },
 }
 
-#[derive(Error, Debug,Clone)]
+#[derive(Error, Debug, Clone)]
 pub enum PipelinePersistenceError {
     #[error("Data could not be persisted: {reason}")]
     SaveFailed { reason: String },

@@ -1,17 +1,16 @@
 use serde::{Deserialize, Serialize};
 
+use chrono::{DateTime, Utc};
+use domain::ast::schemas::FieldSchema;
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
 use domain::error::PipelinePersistenceError;
-use domain::ast::schemas::FieldSchema;
-use chrono::{DateTime, Utc};
+use std::collections::HashMap;
 use utoipa::ToSchema;
 use validator::Validate;
-use std::collections::HashMap;
 
 pub type SchemaId = u32;
-
 
 /// Request body to create a new validation schema. The `schema` object defines the expected fields,
 /// their types, constraints and optional transformation expressions.
@@ -92,15 +91,15 @@ impl CreateValidationSchemaRequest {
     }
 
     pub fn json_schema_str(&self) -> Result<String, PipelinePersistenceError> {
-        serde_json::to_string(&self.json_schema)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        serde_json::to_string(&self.json_schema).map_err(|e| {
+            PipelinePersistenceError::InvalidData {
                 reason: e.to_string(),
-            })
+            }
+        })
     }
 }
 
 //=====================
-
 
 /// Request body to update a schema's name.
 /// The new name must be unique across all schemas (1–32 characters).

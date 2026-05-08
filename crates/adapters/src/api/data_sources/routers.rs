@@ -2,16 +2,14 @@ use super::models::{
     CreateDataSourceRequest, DataSourceId, DataSourceResponse, UpdateDataSourceNameRequest,
     UpdateDataSourceRequest,
 };
-use crate::api::error::ErrorResponse;
 use crate::api::error::ApiError;
+use crate::api::error::ErrorResponse;
 
-use application::data_sources_cases::cases::DataSourcesUseCases;
-use domain::entities::data_source::{
-    PipelineDataSourceInputModel, PipelineDataSourceUpdateModel,
-};
-use domain::error::{PipelinePersistenceError};
-use logging::AppLogger;
 use actix_web::{HttpResponse, get, post, put, web};
+use application::data_sources_cases::cases::DataSourcesUseCases;
+use domain::entities::data_source::{PipelineDataSourceInputModel, PipelineDataSourceUpdateModel};
+use domain::error::PipelinePersistenceError;
+use logging::AppLogger;
 use validator::Validate;
 
 type UseCase = dyn DataSourcesUseCases + Send + Sync;

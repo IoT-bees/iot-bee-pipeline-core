@@ -1,8 +1,8 @@
 use domain::outbound::pipeline_persistence::PipelineConnectionTypeRepository;
 // use domain::outbound::PipelineGeneralRepository;
+use async_trait::async_trait;
 use domain::entities::connection_type::ConnectionTypeModel;
 use domain::error::{IoTBeeError, PipelinePersistenceError};
-use async_trait::async_trait;
 
 use crate::persistence::models::ConnectionTypeRow;
 // use sqlx::Error as SqlxError;

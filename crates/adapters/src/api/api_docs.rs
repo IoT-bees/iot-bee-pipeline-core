@@ -7,9 +7,7 @@ use crate::api::data_sources::models::{
     CreateDataSourceRequest, DataSourceId, DataSourceResponse, UpdateDataSourceNameRequest,
     UpdateDataSourceRequest,
 };
-use crate::api::data_store::models::{
-    CreateDataStoreRequest, DataStoreId, DataStoreResponse,
-};
+use crate::api::data_store::models::{CreateDataStoreRequest, DataStoreId, DataStoreResponse};
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
@@ -19,6 +17,8 @@ use crate::api::validation_schemas::models::{
     UpdateValidationSchemaRequestName, ValidationSchemaByIdResponse, ValidationSchemaResponse,
 };
 
+ 
+
 //ROUTERS
 use crate::api::connection_types::routers as connection_routers;
 use crate::api::data_sources::routers as data_sources_routers;
@@ -26,6 +26,7 @@ use crate::api::data_store::routers as data_store_routers;
 use crate::api::pipeline_data::routers as pipeline_data_routers;
 use crate::api::pipeline_groups::routers as pipeline_groups_routers;
 use crate::api::validation_schemas::routers as validation_routers;
+use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -57,6 +58,9 @@ use crate::api::validation_schemas::routers as validation_routers;
         pipeline_data_routers::create_pipeline_data,
         pipeline_data_routers::get_pipeline_data,
         pipeline_data_routers::get_pipeline_data_by_id,
+        // pipeline lifecycle
+        pipeline_lifecycle_routers::start_new_pipeline,
+        pipeline_lifecycle_routers::stop_pipeline
     ),
     components(
         schemas(
@@ -79,8 +83,7 @@ use crate::api::validation_schemas::routers as validation_routers;
             CreateDataStoreRequest,
             DataStoreResponse,
             DataStoreId,
-            UpdateDataSourceNameRequest
-
+            UpdateDataSourceNameRequest,
         )
     ),
     tags(

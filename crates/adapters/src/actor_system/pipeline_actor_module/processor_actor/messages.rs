@@ -1,6 +1,6 @@
+use actix::prelude::*;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
-use actix::prelude::*;
 
 pub struct ProcessDataMessage(DataConsumerRawType);
 impl ProcessDataMessage {

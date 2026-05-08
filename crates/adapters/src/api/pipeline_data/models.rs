@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use domain::error::{IoTBeeError, PipelinePersistenceError};
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -30,10 +30,11 @@ pub struct CreatePipelineDataRequest {
     #[serde(rename = "pipelineReplication")]
     #[validate(range(min = 1))]
     pub pipeline_replication: u32,
-    /// Si no se envía, el pipeline se crea como inactivo por defecto.
-    #[serde(rename = "isActive", default)]
-    pub is_active: bool,
+    // Si no se envía, el pipeline se crea como inactivo por defecto.
+    // #[serde(rename = "isActive", default)]
+    // pub is_active: bool,
 }
+
 impl TryFrom<CreatePipelineDataRequest> for PipelineDataInputModel {
     type Error = IoTBeeError;
 
@@ -51,7 +52,7 @@ impl TryFrom<CreatePipelineDataRequest> for PipelineDataInputModel {
             request.data_source_id,
             request.validation_schema_id,
             request.pipeline_replication,
-            request.is_active,
+            false,
         )?)
     }
 }

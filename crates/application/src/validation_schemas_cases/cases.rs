@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
@@ -5,7 +6,6 @@ use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::outbound::pipeline_persistence::PipelineValidationSchemaRepository;
 use domain::value_objects::pipelines_values::DataStoreId;
 use logging::AppLogger;
-use async_trait::async_trait;
 use std::sync::Arc;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::validation_schemas_cases::cases");

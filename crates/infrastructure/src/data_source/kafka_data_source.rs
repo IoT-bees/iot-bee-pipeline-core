@@ -12,8 +12,10 @@ impl DataSource for KafkaDataSource {
         &self,
         _sender: Sender<DataConsumerRawType>,
     ) -> Result<(), IoTBeeError> {
-        Err(IoTBeeError::DataSourceError(DataSourceError::ConnectionFailed {
-            reason: "Kafka data source is not yet implemented".to_string(),
-        }))
+        Err(IoTBeeError::DataSourceError(
+            DataSourceError::ConnectionFailed {
+                reason: "Kafka data source is not yet implemented".to_string(),
+            },
+        ))
     }
 }

@@ -1,12 +1,12 @@
 use domain::outbound::pipeline_persistence::PipelineValidationSchemaRepository;
 // use domain::outbound::PipelineGeneralRepository;
+use crate::persistence::models::{ValidationSchemaRow, ValidationSchemaRowWhitId};
+use async_trait::async_trait;
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::value_objects::pipelines_values::DataStoreId;
-use crate::persistence::models::{ValidationSchemaRow, ValidationSchemaRowWhitId};
-use async_trait::async_trait;
 
 use crate::persistence::connection::InternalDataBase;
 use sqlx::Error as SqlxError;
@@ -79,11 +79,9 @@ impl PipelineValidationSchemaRepository for ValidationSchemaRepository {
         .execute(pool)
         .await
         .map_err(|e| {
-            IoTBeeError::from(
-                domain::error::PipelinePersistenceError::DeleteFailed {
-                    reason: e.to_string(),
-                },
-            )
+            IoTBeeError::from(domain::error::PipelinePersistenceError::DeleteFailed {
+                reason: e.to_string(),
+            })
         })?;
 
         Ok(())
@@ -111,11 +109,9 @@ impl PipelineValidationSchemaRepository for ValidationSchemaRepository {
         .execute(pool)
         .await
         .map_err(|e| {
-            IoTBeeError::from(
-                domain::error::PipelinePersistenceError::UpdateFailed {
-                    reason: e.to_string(),
-                },
-            )
+            IoTBeeError::from(domain::error::PipelinePersistenceError::UpdateFailed {
+                reason: e.to_string(),
+            })
         })?;
 
         Ok(())

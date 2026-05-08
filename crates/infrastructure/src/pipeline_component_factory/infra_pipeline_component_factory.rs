@@ -1,7 +1,7 @@
 use domain::entities::data_source::PipelineDataSourceOutputModel;
 use domain::entities::data_store::PipelineDataStoreOutputModel;
 use domain::entities::validation_schema::PipelineNewValidateSchema;
-use domain::error::{IoTBeeError, DomainValidationError};
+use domain::error::{DomainValidationError, IoTBeeError};
 use domain::outbound::data_external_store::DataExternalStore;
 use domain::outbound::data_processor_actions::DataProcessorActions;
 use domain::outbound::data_source::DataSource;

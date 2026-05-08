@@ -1,6 +1,6 @@
-use domain::error::{IoTBeeError, PipelinePersistenceError};
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use domain::error::{IoTBeeError, PipelinePersistenceError};
 use serde::Serialize;
 
 #[derive(Serialize, utoipa::ToSchema)]
@@ -37,7 +37,6 @@ impl fmt::Display for ApiError {
         write!(f, "{}", self.0)
     }
 }
-
 
 impl ResponseError for PersistenceError {
     fn status_code(&self) -> StatusCode {
@@ -81,7 +80,9 @@ impl ResponseError for PersistenceError {
 impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
         match &self.0 {
-            IoTBeeError::PipelinePersistenceError(inner) => PersistenceError(inner.clone()).status_code(),
+            IoTBeeError::PipelinePersistenceError(inner) => {
+                PersistenceError(inner.clone()).status_code()
+            }
             IoTBeeError::PipelineError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::PipelineLifecycleError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DataSourceError(_) => StatusCode::BAD_REQUEST,
@@ -91,7 +92,9 @@ impl ResponseError for ApiError {
 
     fn error_response(&self) -> HttpResponse {
         match &self.0 {
-            IoTBeeError::PipelinePersistenceError(inner) => PersistenceError(inner.clone()).error_response(),
+            IoTBeeError::PipelinePersistenceError(inner) => {
+                PersistenceError(inner.clone()).error_response()
+            }
             IoTBeeError::PipelineError(e) => {
                 HttpResponse::build(StatusCode::BAD_REQUEST).json(ErrorResponse {
                     error: format!("Pipeline error: {}", e),

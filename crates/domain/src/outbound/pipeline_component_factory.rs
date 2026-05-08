@@ -3,8 +3,7 @@ use crate::entities::data_store::PipelineDataStoreOutputModel;
 use crate::entities::validation_schema::PipelineNewValidateSchema;
 use crate::error::IoTBeeError;
 use crate::outbound::{
-    data_external_store::DataExternalStore,
-    data_processor_actions::DataProcessorActions,
+    data_external_store::DataExternalStore, data_processor_actions::DataProcessorActions,
     data_source::DataSource,
 };
 use std::sync::Arc;

@@ -1,7 +1,7 @@
 use super::pipeline_abstraction::ReplicaRegistry;
 
-use logging::AppLogger;
 use actix::prelude::*;
+use logging::AppLogger;
 use std::sync::Arc;
 
 use super::{DataExternalStoreThreadSafe, DataProcessorThreadSafe, DataSourceThreadSafe};
@@ -29,7 +29,7 @@ static LOGGER: AppLogger = AppLogger::new(
 pub struct PipelineSupervisor {
     pipeline_id: u32,
     replica_registry: Arc<ReplicaRegistry>,
-    pipeline_configuration: PipelineConfiguration, // por ahora solo un string, pero podría ser una struct con más info
+    pipeline_configuration: PipelineConfiguration,
     data_source: DataSourceThreadSafe,
     data_processor: DataProcessorThreadSafe,
     data_store: DataExternalStoreThreadSafe,
@@ -93,11 +93,4 @@ impl Actor for PipelineSupervisor {
     }
 }
 
-impl Supervised for PipelineSupervisor {
-    fn restarting(&mut self, _ctx: &mut Self::Context) {
-        LOGGER.warn(&format!(
-            "PipelineSupervisor for pipeline_id={} is restarting.",
-            self.pipeline_id
-        ));
-    }
-}
+

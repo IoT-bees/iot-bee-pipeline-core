@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::ast::Expr;
+use serde::{Deserialize, Serialize};
 
 // La definición de un campo
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,7 +21,6 @@ pub struct FieldSchema {
     // None aquí significa "no transformar, pasar directo"
     pub operation: Option<Expr>,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

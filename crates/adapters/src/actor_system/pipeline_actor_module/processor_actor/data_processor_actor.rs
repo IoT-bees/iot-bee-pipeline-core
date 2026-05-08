@@ -5,9 +5,9 @@ use super::messages::ProcessDataMessage;
 use crate::actor_system::pipeline_actor_module::general_ports::SendDataToProcessor;
 use crate::actor_system::pipeline_actor_module::general_ports::SendDataToStore;
 
-use domain::outbound::data_processor_actions::DataProcessorActions;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
+use domain::outbound::data_processor_actions::DataProcessorActions;
 use logging::AppLogger;
 use std::sync::Arc;
 
@@ -19,13 +19,19 @@ static LOGGER: AppLogger = AppLogger::new(
 type DataStoreThreadSafe = Arc<dyn SendDataToStore + Send + Sync + 'static>;
 type DataProcessorActionsThreadSafe = Arc<dyn DataProcessorActions + Send + Sync + 'static>;
 pub struct DataProcessorActor {
-    data_store: DataStoreThreadSafe, // esto debe ser el actor que implementa SendDataToStore
-    data_processor_actions: DataProcessorActionsThreadSafe, // esto debe ser la implementación concreta de DataProcessorActions
+    data_store: DataStoreThreadSafe,
+    data_processor_actions: DataProcessorActionsThreadSafe,
 }
 
 impl DataProcessorActor {
-    pub fn new(data_store: DataStoreThreadSafe, data_processor: DataProcessorActionsThreadSafe) -> Self {
-        Self { data_store, data_processor_actions: data_processor }
+    pub fn new(
+        data_store: DataStoreThreadSafe,
+        data_processor: DataProcessorActionsThreadSafe,
+    ) -> Self {
+        Self {
+            data_store,
+            data_processor_actions: data_processor,
+        }
     }
     pub fn data_store(&self) -> DataStoreThreadSafe {
         Arc::clone(&self.data_store)
@@ -47,11 +53,7 @@ impl Actor for DataProcessorActor {
     }
 }
 
-impl Supervised for DataProcessorActor {
-    fn restarting(&mut self, _ctx: &mut Self::Context) {
-        LOGGER.warn("DataProcessorActor is restarting.");
-    }
-}
+
 
 // ── Bridge ───────────────────────────────────────────────────────────────────
 // Adapta Addr<DataProcessorActor> al trait SendDataToProcessor.
@@ -68,7 +70,7 @@ impl ProcessorActorBridge {
         data_processor: DataProcessorActionsThreadSafe,
     ) -> Arc<dyn SendDataToProcessor + Send + Sync> {
         let actor = DataProcessorActor::new(data_store, data_processor);
-        let addr = Supervisor::start(move |_ctx| actor);
+        let addr = actor.start();
         Arc::new(Self { addr })
     }
 }

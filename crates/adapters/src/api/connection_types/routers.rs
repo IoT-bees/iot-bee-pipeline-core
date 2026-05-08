@@ -1,7 +1,7 @@
-use application::connection_types_cases::cases::ConnectionTypesUseCases;
-use crate::api::error::{ApiError}; 
-use actix_web::{HttpResponse, get, web};
 use crate::api::connection_types::models::ConnectionTypeResponse;
+use crate::api::error::ApiError;
+use actix_web::{HttpResponse, get, web};
+use application::connection_types_cases::cases::ConnectionTypesUseCases;
 use logging::AppLogger;
 
 type UseCase = dyn ConnectionTypesUseCases + Send + Sync;
@@ -14,7 +14,6 @@ pub fn connection_types_scope(use_cases: web::Data<UseCase>) -> actix_web::Scope
         .service(get_connection_types)
 }
 
-
 #[utoipa::path(
     get,
     path = "/connection-types",
@@ -24,9 +23,7 @@ pub fn connection_types_scope(use_cases: web::Data<UseCase>) -> actix_web::Scope
     tag = "Connection Types"
 )]
 #[get("")]
-pub async fn get_connection_types(
-    use_cases: web::Data<UseCase>,
-) -> Result<HttpResponse, ApiError> {
+pub async fn get_connection_types(use_cases: web::Data<UseCase>) -> Result<HttpResponse, ApiError> {
     LOGGER.debug("get_connection_types handler called");
 
     let connection_types = use_cases.get_all_connection_types().await.map_err(|e| {
@@ -45,5 +42,3 @@ pub async fn get_connection_types(
     ));
     Ok(HttpResponse::Ok().json(connection_types))
 }
-
-

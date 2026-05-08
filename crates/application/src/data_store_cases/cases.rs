@@ -1,12 +1,10 @@
-use domain::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
+use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
 use domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
 use domain::value_objects::pipelines_values::DataStoreId;
 
+use async_trait::async_trait;
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use logging::AppLogger;
-use async_trait::async_trait;
 use std::sync::Arc;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::data_store_cases::cases");

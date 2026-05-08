@@ -1,7 +1,4 @@
-
-
-
-pub enum States{
+pub enum States {
     Active,
     Inactive,
 }

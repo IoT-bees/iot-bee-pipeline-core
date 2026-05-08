@@ -1,17 +1,19 @@
-use crate::api::validation_schemas::models::{
+use crate::api::error::ApiError;
+use crate::api::error::ErrorResponse;
+use super::models::{
     CreateValidationSchemaRequest, UpdateValidationSchemaRequestJson,
     UpdateValidationSchemaRequestName,
 };
-use crate::api::error::ErrorResponse;
-use crate::api::validation_schemas::models::{
+use super::models::{
     SchemaId, ValidationSchemaByIdResponse, ValidationSchemaResponse,
 };
-use application::validation_schemas_cases::cases::SchemaValidationUseCases;
-use domain::error::{PipelinePersistenceError};
-use logging::AppLogger;
+
+
 use actix_web::{HttpResponse, delete, get, post, put, web};
+use application::validation_schemas_cases::cases::SchemaValidationUseCases;
+use domain::error::PipelinePersistenceError;
+use logging::AppLogger;
 use validator::Validate;
-use crate::api::error::ApiError;
 
 type UseCase = dyn SchemaValidationUseCases + Send + Sync;
 

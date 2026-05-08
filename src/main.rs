@@ -1,5 +1,5 @@
-use iot_bee::composition::api_composition::api_composer::{ApiComposer, AppState};
-use iot_bee::composition::pipeline_composition::pipeline_composer::PipelineSystemComposer;
+use iot_bee::composition::api_composition::api_composer::ApiComposer;
+use iot_bee::composition::app_state::AppState;
 use logging::init_tracing;
 use tracing::info;
 
@@ -19,13 +19,12 @@ async fn main() -> std::io::Result<()> {
     };
 
     // 1. Actor supervisor: arranca primero y carga los pipelines activos desde DB.
-    PipelineSystemComposer::run(db.clone()).await;
+    let app_state = AppState::new(db.clone());
+    app_state.start_all_pipelines().await;
 
     // 2. API HTTP: arranca después, ya con el supervisor vivo.
     ApiComposer::run(db).await
 }
-
-
 
 fn banner() {
     let banner = r#"
@@ -44,4 +43,3 @@ $$$$$$\\$$$$$$  |$$ |        $$$$$$$  |\$$$$$$$\ \$$$$$$$\
 "#;
     info!("{}", banner);
 }
-

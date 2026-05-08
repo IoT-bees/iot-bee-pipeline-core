@@ -1,16 +1,17 @@
 // brigde wrapper para enviar mensajes a SystemActorSupervisor sin exponer su ActorAddr ni lógica de routing a handlers.rs
+use async_trait::async_trait;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
 use domain::value_objects::pipelines_values::DataStoreId;
-use async_trait::async_trait;
 
 use super::messages::{
     CreatePipelineMessage,
-    // DeletePipelineMessage, ListPipelinesMessage, SystemAddReplicaMessage,
+    DeletePipelineMessage, 
+    // ListPipelinesMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
 };
 
-use domain::error::{IoTBeeError, PipelineLifecycleError};
 use actix::prelude::*;
+use domain::error::{IoTBeeError, PipelineLifecycleError};
 
 use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::outbound::{
@@ -72,6 +73,15 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
             .await
             .map_err(mailbox_err)?
     }
+
+    async fn stop(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError> {
+        self.supervisor_addr
+            .send(DeletePipelineMessage::new(pipeline_id.id()))
+            .await
+            .map_err(mailbox_err)?
+
+    }
+
 }
 
 fn mailbox_err(e: MailboxError) -> IoTBeeError {

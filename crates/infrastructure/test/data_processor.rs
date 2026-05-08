@@ -4,14 +4,13 @@
 
 use std::collections::HashMap;
 
-use domain::entities::data_consumer_types::DataConsumerRawType;
-use domain::outbound::data_processor_actions::DataProcessorActions;
 use domain::ast::ast::{Expr, Op};
 use domain::ast::compiler::{Instruction, Program};
 use domain::ast::vm::{Vm, VmError};
+use domain::entities::data_consumer_types::DataConsumerRawType;
+use domain::outbound::data_processor_actions::DataProcessorActions;
 // use domain::ast::processor::PipelineDataProcessorCore;
 use infrastructure::data_processor::data_process::PipelineDataProcessorCore;
-
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -114,7 +113,10 @@ fn ast_deserializa_bin_op_todos_los_operadores() {
         let expr: Expr = serde_json::from_str(&json).unwrap();
         match expr {
             Expr::BinOp { op, .. } => {
-                assert_eq!(std::mem::discriminant(&op), std::mem::discriminant(&expected_op));
+                assert_eq!(
+                    std::mem::discriminant(&op),
+                    std::mem::discriminant(&expected_op)
+                );
             }
             _ => panic!("Se esperaba BinOp"),
         }
@@ -152,7 +154,9 @@ fn ast_serializacion_simetrica() {
     // Serializar y volver a deserializar debe dar el mismo resultado al ejecutar.
     let original = Expr::BinOp {
         op: Op::Add,
-        left: Box::new(Expr::Var { name: "x".to_string() }),
+        left: Box::new(Expr::Var {
+            name: "x".to_string(),
+        }),
         right: Box::new(Expr::Num { value: 5.0 }),
     };
     let json = serde_json::to_string(&original).unwrap();
@@ -174,7 +178,9 @@ fn compiler_num_emite_push_const() {
 
 #[test]
 fn compiler_var_emite_push_var() {
-    let prog = Program::compile(&Expr::Var { name: "x".to_string() });
+    let prog = Program::compile(&Expr::Var {
+        name: "x".to_string(),
+    });
     assert_eq!(prog.instructions.len(), 1);
     assert!(matches!(&prog.instructions[0], Instruction::PushVar(n) if n == "x"));
 }
@@ -184,8 +190,12 @@ fn compiler_bin_op_orden_postfijo() {
     // a + b  →  PushVar(a), PushVar(b), Add
     let expr = Expr::BinOp {
         op: Op::Add,
-        left:  Box::new(Expr::Var { name: "a".to_string() }),
-        right: Box::new(Expr::Var { name: "b".to_string() }),
+        left: Box::new(Expr::Var {
+            name: "a".to_string(),
+        }),
+        right: Box::new(Expr::Var {
+            name: "b".to_string(),
+        }),
     };
     let prog = Program::compile(&expr);
     assert_eq!(prog.instructions.len(), 3);
@@ -198,7 +208,7 @@ fn compiler_bin_op_orden_postfijo() {
 fn compiler_operacion_de_resta_emite_sub() {
     let expr = Expr::BinOp {
         op: Op::Sub,
-        left:  Box::new(Expr::Num { value: 1.0 }),
+        left: Box::new(Expr::Num { value: 1.0 }),
         right: Box::new(Expr::Num { value: 2.0 }),
     };
     let prog = Program::compile(&expr);
@@ -209,7 +219,7 @@ fn compiler_operacion_de_resta_emite_sub() {
 fn compiler_operacion_de_div_emite_div() {
     let expr = Expr::BinOp {
         op: Op::Div,
-        left:  Box::new(Expr::Num { value: 1.0 }),
+        left: Box::new(Expr::Num { value: 1.0 }),
         right: Box::new(Expr::Num { value: 2.0 }),
     };
     let prog = Program::compile(&expr);
@@ -223,8 +233,12 @@ fn compiler_expresion_anidada_secuencia_correcta() {
         op: Op::Mul,
         left: Box::new(Expr::BinOp {
             op: Op::Add,
-            left:  Box::new(Expr::Var { name: "a".to_string() }),
-            right: Box::new(Expr::Var { name: "b".to_string() }),
+            left: Box::new(Expr::Var {
+                name: "a".to_string(),
+            }),
+            right: Box::new(Expr::Var {
+                name: "b".to_string(),
+            }),
         }),
         right: Box::new(Expr::Num { value: 2.0 }),
     };
@@ -243,49 +257,86 @@ fn compiler_expresion_anidada_secuencia_correcta() {
 
 #[test]
 fn vm_suma_constantes() {
-    let expr = Expr::BinOp { op: Op::Add, left: Box::new(Expr::Num { value: 3.0 }), right: Box::new(Expr::Num { value: 4.0 }) };
+    let expr = Expr::BinOp {
+        op: Op::Add,
+        left: Box::new(Expr::Num { value: 3.0 }),
+        right: Box::new(Expr::Num { value: 4.0 }),
+    };
     assert_eq!(run(&expr, &vars(&[])).unwrap(), 7.0);
 }
 
 #[test]
 fn vm_resta_izquierda_menos_derecha() {
     // 10 - 3 = 7  Y  3 - 10 = -7 (no conmutativa)
-    let e1 = Expr::BinOp { op: Op::Sub, left: Box::new(Expr::Num { value: 10.0 }), right: Box::new(Expr::Num { value: 3.0 }) };
-    let e2 = Expr::BinOp { op: Op::Sub, left: Box::new(Expr::Num { value: 3.0 }),  right: Box::new(Expr::Num { value: 10.0 }) };
-    assert_eq!(run(&e1, &vars(&[])).unwrap(),  7.0);
+    let e1 = Expr::BinOp {
+        op: Op::Sub,
+        left: Box::new(Expr::Num { value: 10.0 }),
+        right: Box::new(Expr::Num { value: 3.0 }),
+    };
+    let e2 = Expr::BinOp {
+        op: Op::Sub,
+        left: Box::new(Expr::Num { value: 3.0 }),
+        right: Box::new(Expr::Num { value: 10.0 }),
+    };
+    assert_eq!(run(&e1, &vars(&[])).unwrap(), 7.0);
     assert_eq!(run(&e2, &vars(&[])).unwrap(), -7.0);
 }
 
 #[test]
 fn vm_multiplicacion() {
-    let expr = Expr::BinOp { op: Op::Mul, left: Box::new(Expr::Num { value: 5.0 }), right: Box::new(Expr::Num { value: 4.0 }) };
+    let expr = Expr::BinOp {
+        op: Op::Mul,
+        left: Box::new(Expr::Num { value: 5.0 }),
+        right: Box::new(Expr::Num { value: 4.0 }),
+    };
     assert_eq!(run(&expr, &vars(&[])).unwrap(), 20.0);
 }
 
 #[test]
 fn vm_division_a_dividido_b_no_conmutativa() {
     // 10 / 4 = 2.5  Y  4 / 10 = 0.4
-    let e1 = Expr::BinOp { op: Op::Div, left: Box::new(Expr::Num { value: 10.0 }), right: Box::new(Expr::Num { value: 4.0 }) };
-    let e2 = Expr::BinOp { op: Op::Div, left: Box::new(Expr::Num { value: 4.0 }),  right: Box::new(Expr::Num { value: 10.0 }) };
+    let e1 = Expr::BinOp {
+        op: Op::Div,
+        left: Box::new(Expr::Num { value: 10.0 }),
+        right: Box::new(Expr::Num { value: 4.0 }),
+    };
+    let e2 = Expr::BinOp {
+        op: Op::Div,
+        left: Box::new(Expr::Num { value: 4.0 }),
+        right: Box::new(Expr::Num { value: 10.0 }),
+    };
     assert_eq!(run(&e1, &vars(&[])).unwrap(), 2.5);
     assert!(approx(run(&e2, &vars(&[])).unwrap(), 0.4));
 }
 
 #[test]
 fn vm_division_por_cero() {
-    let expr = Expr::BinOp { op: Op::Div, left: Box::new(Expr::Num { value: 5.0 }), right: Box::new(Expr::Num { value: 0.0 }) };
-    assert!(matches!(run(&expr, &vars(&[])), Err(VmError::DivisionByZero)));
+    let expr = Expr::BinOp {
+        op: Op::Div,
+        left: Box::new(Expr::Num { value: 5.0 }),
+        right: Box::new(Expr::Num { value: 0.0 }),
+    };
+    assert!(matches!(
+        run(&expr, &vars(&[])),
+        Err(VmError::DivisionByZero)
+    ));
 }
 
 #[test]
 fn vm_variable_indefinida_error() {
-    let expr = Expr::Var { name: "inexistente".to_string() };
-    assert!(matches!(run(&expr, &vars(&[])), Err(VmError::UndefinedVar(ref n)) if n == "inexistente"));
+    let expr = Expr::Var {
+        name: "inexistente".to_string(),
+    };
+    assert!(
+        matches!(run(&expr, &vars(&[])), Err(VmError::UndefinedVar(ref n)) if n == "inexistente")
+    );
 }
 
 #[test]
 fn vm_resuelve_variable_del_registro() {
-    let expr = Expr::Var { name: "x".to_string() };
+    let expr = Expr::Var {
+        name: "x".to_string(),
+    };
     assert_eq!(run(&expr, &vars(&[("x", 99.0)])).unwrap(), 99.0);
 }
 
@@ -296,43 +347,67 @@ fn vm_expresion_con_multiples_variables() {
         op: Op::Mul,
         left: Box::new(Expr::BinOp {
             op: Op::Add,
-            left:  Box::new(Expr::Var { name: "a".to_string() }),
-            right: Box::new(Expr::Var { name: "b".to_string() }),
+            left: Box::new(Expr::Var {
+                name: "a".to_string(),
+            }),
+            right: Box::new(Expr::Var {
+                name: "b".to_string(),
+            }),
         }),
-        right: Box::new(Expr::Var { name: "c".to_string() }),
+        right: Box::new(Expr::Var {
+            name: "c".to_string(),
+        }),
     };
-    assert_eq!(run(&expr, &vars(&[("a", 3.0), ("b", 4.0), ("c", 2.0)])).unwrap(), 14.0);
+    assert_eq!(
+        run(&expr, &vars(&[("a", 3.0), ("b", 4.0), ("c", 2.0)])).unwrap(),
+        14.0
+    );
 }
 
 #[test]
 fn vm_reutilizable_sin_residuo_de_ejecuciones_anteriores() {
     let expr = Expr::BinOp {
         op: Op::Add,
-        left:  Box::new(Expr::Var { name: "x".to_string() }),
+        left: Box::new(Expr::Var {
+            name: "x".to_string(),
+        }),
         right: Box::new(Expr::Num { value: 1.0 }),
     };
     let prog = Program::compile(&expr);
     let mut vm = Vm::new();
     assert_eq!(vm.run(&prog, &vars(&[("x", 10.0)])).unwrap(), 11.0);
     assert_eq!(vm.run(&prog, &vars(&[("x", 20.0)])).unwrap(), 21.0);
-    assert_eq!(vm.run(&prog, &vars(&[("x",  0.0)])).unwrap(),  1.0);
+    assert_eq!(vm.run(&prog, &vars(&[("x", 0.0)])).unwrap(), 1.0);
 }
 
 #[test]
 fn vm_programa_vacio_stack_underflow() {
-    let prog = Program { instructions: vec![] };
-    assert!(matches!(Vm::new().run(&prog, &vars(&[])), Err(VmError::StackUnderflow)));
+    let prog = Program {
+        instructions: vec![],
+    };
+    assert!(matches!(
+        Vm::new().run(&prog, &vars(&[])),
+        Err(VmError::StackUnderflow)
+    ));
 }
 
 #[test]
 fn vm_numeros_negativos() {
-    let expr = Expr::BinOp { op: Op::Add, left: Box::new(Expr::Num { value: -5.0 }), right: Box::new(Expr::Num { value: -3.0 }) };
+    let expr = Expr::BinOp {
+        op: Op::Add,
+        left: Box::new(Expr::Num { value: -5.0 }),
+        right: Box::new(Expr::Num { value: -3.0 }),
+    };
     assert_eq!(run(&expr, &vars(&[])).unwrap(), -8.0);
 }
 
 #[test]
 fn vm_multiplicar_por_cero() {
-    let expr = Expr::BinOp { op: Op::Mul, left: Box::new(Expr::Num { value: 0.0 }), right: Box::new(Expr::Num { value: 99999.0 }) };
+    let expr = Expr::BinOp {
+        op: Op::Mul,
+        left: Box::new(Expr::Num { value: 0.0 }),
+        right: Box::new(Expr::Num { value: 99999.0 }),
+    };
     assert_eq!(run(&expr, &vars(&[])).unwrap(), 0.0);
 }
 
@@ -345,12 +420,12 @@ fn vm_expresion_profundamente_anidada() {
             op: Op::Mul,
             left: Box::new(Expr::BinOp {
                 op: Op::Add,
-                left:  Box::new(Expr::Num { value: 1.0 }),
+                left: Box::new(Expr::Num { value: 1.0 }),
                 right: Box::new(Expr::Num { value: 2.0 }),
             }),
             right: Box::new(Expr::BinOp {
                 op: Op::Sub,
-                left:  Box::new(Expr::Num { value: 3.0 }),
+                left: Box::new(Expr::Num { value: 3.0 }),
                 right: Box::new(Expr::Num { value: 1.0 }),
             }),
         }),
@@ -481,7 +556,9 @@ fn process_validacion_en_limite_exacto_es_valido() {
 fn process_campos_extra_en_registro_son_ignorados() {
     // El schema solo define "temperatura"; "presion" no existe en el schema.
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    let out = p.process(&record(&[("temperatura", 10.0), ("presion", 9999.0)])).unwrap();
+    let out = p
+        .process(&record(&[("temperatura", 10.0), ("presion", 9999.0)]))
+        .unwrap();
     assert!(out.contains_key("temperatura"));
     assert!(!out.contains_key("presion"));
 }
@@ -489,7 +566,9 @@ fn process_campos_extra_en_registro_son_ignorados() {
 #[test]
 fn process_schema_vacio_siempre_produce_salida_vacia() {
     let p = PipelineDataProcessorCore::new("{}").unwrap();
-    let out = p.process(&record(&[("cualquier", 42.0), ("otro", 1.0)])).unwrap();
+    let out = p
+        .process(&record(&[("cualquier", 42.0), ("otro", 1.0)]))
+        .unwrap();
     assert!(out.is_empty());
 }
 
@@ -515,9 +594,27 @@ fn process_multiples_campos_procesados_independientemente() {
 #[test]
 fn process_reutilizable_multiples_llamadas() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    assert_eq!(*p.process(&record(&[("temperatura",  0.0)])).unwrap().get("temperatura").unwrap(),  0.0);
-    assert_eq!(*p.process(&record(&[("temperatura", 10.0)])).unwrap().get("temperatura").unwrap(), 20.0);
-    assert_eq!(*p.process(&record(&[("temperatura", 25.0)])).unwrap().get("temperatura").unwrap(), 50.0);
+    assert_eq!(
+        *p.process(&record(&[("temperatura", 0.0)]))
+            .unwrap()
+            .get("temperatura")
+            .unwrap(),
+        0.0
+    );
+    assert_eq!(
+        *p.process(&record(&[("temperatura", 10.0)]))
+            .unwrap()
+            .get("temperatura")
+            .unwrap(),
+        20.0
+    );
+    assert_eq!(
+        *p.process(&record(&[("temperatura", 25.0)]))
+            .unwrap()
+            .get("temperatura")
+            .unwrap(),
+        50.0
+    );
 }
 
 #[test]
@@ -653,9 +750,9 @@ async fn process_data_conversion_celsius_fahrenheit_end_to_end() {
     let p = PipelineDataProcessorCore::new(SCHEMA_CELSIUS_A_FAHRENHEIT).unwrap();
 
     let casos = [
-        (  0.0,  32.0),  // punto de congelación
-        (100.0, 212.0),  // punto de ebullición
-        ( 37.0,  98.6),  // temperatura corporal
+        (0.0, 32.0),    // punto de congelación
+        (100.0, 212.0), // punto de ebullición
+        (37.0, 98.6),   // temperatura corporal
     ];
 
     for (celsius, fahrenheit_esperado) in casos {
@@ -665,7 +762,9 @@ async fn process_data_conversion_celsius_fahrenheit_end_to_end() {
         assert!(
             approx(*json.get("temperatura").unwrap(), fahrenheit_esperado),
             "{}°C debería ser {}°F, obtenido: {}",
-            celsius, fahrenheit_esperado, json["temperatura"]
+            celsius,
+            fahrenheit_esperado,
+            json["temperatura"]
         );
     }
 }
@@ -710,11 +809,13 @@ const SCHEMA_MULTI: &str = r#"{
 #[test]
 fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p.process(&record(&[
-        ("temperatura", 25.0),
-        ("humedad",     60.0),
-        ("presion",    1000.0),
-    ])).unwrap();
+    let out = p
+        .process(&record(&[
+            ("temperatura", 25.0),
+            ("humedad", 60.0),
+            ("presion", 1000.0),
+        ]))
+        .unwrap();
 
     assert!(out.contains_key("temperatura"));
     assert!(out.contains_key("humedad"));
@@ -724,11 +825,13 @@ fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
 #[test]
 fn process_multivariable_cada_campo_se_procesa_independientemente() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p.process(&record(&[
-        ("temperatura", 0.0),   // 0 * 1.8 + 32 = 32
-        ("humedad",    65.0),   // con operación ×2 → 130
-        ("presion",   950.0),   // sin operación → 950
-    ])).unwrap();
+    let out = p
+        .process(&record(&[
+            ("temperatura", 0.0), // 0 * 1.8 + 32 = 32
+            ("humedad", 65.0),    // con operación ×2 → 130
+            ("presion", 950.0),   // sin operación → 950
+        ]))
+        .unwrap();
 
     assert!(approx(*out.get("temperatura").unwrap(), 32.0));
     assert_eq!(*out.get("humedad").unwrap(), 130.0);
@@ -739,10 +842,9 @@ fn process_multivariable_cada_campo_se_procesa_independientemente() {
 fn process_multivariable_campo_opcional_ausente_usa_default() {
     // "presion" no viene en el registro → debe usar 1013.25
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p.process(&record(&[
-        ("temperatura", 20.0),
-        ("humedad",     50.0),
-    ])).unwrap();
+    let out = p
+        .process(&record(&[("temperatura", 20.0), ("humedad", 50.0)]))
+        .unwrap();
 
     assert_eq!(*out.get("presion").unwrap(), 1013.25);
 }
@@ -752,9 +854,15 @@ fn process_multivariable_falla_si_falta_cualquier_campo_requerido() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
 
     // falta temperatura
-    assert!(p.process(&record(&[("humedad", 50.0), ("presion", 1000.0)])).is_err());
+    assert!(
+        p.process(&record(&[("humedad", 50.0), ("presion", 1000.0)]))
+            .is_err()
+    );
     // falta humedad
-    assert!(p.process(&record(&[("temperatura", 20.0), ("presion", 1000.0)])).is_err());
+    assert!(
+        p.process(&record(&[("temperatura", 20.0), ("presion", 1000.0)]))
+            .is_err()
+    );
 }
 
 #[test]
@@ -762,19 +870,32 @@ fn process_multivariable_validacion_falla_en_cualquier_campo() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
 
     // temperatura fuera de rango
-    assert!(p.process(&record(&[("temperatura", 200.0), ("humedad", 50.0)])).is_err());
+    assert!(
+        p.process(&record(&[("temperatura", 200.0), ("humedad", 50.0)]))
+            .is_err()
+    );
     // humedad fuera de rango
-    assert!(p.process(&record(&[("temperatura", 20.0), ("humedad", 150.0)])).is_err());
+    assert!(
+        p.process(&record(&[("temperatura", 20.0), ("humedad", 150.0)]))
+            .is_err()
+    );
     // presion fuera de rango
-    assert!(p.process(&record(&[("temperatura", 20.0), ("humedad", 50.0), ("presion", 9999.0)])).is_err());
+    assert!(
+        p.process(&record(&[
+            ("temperatura", 20.0),
+            ("humedad", 50.0),
+            ("presion", 9999.0)
+        ]))
+        .is_err()
+    );
 }
 
 #[actix_rt::test]
 async fn process_data_multivariable_json_completo() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let dato = DataConsumerRawType::new(
-        r#"{"temperatura": 100.0, "humedad": 80.0, "presion": 1000.0}"#
-    ).unwrap();
+    let dato =
+        DataConsumerRawType::new(r#"{"temperatura": 100.0, "humedad": 80.0, "presion": 1000.0}"#)
+            .unwrap();
 
     let resultado = p.process_data(&dato).await.unwrap();
     let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
@@ -789,9 +910,7 @@ async fn process_data_multivariable_json_completo() {
 async fn process_data_multivariable_con_default() {
     // presion ausente en el JSON → default 1013.25
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let dato = DataConsumerRawType::new(
-        r#"{"temperatura": 37.0, "humedad": 55.0}"#
-    ).unwrap();
+    let dato = DataConsumerRawType::new(r#"{"temperatura": 37.0, "humedad": 55.0}"#).unwrap();
 
     let resultado = p.process_data(&dato).await.unwrap();
     let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
@@ -814,8 +933,6 @@ async fn process_data_multivariable_falla_si_falta_campo_requerido_en_json() {
 async fn process_data_multivariable_falla_si_valor_fuera_de_rango() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
 
-    let dato = DataConsumerRawType::new(
-        r#"{"temperatura": 20.0, "humedad": 999.0}"#
-    ).unwrap();
+    let dato = DataConsumerRawType::new(r#"{"temperatura": 20.0, "humedad": 999.0}"#).unwrap();
     assert!(p.process_data(&dato).await.is_err());
 }

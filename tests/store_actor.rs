@@ -3,9 +3,9 @@
 ///   - llama a `save()` cuando recibe `SendDataToStoreMessage`
 ///   - propaga los errores del store externo al llamante
 use actix::prelude::*;
-use async_trait::async_trait;
 use adapters::actor_system::pipeline_actor_module::store_actor::data_store_actor::DataStoreActor;
 use adapters::actor_system::pipeline_actor_module::store_actor::messages::SendDataToStoreMessage;
+use async_trait::async_trait;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::outbound::data_external_store::DataExternalStore;
