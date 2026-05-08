@@ -148,18 +148,19 @@ impl Message for RestartPipelineMessage {
 // ── StatusPipeline ────────────────────────────────────────────────────────────
 // Consulta el estado de todas las réplicas del pipeline dado.
 
-pub struct StatusPipelineMessage {
-    pub pipeline_id: u32,
-}
+pub struct StatusPipelineMessage(u32);
 
 impl StatusPipelineMessage {
     pub fn new(pipeline_id: u32) -> Self {
-        Self { pipeline_id }
+        Self(pipeline_id)
+    }
+    pub fn pipeline_id(&self) -> u32 {
+        self.0
     }
 }
-
+use domain::value_objects::pipelines_values::PipelineStatus;
 impl Message for StatusPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<PipelineStatus, IoTBeeError>;
 }
 
 // StartAllPipelinesInLocalStorageMessage

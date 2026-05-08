@@ -4,6 +4,8 @@ use crate::outbound::{
     data_external_store::DataExternalStore, data_processor_actions::DataProcessorActions,
     data_source::DataSource,
 };
+
+use crate::value_objects::pipelines_values::PipelineStatus;
 use crate::value_objects::pipelines_values::DataStoreId;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -20,9 +22,9 @@ pub trait PipelineLifecycle {
     ) -> Result<(), IoTBeeError>;
 
     async fn stop(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
-    // async fn get_status_by_id(
-    //     &self,
-    //     pipeline_id: &DataStoreId,
-    // ) -> Result<PipelineStatus, IoTBeeError>;
+    async fn get_status_by_id(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<PipelineStatus, IoTBeeError>;
     // async fn get_status(&self) -> Result<Vec<(DataStoreId, PipelineStatus)>, IoTBeeError>;
 }

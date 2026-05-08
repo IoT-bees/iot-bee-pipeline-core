@@ -72,7 +72,12 @@ pub trait PipelineGroupRepository {
     async fn save_pipeline_group(&self, group: &PipelineGroupInputModel)
     -> Result<(), IoTBeeError>;
     //TODO: add update and delete methods for the pipeline group
-    // async fn delete_pipeline_group(&self, group_id: &DataStoreId) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_group(&self, group_id: &DataStoreId) -> Result<(), IoTBeeError>;
+    async fn get_pipelines_using_group(
+        &self,
+        group_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
+
 }
 
 #[async_trait]

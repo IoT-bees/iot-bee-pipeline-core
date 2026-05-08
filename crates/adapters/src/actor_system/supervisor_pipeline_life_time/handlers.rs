@@ -88,7 +88,8 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
             }
 
             // si todas fueron exitosas, las insertas al registro
-            registry.add_replica(pipelines).await;
+            let ids = registry.add_replica(pipelines).await;
+            LOGGER.info(&format!("Réplicas iniciadas con ids: {:?}", ids));
 
             Ok(())
         })
@@ -97,9 +98,12 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
 
 // ── StopAllReplicas ── asíncrono ──────────────────────────────────────────────
 //
-// Patrón: all_arcs() clona los Arc y libera el RwLock en la parte síncrona
-// del handler, ANTES de entrar en Box::pin(async move {}).
-// El mailbox sigue procesando mensajes mientras el future recorre las réplicas.
+// Patrón: all_entries() clona los (id, Arc) y libera el RwLock en la parte
+// síncrona del handler, ANTES de entrar en Box::pin(async move {}).
+// Se intenta detener cada réplica de forma independiente.
+// Las que se detengan con éxito se eliminan del registro inmediatamente,
+// de modo que si alguna falla el registro queda limpio de las ya detenidas
+// y una segunda llamada sólo reintentará las que siguen activas.
 
 impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
@@ -108,21 +112,33 @@ impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
         let replica_registry = self.replica_registry();
 
         Box::pin(async move {
-            let mut result_vector: Vec<Result<(), IoTBeeError>> = Vec::new();
-            let replicas = replica_registry.all_arcs().await;
+            let entries = replica_registry.all_entries().await;
+            let mut errors: Vec<IoTBeeError> = Vec::new();
 
-            for replica in replicas {
-                let stop_result = replica.stop().await;
-                result_vector.push(stop_result);
-            }
-            // Combinar los resultados individuales en un solo resultado
-            for result in result_vector {
-                if let Err(e) = result {
-                    return Err(e);
+            for (id, replica) in entries {
+                match replica.stop().await {
+                    Ok(()) => {
+                        // Detenida con éxito: limpiarla del registro aunque después haya fallos
+                        replica_registry.remove_replica(id).await.ok();
+                    }
+                    Err(e) => {
+                        errors.push(e);
+                    }
                 }
             }
 
-            Ok(())
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(PipelineLifecycleError::OperationFailed {
+                    reason: format!(
+                        "{} réplica(s) no pudieron detenerse: {:?}",
+                        errors.len(),
+                        errors.iter().map(|e| e.to_string()).collect::<Vec<_>>()
+                    ),
+                }
+                .into())
+            }
         })
     }
 }
@@ -131,17 +147,14 @@ impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
 impl Handler<RemoveReplicaMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
-    fn handle(&mut self, _msg: RemoveReplicaMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        // para remover una replica primero se debe obtener el pipeline y detenerlo, luego se remueve del registro de replicas
+    fn handle(&mut self, msg: RemoveReplicaMessage, _ctx: &mut Context<Self>) -> Self::Result {
         let replica_registry = self.replica_registry();
+        let id = msg.replica_id();
 
         Box::pin(async move {
-            let replica = match replica_registry.get_last_replica().await {
-                Ok(r) => r,
-                Err(e) => return Err(e),
-            };
+            let replica = replica_registry.get_replica(id).await?;
             replica.stop().await?;
-            replica_registry.remove_last_replica().await
+            replica_registry.remove_replica(id).await
         })
     }
 }
@@ -190,6 +203,8 @@ impl Handler<StatusAllReplicasMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
     fn handle(&mut self, _msg: StatusAllReplicasMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        Box::pin(async move { Ok(()) })
+        Box::pin(async move {
+            Ok(())
+        })
     }
 }

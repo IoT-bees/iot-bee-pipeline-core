@@ -5,7 +5,7 @@ use logging::AppLogger;
 
 use crate::api::error::ApiError;
 use crate::api::error::ErrorResponse;
-use actix_web::{HttpResponse, get, post, web};
+use actix_web::{HttpResponse, get, post, delete, web};
 use validator::Validate;
 
 type UseCase = dyn PipelineGroupUseCases + Send + Sync;
@@ -18,7 +18,7 @@ pub fn pipeline_groups_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_pipeline_group)
         .service(get_pipeline_groups)
         .service(get_pipeline_group_by_id)
-        // .service()
+        .service(delete_pipeline_group)
 }
 
 #[utoipa::path(
@@ -116,4 +116,37 @@ pub async fn get_pipeline_group_by_id(
         "Pipeline group id={group_id} retrieved successfully"
     ));
     Ok(HttpResponse::Ok().json(response))
+}
+
+
+#[utoipa::path(
+    delete,
+    path = "/pipeline-groups/{id}",
+    params(
+        ("id" = u32, Path, description = "Pipeline group ID")
+    ),
+    responses(
+        (status = 204, description = "Pipeline group deleted successfully"),
+        (status = 404, description = "Pipeline group not found", body = ErrorResponse),
+        (status = 409, description = "Cannot delete pipeline group because it is used by pipelines", body = ErrorResponse)
+    ),
+    tag = "Pipeline Groups"
+)]
+#[delete("/{id}")]
+async fn delete_pipeline_group(
+    use_case: web::Data<UseCase>,
+    id: web::Path<u32>,
+) -> Result<HttpResponse, ApiError> {
+    let group_id = id.into_inner();
+    LOGGER.debug(&format!("delete_group handler called for id={group_id}"));
+
+    use_case
+        .delete_pipeline_group(&group_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!("Failed to delete pipeline group id={group_id}: {e}"));
+            e
+        })?;
+    LOGGER.info(&format!("Pipeline group id={group_id} deleted successfully"));
+    Ok(HttpResponse::NoContent().finish())
 }

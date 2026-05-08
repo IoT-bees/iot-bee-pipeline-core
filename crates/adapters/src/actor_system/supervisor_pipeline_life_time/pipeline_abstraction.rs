@@ -1,4 +1,8 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{
+    atomic::{AtomicU32, Ordering},
+    Arc,
+};
 
 use super::super::pipeline_actor_module::general_messages::SendActorActionMessageResult;
 use super::super::pipeline_actor_module::general_ports::SendActionToActor;
@@ -97,62 +101,90 @@ impl PipelineAbstractionController {
 // garantizando que el RwLockGuard nunca se sostenga a través de un punto de
 // suspensión asíncrona (lo que causaría un deadlock en tokio).
 use tokio::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
 pub struct ReplicaRegistry {
-    replicas: RwLock<Vec<Arc<PipelineAbstractionController>>>,
+    replicas: RwLock<HashMap<u32, Arc<PipelineAbstractionController>>>,
+    next_id: AtomicU32,
 }
 
 impl ReplicaRegistry {
     pub fn new() -> Self {
         Self {
-            replicas: RwLock::new(Vec::new()),
+            replicas: RwLock::new(HashMap::new()),
+            next_id: AtomicU32::new(1),
         }
     }
 
-    async fn read_lock(&self) -> RwLockReadGuard<'_, Vec<Arc<PipelineAbstractionController>>> {
+    async fn read_lock(
+        &self,
+    ) -> RwLockReadGuard<'_, HashMap<u32, Arc<PipelineAbstractionController>>> {
         self.replicas.read().await
     }
 
-    async fn write_lock(&self) -> RwLockWriteGuard<'_, Vec<Arc<PipelineAbstractionController>>> {
+    async fn write_lock(
+        &self,
+    ) -> RwLockWriteGuard<'_, HashMap<u32, Arc<PipelineAbstractionController>>> {
         self.replicas.write().await
     }
 
     /// Clona todos los Arc liberando el lock inmediatamente.
     /// Usado por los handlers antes del .await para no sostener el guard.
     pub async fn all_arcs(&self) -> Vec<Arc<PipelineAbstractionController>> {
-        self.read_lock().await.iter().cloned().collect()
+        let result = self.read_lock().await.values().cloned().collect();
+        result
     }
 
-    /// Añade una réplica. Devuelve el número total de réplicas tras la inserción.
-    pub async fn add_replica(&self, controller: Vec<PipelineAbstractionController>) -> usize {
+    /// Devuelve pares (id, Arc) de todas las réplicas liberando el lock inmediatamente.
+    /// Permite al handler identificar qué réplicas limpiar del registro individualmente.
+    pub async fn all_entries(&self) -> Vec<(u32, Arc<PipelineAbstractionController>)> {
+        self.read_lock()
+            .await
+            .iter()
+            .map(|(&id, arc)| (id, Arc::clone(arc)))
+            .collect()
+    }
+
+    /// Añade réplicas asignando un id único a cada una.
+    /// Devuelve los ids asignados en el mismo orden que los controladores recibidos.
+    pub async fn add_replica(&self, controllers: Vec<PipelineAbstractionController>) -> Vec<u32> {
         let mut replicas = self.write_lock().await;
-        for c in controller {
-            replicas.push(Arc::new(c));
+        let mut ids = Vec::with_capacity(controllers.len());
+        for c in controllers {
+            let id = self.next_id.fetch_add(1, Ordering::SeqCst);
+            replicas.insert(id, Arc::new(c));
+            ids.push(id);
         }
-        replicas.len()
+        ids
     }
 
-    pub async fn get_last_replica(
+    /// Obtiene una réplica por su id interno.
+    pub async fn get_replica(
         &self,
+        id: u32,
     ) -> Result<Arc<PipelineAbstractionController>, IoTBeeError> {
-        self.read_lock().await.last().cloned().ok_or_else(|| {
+        self.read_lock().await.get(&id).cloned().ok_or_else(|| {
             PipelineLifecycleError::OperationFailed {
-                reason: "No hay réplicas disponibles".to_string(),
+                reason: format!("No hay réplica con id={}", id),
             }
             .into()
         })
     }
 
-    /// Elimina la última réplica (escala hacia abajo). Error si no hay réplicas.
-    pub async fn remove_last_replica(&self) -> Result<(), IoTBeeError> {
+    /// Elimina una réplica por su id interno. Error si el id no existe.
+    pub async fn remove_replica(&self, id: u32) -> Result<(), IoTBeeError> {
         let mut replicas = self.write_lock().await;
-        if replicas.is_empty() {
+        if replicas.remove(&id).is_none() {
             return Err(PipelineLifecycleError::OperationFailed {
-                reason: "No hay réplicas para eliminar".to_string(),
+                reason: format!("No hay réplica con id={} para eliminar", id),
             }
             .into());
         }
-        replicas.pop();
         Ok(())
+    }
+
+    /// Elimina todos los registros del mapa (usado tras un stop exitoso).
+    pub async fn clear(&self) {
+        self.write_lock().await.clear();
     }
 
     /// Devuelve el número actual de réplicas.

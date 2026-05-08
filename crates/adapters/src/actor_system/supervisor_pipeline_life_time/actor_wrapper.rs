@@ -63,9 +63,9 @@ impl SupervisorPipelineBridge {
             .map_err(mailbox_err)?
     }
 
-    pub async fn remove_replica(&self) -> Result<(), IoTBeeError> {
+    pub async fn remove_replica(&self, replica_id: u32) -> Result<(), IoTBeeError> {
         self.addr
-            .send(RemoveReplicaMessage)
+            .send(RemoveReplicaMessage::new(replica_id))
             .await
             .map_err(mailbox_err)?
     }

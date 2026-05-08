@@ -49,6 +49,7 @@ use crate::api::validation_schemas::routers as validation_routers;
         pipeline_groups_routers::create_pipeline_group,
         pipeline_groups_routers::get_pipeline_groups,
         pipeline_groups_routers::get_pipeline_group_by_id,
+        pipeline_groups_routers::delete_pipeline_group,
         //data stores
         data_store_routers::create_data_store,
         data_store_routers::get_data_store,

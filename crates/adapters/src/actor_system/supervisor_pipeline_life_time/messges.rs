@@ -28,9 +28,20 @@ impl Message for AddReplicaMessage {
 }
 
 // ── RemoveReplica ─────────────────────────────────────────────────────────────
-// Elimina la última réplica (escala hacia abajo). Error si no hay réplicas.
+// Elimina la réplica con el id indicado. Error si no existe.
 
-pub struct RemoveReplicaMessage;
+pub struct RemoveReplicaMessage {
+    replica_id: u32,
+}
+
+impl RemoveReplicaMessage {
+    pub fn new(replica_id: u32) -> Self {
+        Self { replica_id }
+    }
+    pub fn replica_id(&self) -> u32 {
+        self.replica_id
+    }
+}
 
 impl Message for RemoveReplicaMessage {
     type Result = Result<(), IoTBeeError>;
@@ -62,6 +73,23 @@ pub struct RestartAllReplicasMessage;
 impl Message for RestartAllReplicasMessage {
     type Result = Result<(), IoTBeeError>;
 }
+
+
+// ── StatusReplica ───────────────────────────────────────────────────────────
+// Consulta el estado de un actor específico dentro de una réplica.
+pub struct StatusReplicasMessage(u32);
+impl StatusReplicasMessage {
+    pub fn new(replica_id: u32) -> Self {
+        Self(replica_id)
+    }
+    pub fn replica_id(&self) -> u32 {
+        self.0
+    }
+}
+impl Message for StatusReplicasMessage {
+    type Result = Result<(), IoTBeeError>;
+}
+
 
 // ── StatusAllReplicas ─────────────────────────────────────────────────────────
 // Consulta el estado de todos los actores de todas las réplicas activas.
