@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use std::sync::Arc;
 
 use super::pipeline_abstraction::PipelineAbstractionController;
 use domain::error::IoTBeeError;
@@ -98,4 +99,25 @@ pub struct StatusAllReplicasMessage;
 
 impl Message for StatusAllReplicasMessage {
     type Result = Result<(), IoTBeeError>;
+}
+
+// ── InternalInsertReplicas ────────────────────────────────────────────────────
+// Mensaje interno enviado por StartPipeline a sí mismo tras crear los controllers
+// en el bloque async. Permite insertar en self.replicas de forma síncrona,
+// sin ningún lock externo.
+
+pub struct InternalInsertReplicasMessage(pub Vec<PipelineAbstractionController>);
+
+impl Message for InternalInsertReplicasMessage {
+    type Result = Result<(), IoTBeeError>;
+}
+
+// ── InternalReInsertReplicas ──────────────────────────────────────────────────
+// Mensaje interno usado por StopAll y RemoveReplica para devolver al actor las
+// réplicas que no pudieron detenerse, conservando sus ids originales.
+
+pub struct InternalReInsertReplicasMessage(pub Vec<(u32, Arc<PipelineAbstractionController>)>);
+
+impl Message for InternalReInsertReplicasMessage {
+    type Result = ();
 }

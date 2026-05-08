@@ -1,8 +1,9 @@
-use super::pipeline_abstraction::ReplicaRegistry;
-
 use actix::prelude::*;
 use logging::AppLogger;
+use std::collections::HashMap;
 use std::sync::Arc;
+
+use super::pipeline_abstraction::PipelineAbstractionController;
 
 use super::{DataExternalStoreThreadSafe, DataProcessorThreadSafe, DataSourceThreadSafe};
 use domain::entities::pipeline_data::PipelineConfiguration;
@@ -13,22 +14,27 @@ static LOGGER: AppLogger = AppLogger::new(
 // ── PipelineSupervisor ────────────────────────────────────────────────────────
 //
 // Actor que gestiona las réplicas de UN pipeline concreto.
-// Cada réplica es un PipelineAbstractionController (consumer + processor + store).
+// Cada réplica es un PipelineAbstractionController (consumer + processor + store)
+// identificada por un u32 interno autoincrementable.
 //
 // El campo pipeline_id identifica de qué pipeline es supervisor.
 // La lógica de routing entre pipelines vive en SystemActorSupervisor (nivel superior).
 //
-// Handlers síncronos (add, remove, count):
-//   type Result = Result<_, IoTBeeError>  → el mailbox continúa
+// El mapa `replicas` vive directamente como campo del actor: el mailbox de Actix
+// garantiza acceso exclusivo a &mut self en la parte síncrona de cada handler,
+// por lo que no se necesita ningún lock externo.
 //
-// Handlers asíncronos (stop_all, restart_all, status_all):
-//   type Result = ResponseFuture<_>       → lanza Box::pin sin bloquear el mailbox.
-//   Los Arc de las réplicas se clonan en la parte síncrona (all_arcs()) antes del
-//   await, garantizando que el RwLockGuard se libere antes de cualquier suspensión.
+// Handlers síncronos (add, count): acceden a self.replicas directamente.
+// Handlers asíncronos (start, stop, remove):
+//   - Extraen los datos necesarios (drain / remove) en la parte síncrona.
+//   - Hacen el trabajo async en Box::pin.
+//   - Si necesitan escribir de vuelta al actor, envían un mensaje interno
+//     a ctx.address() (InternalInsertReplicas / InternalReInsertReplicas).
 
 pub struct PipelineSupervisor {
     pipeline_id: u32,
-    replica_registry: Arc<ReplicaRegistry>,
+    pub(super) replicas: HashMap<u32, Arc<PipelineAbstractionController>>,
+    pub(super) next_replica_id: u32,
     pipeline_configuration: PipelineConfiguration,
     data_source: DataSourceThreadSafe,
     data_processor: DataProcessorThreadSafe,
@@ -45,7 +51,8 @@ impl PipelineSupervisor {
     ) -> Self {
         Self {
             pipeline_id,
-            replica_registry: Arc::new(ReplicaRegistry::new()),
+            replicas: HashMap::new(),
+            next_replica_id: 1,
             pipeline_configuration,
             data_source,
             data_processor,
@@ -57,9 +64,6 @@ impl PipelineSupervisor {
     }
     pub fn pipeline_configuration(&self) -> &PipelineConfiguration {
         &self.pipeline_configuration
-    }
-    pub fn replica_registry(&self) -> Arc<ReplicaRegistry> {
-        Arc::clone(&self.replica_registry)
     }
 
     pub fn data_source(&self) -> DataSourceThreadSafe {
