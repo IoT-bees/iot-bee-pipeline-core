@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use domain::error::{IoTBeeError, PipelinePersistenceError};
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -27,13 +27,14 @@ pub struct CreatePipelineDataRequest {
     #[serde(rename = "dataStoreDescription")]
     #[validate(length(min = 1, max = 255))]
     pub data_store_description: String,
-    #[serde(rename = "dataStoreConfiguration")]
-    #[validate(length(min = 1))]
-    pub data_store_configuration: String,
     #[serde(rename = "pipelineReplication")]
     #[validate(range(min = 1))]
     pub pipeline_replication: u32,
+    // Si no se envía, el pipeline se crea como inactivo por defecto.
+    // #[serde(rename = "isActive", default)]
+    // pub is_active: bool,
 }
+
 impl TryFrom<CreatePipelineDataRequest> for PipelineDataInputModel {
     type Error = IoTBeeError;
 
@@ -48,9 +49,10 @@ impl TryFrom<CreatePipelineDataRequest> for PipelineDataInputModel {
             request.name,
             request.pipeline_group_id,
             request.data_store_id,
-            request.data_source_id,       // Placeholder for data_source_id
-            request.validation_schema_id, // Placeholder for validation_schema_id
-            request.pipeline_replication, // Placeholder for pipeline_replication
+            request.data_source_id,
+            request.validation_schema_id,
+            request.pipeline_replication,
+            false,
         )?)
     }
 }
@@ -83,6 +85,8 @@ pub struct PipelineDataResponse {
     pub id: u32,
     #[serde(rename = "name")]
     pub name: String,
+    #[serde(rename = "isActive")]
+    pub is_active: bool,
     #[serde(rename = "dataStore")]
     pub data_store: DataStoreInfo,
     #[serde(rename = "pipelineGroup")]
@@ -102,8 +106,9 @@ impl TryFrom<PipelineDataOutputModel> for PipelineDataResponse {
 
     fn try_from(output_model: PipelineDataOutputModel) -> Result<Self, Self::Error> {
         let response = Self {
-            id: output_model.id(),
+            id: output_model.id().id(),
             name: output_model.name().to_string(),
+            is_active: output_model.is_active(),
             data_store: DataStoreInfo {
                 id: output_model.store_id(),
                 name: output_model.store_name().to_string(),

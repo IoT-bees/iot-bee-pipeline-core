@@ -1,13 +1,5 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use super::ast::Expr;
-
-// El schema completo: un mapa de nombre_de_campo → definición
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PipelineSchema {
-    pub version: u32,
-    pub fields: HashMap<String, FieldSchema>,
-}
+use serde::{Deserialize, Serialize};
 
 // La definición de un campo
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,7 +23,7 @@ pub struct FieldSchema {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum FieldType {
     Float,
     Int,

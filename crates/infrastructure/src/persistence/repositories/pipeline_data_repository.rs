@@ -1,11 +1,11 @@
-use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
-use domain::error::{IoTBeeError, PipelinePersistenceError};
-use domain::outbound::pipeline_persistence::PipelineControllerRepository;
-use domain::value_objects::pipelines_values::DataStoreId;
 use crate::persistence::connection::InternalDataBase;
 use crate::persistence::models::PipelineRowFlat;
 use async_trait::async_trait;
 use chrono::Utc;
+use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
+use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::outbound::pipeline_persistence::PipelineControllerRepository;
+use domain::value_objects::pipelines_values::DataStoreId;
 use sqlx::Error as SqlxError;
 use std::sync::Arc;
 
@@ -39,7 +39,7 @@ impl PipelineControllerRepository for PipelineDataRepository {
         .bind(pipeline.data_source_id())
         .bind(pipeline.validation_schema_id())
         .bind(pipeline.pipeline_replication())
-        .bind("stopped") // Default status when creating a pipeline
+        .bind(pipeline.is_active())
         .bind(Utc::now().to_rfc3339())
         .bind(Utc::now().to_rfc3339())
         .execute(pool)
@@ -124,7 +124,7 @@ impl PipelineControllerRepository for PipelineDataRepository {
                 ds.name as data_source_name,
 
                 vs.id as validation_schema_id,
-                vs.name as validation_schema_name,
+                vs.json_name as validation_schema_name,
 
                 p.replicas,
                 p.status,
@@ -136,6 +136,7 @@ impl PipelineControllerRepository for PipelineDataRepository {
             JOIN databases d ON p.db_id = d.id
             JOIN data_sources ds ON p.data_source_id = ds.id
             JOIN validation_schemas vs ON p.validation_schema_id = vs.id
+            WHERE p.id = ?
             "#,
         )
         .bind(pipeline_id.id())

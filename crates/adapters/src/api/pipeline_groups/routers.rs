@@ -3,8 +3,8 @@ use application::groups_cases::cases::PipelineGroupUseCases;
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use logging::AppLogger;
 
-use crate::api::error::ErrorResponse;
 use crate::api::error::ApiError;
+use crate::api::error::ErrorResponse;
 use actix_web::{HttpResponse, get, post, web};
 use validator::Validate;
 
@@ -66,9 +66,7 @@ pub async fn create_pipeline_group(
     tag = "Pipeline Groups"
 )]
 #[get("")]
-pub async fn get_pipeline_groups(
-    use_case: web::Data<UseCase>,
-) -> Result<HttpResponse, ApiError> {
+pub async fn get_pipeline_groups(use_case: web::Data<UseCase>) -> Result<HttpResponse, ApiError> {
     LOGGER.debug("get_pipeline_groups handler called");
 
     let groups = use_case.get_pipeline_groups().await.map_err(|e| {

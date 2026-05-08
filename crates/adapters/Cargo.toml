@@ -22,3 +22,5 @@ futures-util   = { workspace = true }
 async-trait     = { workspace = true }
 chrono         = { workspace = true }
 validator      = { workspace = true }
+schemars       = { workspace = true }
+

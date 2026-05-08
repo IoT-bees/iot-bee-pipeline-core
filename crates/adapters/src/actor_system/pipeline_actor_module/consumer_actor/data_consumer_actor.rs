@@ -1,6 +1,7 @@
 use actix::prelude::*;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+use tokio::task::JoinHandle;
 
 use crate::actor_system::pipeline_actor_module::consumer_actor::messages::{
     ConsumerActorActionMessage, ConsumerActorState,
@@ -18,9 +19,10 @@ type DataProcessorThreadSafe = Arc<dyn SendDataToProcessor + Send + Sync + 'stat
 type DataSourceThreadSafe = Arc<dyn DataSource + Send + Sync + 'static>;
 pub struct DataConsumerActor {
     pub data_source: DataSourceThreadSafe,
-    pub data_processor: DataProcessorThreadSafe, // esto debe ser el actor que implementa SendDataToProcessor
+    pub data_processor: DataProcessorThreadSafe,
     state: ConsumerActorState,
     sender: Option<Sender<DataConsumerRawType>>,
+    pub(super) task_handle: Option<JoinHandle<()>>,
 }
 
 impl DataConsumerActor {
@@ -30,6 +32,7 @@ impl DataConsumerActor {
             data_processor,
             state: ConsumerActorState::Idle,
             sender: None,
+            task_handle: None,
         }
     }
     pub fn data_source(&self) -> Arc<dyn DataSource + Send + Sync + 'static> {
@@ -75,20 +78,16 @@ impl Actor for DataConsumerActor {
     }
 }
 
-impl Supervised for DataConsumerActor {
-    fn restarting(&mut self, _ctx: &mut Self::Context) {
-        LOGGER.warn("DataConsumerActor is restarting...");
-        self.set_state(ConsumerActorState::Idle);
-        self.set_sender(None);
-    }
-}
+
 
 //───brigde───────────────────────────────────────────────────────────────────────────
 
-use crate::actor_system::pipeline_actor_module::general_messages::{SendActorActionMessage, SendActorActionMessageResult};
+use crate::actor_system::pipeline_actor_module::general_messages::{
+    SendActorActionMessage, SendActorActionMessageResult,
+};
 use crate::actor_system::pipeline_actor_module::general_ports::SendActionToActor;
-use domain::error::PipelineLifecycleError;
 use async_trait::async_trait;
+use domain::error::PipelineLifecycleError;
 pub struct ConsumerActorBridge {
     addr: Addr<DataConsumerActor>,
 }
@@ -99,7 +98,7 @@ impl ConsumerActorBridge {
         data_processor: DataProcessorThreadSafe,
     ) -> Arc<dyn SendActionToActor + Send + Sync> {
         let actor = DataConsumerActor::new(data_source, data_processor);
-        let addr = Supervisor::start(move |_ctx| actor);
+        let addr = actor.start();
         Arc::new(Self { addr })
     }
 }
@@ -110,32 +109,26 @@ impl SendActionToActor for ConsumerActorBridge {
         self.addr
             .send(SendActorActionMessage::stop())
             .await
-            .map_err(
-                |e| PipelineLifecycleError::InternalCommunication {
-                    reason: format!("Failed to send stop message to consumer actor: {}", e),
-                },
-            )?
+            .map_err(|e| PipelineLifecycleError::InternalCommunication {
+                reason: format!("Failed to send stop message to consumer actor: {}", e),
+            })?
     }
 
     async fn send_restart_actor(&self) -> SendActorActionMessageResult {
         self.addr
             .send(SendActorActionMessage::restart())
             .await
-            .map_err(
-                |e| PipelineLifecycleError::InternalCommunication {
-                    reason: format!("Failed to send restart message to consumer actor: {}", e),
-                },
-            )?
+            .map_err(|e| PipelineLifecycleError::InternalCommunication {
+                reason: format!("Failed to send restart message to consumer actor: {}", e),
+            })?
     }
 
     async fn get_actor_status(&self) -> SendActorActionMessageResult {
         self.addr
             .send(SendActorActionMessage::status())
             .await
-            .map_err(
-                |e| PipelineLifecycleError::InternalCommunication {
-                    reason: format!("Failed to send status message to consumer actor: {}", e),
-                },
-            )?
+            .map_err(|e| PipelineLifecycleError::InternalCommunication {
+                reason: format!("Failed to send status message to consumer actor: {}", e),
+            })?
     }
 }

@@ -3,12 +3,12 @@
 ///   - llama a `save()` cuando recibe `SendDataToStoreMessage`
 ///   - propaga los errores del store externo al llamante
 use actix::prelude::*;
+use adapters::actor_system::pipeline_actor_module::store_actor::data_store_actor::DataStoreActor;
+use adapters::actor_system::pipeline_actor_module::store_actor::messages::SendDataToStoreMessage;
 use async_trait::async_trait;
-use iot_bee::adapters::actor_system::pipeline_actor_module::store_actor::data_store_actor::DataStoreActor;
-use iot_bee::adapters::actor_system::pipeline_actor_module::store_actor::messages::SendDataToStoreMessage;
-use iot_bee::domain::entities::data_consumer_types::DataConsumerRawType;
-use iot_bee::domain::error::{IoTBeeError, PipelinePersistenceError};
-use iot_bee::domain::outbound::data_external_store::DataExternalStore;
+use domain::entities::data_consumer_types::DataConsumerRawType;
+use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::outbound::data_external_store::DataExternalStore;
 use std::sync::{Arc, Mutex};
 
 // ─── Store externo falso ──────────────────────────────────────────────────────

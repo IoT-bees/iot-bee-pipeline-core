@@ -36,8 +36,8 @@ impl SystemActorSupervisor {
     }
 
     /// Clona el bridge del pipeline dado, si existe.
-    pub(super) fn get_bridge(&self, pipeline_id: u32) -> Option<&SupervisorPipelineBridge> {
-        self.supervisors.get(&pipeline_id)
+    pub(super) fn get_bridge(&self, pipeline_id: u32) -> Option<SupervisorPipelineBridge> {
+        self.supervisors.get(&pipeline_id).cloned()
     }
 
     /// Registra un bridge nuevo para el pipeline dado.
@@ -46,7 +46,10 @@ impl SystemActorSupervisor {
     }
 
     /// Elimina y devuelve el bridge del pipeline dado.
-    pub(super) fn _remove_pipeline(&mut self, pipeline_id: u32) -> Option<SupervisorPipelineBridge> {
+    pub(super) fn _remove_pipeline(
+        &mut self,
+        pipeline_id: u32,
+    ) -> Option<SupervisorPipelineBridge> {
         self.supervisors.remove(&pipeline_id)
     }
 

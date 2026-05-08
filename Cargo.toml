@@ -3,7 +3,8 @@ members = [
     "crates/domain",
     "crates/application",
     "crates/infrastructure",
-    "crates/adapters", "crates/logging",
+    "crates/adapters",
+    "crates/logging",
 ]
 resolver = "2"
 
@@ -22,6 +23,7 @@ toml = "1.1.2"
 
 # Validation
 validator = { version = "0.20.0", features = ["derive"] }
+schemars = { version = "0.8.22"} 
 
 # Documentation
 utoipa = { version = "5", features = ["actix_extras", "chrono"] }
@@ -58,6 +60,7 @@ application = { path = "crates/application" }
 infrastructure = { path = "crates/infrastructure" }
 adapters    = { path = "crates/adapters" }
 logging     = { path = "crates/logging" }
+
 tokio       = { workspace = true }
 tracing     = { workspace = true }
 tracing-subscriber = { workspace = true }
@@ -65,38 +68,7 @@ dotenvy     = { workspace = true }
 actix-web     = { workspace = true }
 utoipa         = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
+actix-rt       = { workspace = true }
+async-trait     = { workspace = true }
+actix           = { workspace = true }
 
-[[test]]
-name = "domain_value_objects"
-path = "test/domain_value_objects.rs"
-
-[[test]]
-name = "data_store_use_cases"
-path = "test/data_store_use_cases.rs"
-
-[[test]]
-name = "data_store_api"
-path = "test/data_store_api.rs"
-
-[[test]]
-name = "data_store_repository"
-path = "test/data_store_repository.rs"
-
-[[test]]
-name = "store_actor"
-path = "test/store_actor.rs"
-
-[[test]]
-name = "pipeline_integration"
-path = "test/pipeline_integration.rs"
-
-[[test]]
-name = "supervisor_actor"
-path = "test/supervisor_actor.rs"
-
-[[test]]
-name = "actor_system"
-path = "test/actor_system_test.rs"
-
-[dev-dependencies]
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite"] }

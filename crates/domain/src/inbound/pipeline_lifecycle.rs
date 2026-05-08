@@ -19,7 +19,7 @@ pub trait PipelineLifecycle {
         data_store: Arc<dyn DataExternalStore + Send + Sync>,
     ) -> Result<(), IoTBeeError>;
 
-    // async fn stop(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
+    async fn stop(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
     // async fn get_status_by_id(
     //     &self,
     //     pipeline_id: &DataStoreId,

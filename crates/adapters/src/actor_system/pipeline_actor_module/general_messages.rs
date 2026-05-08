@@ -1,5 +1,5 @@
-use domain::error::IoTBeeError;
 use actix::prelude::*;
+use domain::error::IoTBeeError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActorActions {

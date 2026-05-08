@@ -15,6 +15,7 @@ use domain::entities::pipeline_data::PipelineConfiguration;
 // Wrapper cloneable de Addr<PipelineSupervisor>. Expone la API del supervisor
 // como métodos async tipados sin exponer el tipo Actor al exterior.
 // Addr<A> implementa Clone, por lo que el derive es suficiente.
+#[derive(Clone)]
 pub struct SupervisorPipelineBridge {
     addr: Addr<PipelineSupervisor>,
 }
@@ -34,7 +35,7 @@ impl SupervisorPipelineBridge {
             data_processor,
             data_store,
         );
-        let addr = Supervisor::start(move |_ctx| pipeline_supervisor);
+        let addr = pipeline_supervisor.start();
         Self { addr }
     }
 

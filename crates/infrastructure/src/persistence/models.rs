@@ -27,10 +27,10 @@ pub struct ConnectionTypeRow {
 pub struct DataSourceRow {
     pub id: u32,
     pub name: String,
-    pub data_source_type_id: u32,
     pub data_source_state: String,
     pub data_source_configuration: String,
     pub data_source_description: String,
+    pub source_type: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -74,7 +74,7 @@ pub struct PipelineRowFlat {
     pub validation_schema_name: String,
 
     pub replicas: u32,
-    pub status: String,
+    pub status: bool,
     pub created_at: String,
     pub updated_at: String,
 }

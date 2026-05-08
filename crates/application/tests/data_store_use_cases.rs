@@ -1,15 +1,13 @@
+use application::data_store_cases::cases::{DataStoreUseCases, DataStoreUseCasesImpl};
 /// Pruebas de la capa de aplicación usando repositorios falsos (fake).
 /// Validan que los casos de uso orquesten correctamente el repositorio
 /// y propaguen errores con la semántica correcta.
 use async_trait::async_trait;
 use chrono::Utc;
-use iot_bee::application::data_store_cases::cases::{DataStoreUseCases, DataStoreUseCasesImpl};
-use iot_bee::domain::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
-use iot_bee::domain::error::{IoTBeeError, PipelinePersistenceError};
-use iot_bee::domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
-use iot_bee::domain::value_objects::pipelines_values::DataStoreId;
+use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
+use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
+use domain::value_objects::pipelines_values::DataStoreId;
 use std::sync::Arc;
 
 // ─── Repositorios falsos ──────────────────────────────────────────────────────

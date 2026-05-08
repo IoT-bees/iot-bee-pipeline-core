@@ -9,3 +9,10 @@ logging     = { path = "../logging" }
 async-trait = { workspace = true }
 thiserror   = { workspace = true }
 uuid        = { workspace = true }
+
+[dev-dependencies]
+# actix ={ workspace = true }
+tokio = { workspace = true }
+actix-rt = { workspace = true }
+actix-web = { workspace = true }
+chrono = { workspace = true }

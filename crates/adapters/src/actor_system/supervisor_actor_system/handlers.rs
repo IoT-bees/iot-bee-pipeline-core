@@ -2,12 +2,13 @@ use actix::prelude::*;
 
 // use super::super::supervisor_pipeline_life_time::pipeline_abstraction::AllReplicasResult;
 use super::super::supervisor_pipeline_life_time::{
-    actor_wrapper::SupervisorPipelineBridge, 
+    actor_wrapper::SupervisorPipelineBridge,
     // pipeline_supervisor::PipelineSupervisor,
 };
 use super::messages::{
     CreatePipelineMessage,
-    //  DeletePipelineMessage, ListPipelinesMessage, RestartPipelineMessage,
+     DeletePipelineMessage, 
+    // ListPipelinesMessage, RestartPipelineMessage,
     // StatusPipelineMessage, StopPipelineMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
 };
@@ -63,16 +64,41 @@ impl Handler<CreatePipelineMessage> for SystemActorSupervisor {
 }
 
 // // ── DeletePipeline ── síncrono ────────────────────────────────────────────────
+impl Handler<DeletePipelineMessage> for SystemActorSupervisor {
+    type Result = ResponseActFuture<Self, Result<(), IoTBeeError>>;
 
-// impl Handler<DeletePipelineMessage> for SystemActorSupervisor {
-//     type Result = Result<(), IoTBeeError>;
+    fn handle(&mut self, msg: DeletePipelineMessage, _ctx: &mut Context<Self>) -> Self::Result {
+        let pipeline_id = msg.pipeline_id;
+        
+        let bridge = match self.get_bridge(pipeline_id) {
+            Some(b) => b,
+            None => {
+                return Box::pin(
+                    async move {
+                        Err(PipelineLifecycleError::NotFound { 
+                            pipeline_id: pipeline_id.to_string() 
+                        }.into())
+                    }
+                    .into_actor(self)
+                    .map(move |result, _actor, _ctx| result),
+                );
+            }
+        };
+        
+        Box::pin(
+            async move {
+                bridge.stop_pipeline().await
+            }
+            .into_actor(self)
+            .map(move |result, actor, _ctx| {
+                result?;
+                actor._remove_pipeline(pipeline_id);
+                Ok(())
+            }),
+        )
+    }
+}
 
-//     fn handle(&mut self, msg: DeletePipelineMessage, _ctx: &mut Context<Self>) -> Self::Result {
-//         self.remove_pipeline(msg.pipeline_id)
-//             .map(|_| ())
-//             .ok_or_else(|| not_found(msg.pipeline_id))
-//     }
-// }
 
 // // ── ListPipelines ── síncrono ─────────────────────────────────────────────────
 

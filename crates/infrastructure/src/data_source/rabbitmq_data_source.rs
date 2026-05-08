@@ -7,8 +7,8 @@ use futures_util::StreamExt;
 use tokio::sync::mpsc::Sender;
 use uuid::Uuid;
 
-use logging::AppLogger;
 use lapin::{Connection, ConnectionProperties, options::*, types::FieldTable};
+use logging::AppLogger;
 use std::time::Duration;
 
 static LOGGER: AppLogger = AppLogger::new(
@@ -256,9 +256,10 @@ impl RabbitMQDataSource {
         channel
             .queue_declare(
                 queue_name.into(),
-                QueueDeclareOptions{
+                QueueDeclareOptions {
                     durable: true,
-                    ..Default::default()},
+                    ..Default::default()
+                },
                 FieldTable::default(),
             )
             .await

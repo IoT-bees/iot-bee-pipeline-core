@@ -1,9 +1,9 @@
+use async_trait::async_trait;
 use domain::entities::pipeline_groups::{PipelineGroupInputModel, PipelineGroupOutputModel};
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::outbound::pipeline_persistence::PipelineGroupRepository;
 use domain::value_objects::pipelines_values::DataStoreId;
 use logging::AppLogger;
-use async_trait::async_trait;
 use std::sync::Arc;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::groups_cases::cases");

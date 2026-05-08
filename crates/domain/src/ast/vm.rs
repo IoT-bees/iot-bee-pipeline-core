@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use super::compiler::{Instruction, Program};
+use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum VmError {
     // La stack quedó vacía cuando se esperaba un valor
     StackUnderflow,
@@ -9,6 +9,22 @@ pub enum VmError {
     UndefinedVar(String),
     // División por cero
     DivisionByZero,
+}
+impl std::fmt::Display for VmError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VmError::StackUnderflow => write!(
+                f,
+                "Stack underflow: no hay suficientes valores en la stack para ejecutar la operación"
+            ),
+            VmError::UndefinedVar(name) => write!(
+                f,
+                "Variable indefinida: no se encontró el campo '{}' en el registro",
+                name
+            ),
+            VmError::DivisionByZero => write!(f, "División por cero: se intentó dividir por cero"),
+        }
+    }
 }
 
 pub struct Vm {
@@ -22,7 +38,9 @@ impl Vm {
     pub fn new() -> Self {
         // with_capacity pre-aloca espacio. Para expresiones
         // simples raramente necesitas más de 16 slots.
-        Vm { stack: Vec::with_capacity(16) }
+        Vm {
+            stack: Vec::with_capacity(16),
+        }
     }
 
     pub fn run(

@@ -1,8 +1,8 @@
+use async_trait::async_trait;
 use domain::entities::connection_type::ConnectionTypeModel;
 use domain::error::IoTBeeError;
 use domain::outbound::pipeline_persistence::PipelineConnectionTypeRepository;
 use logging::AppLogger;
-use async_trait::async_trait;
 use std::sync::Arc;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::connection_types_cases::cases");

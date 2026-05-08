@@ -16,3 +16,12 @@ uuid        = { workspace = true }
 chrono      = { workspace = true }
 thiserror   = { workspace = true }
 async-trait = { workspace = true }
+
+[dev-dependencies]
+actix-rt = { workspace = true }
+actix-web = { workspace = true }
+chrono = { workspace = true }
+
+[[test]]
+name = "data_processor"
+path = "test/data_processor.rs"

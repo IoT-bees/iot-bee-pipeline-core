@@ -16,7 +16,6 @@ use crate::actor_system::pipeline_actor_module::{
 };
 use std::sync::Arc;
 
-
 use logging::AppLogger;
 static LOGGER: AppLogger = AppLogger::new("supervisor_pipeline_life_time::handlers");
 
@@ -28,9 +27,13 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
         let replica_count = self.pipeline_configuration().pipeline_replication();
         let data_store = self.data_store();
         let data_source = self.data_source();
+        let data_processor = self.data_processor();
         let registry = self.replica_registry();
 
-        LOGGER.info(&format!("Iniciando pipeline con {} réplicas...", replica_count));
+        LOGGER.info(&format!(
+            "Iniciando pipeline con {} réplicas...",
+            replica_count
+        ));
         Box::pin(async move {
             // Crear todas las réplicas en paralelo
             let mut tasks = Vec::new();
@@ -38,12 +41,13 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
             for _ in 0..replica_count {
                 let data_store = data_store.clone();
                 let data_source = data_source.clone();
-
+                let data_processor = data_processor.clone();
                 let task = actix::spawn(async move {
-                    //TODO: implementar a futuro un result en los estart para validar que el actor que inicia esta completamente sano. 
+                    //TODO: implementar a futuro un result en los estart para validar que el actor que inicia esta completamente sano.
                     let store = StoreActorBridge::start_new_store_actor_with_impl(data_store);
                     let processor = ProcessorActorBridge::start_new_processor_actor_with_impl(
-                        Arc::clone(&store),
+                        store.clone(),
+                        data_processor,
                     );
                     let consumer = ConsumerActorBridge::start_new_consumer_actor_with_impl(
                         data_source,

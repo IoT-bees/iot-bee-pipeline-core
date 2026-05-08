@@ -3,14 +3,12 @@
 /// Validan: status codes, contrato JSON y manejo de errores.
 use actix_web::http::StatusCode;
 use actix_web::{App, test, web};
+use adapters::api::data_store::routers::data_store_scope;
+use application::data_store_cases::cases::DataStoreUseCases;
 use async_trait::async_trait;
 use chrono::Utc;
-use iot_bee::adapters::api::data_store::routers::data_store_scope;
-use iot_bee::application::data_store_cases::cases::DataStoreUseCases;
-use iot_bee::domain::entities::data_store::{
-    PipelineDataStoreInputModel, PipelineDataStoreOutputModel,
-};
-use iot_bee::domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
+use domain::error::{IoTBeeError, PipelinePersistenceError};
 use serde_json::json;
 use std::sync::Arc;
 

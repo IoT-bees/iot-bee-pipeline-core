@@ -1,6 +1,6 @@
+use actix::prelude::*;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
-use actix::prelude::*;
 
 pub type StoreActorResult = Result<(), IoTBeeError>;
 pub struct SendDataToStoreMessage(DataConsumerRawType);

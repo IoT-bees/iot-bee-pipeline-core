@@ -1,17 +1,16 @@
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
+use actix_web::{HttpResponse, get, post, web};
 use application::pipeline_data_cases::cases::PipelineDataUseCases;
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
 use domain::error::IoTBeeError;
 use logging::AppLogger;
-use actix_web::{HttpResponse, get, post, web};
 
-use crate::api::error::ErrorResponse;
 use crate::api::error::ApiError;
+use crate::api::error::ErrorResponse;
 
 type UseCase = dyn PipelineDataUseCases + Send + Sync;
-
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::adapters::api::pipeline_data::routers");
 
@@ -111,3 +110,6 @@ pub async fn get_pipeline_data_by_id(
     LOGGER.info(&format!("Pipeline id={pipeline_id} retrieved successfully"));
     Ok(HttpResponse::Ok().json(response))
 }
+
+//crear endpoint para habilitar o deshabilitar el pipeline.
+// #[put()]

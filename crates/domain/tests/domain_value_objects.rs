@@ -1,6 +1,6 @@
 /// Pruebas unitarias para los value objects del dominio.
 /// Cubren las reglas de validación que protegen los invariantes del dominio.
-use iot_bee::domain::value_objects::pipelines_values::{
+use domain::value_objects::pipelines_values::{
     DataStoreId, DescriptionField, FieldName, PipelineStatus, ReplicationFactor,
 };
 

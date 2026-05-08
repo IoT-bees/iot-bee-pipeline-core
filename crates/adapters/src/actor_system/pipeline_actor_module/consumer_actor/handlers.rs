@@ -38,7 +38,7 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                 let data_source = self.data_source();
                 let actor_addr = ctx.address();
                 let sender_to_processor = self.data_processor();
-                tokio::spawn(async move {
+                let handle = tokio::spawn(async move {
                     let mut rx = rx;
                     LOGGER.info("DataConsumerActor started consuming data from DataSource...");
                     while let Some(data) = rx.recv().await {
@@ -49,8 +49,8 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                     }
                     LOGGER.info("DataConsumerActor channel closed, stopping consumption.");
                     actor_addr.do_send(ConsumerActorActionMessage::channel_died());
-                })
-                .into_actor(self);
+                });
+                self.task_handle = Some(handle);
 
                 Box::pin(
                     wrap_future::<_, Self>(async move { data_source.start_to_consume(tx).await })
@@ -82,11 +82,14 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                     return Box::pin(async move { state }.into_actor(self));
                 }
 
-                // Soltar el sender dispara sender.closed() en el task de RabbitMQ.
+                // Abortar el task que tiene rx → rx se dropea → sender.closed() se activa en RabbitMQ.
+                if let Some(handle) = self.task_handle.take() {
+                    handle.abort();
+                }
                 self.set_sender(None);
                 self.set_state(ConsumerActorState::Stopping);
                 LOGGER
-                    .info("StopConsuming received. Sender dropped, RabbitMQ task will shut down.");
+                    .info("StopConsuming received. Task aborted, rx dropped, RabbitMQ will detect sender.closed().");
 
                 Box::pin(async { ConsumerActorState::Stopping }.into_actor(self))
             }
@@ -97,8 +100,9 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                         LOGGER.warn(
                             "ChannelDied received while consuming. Transitioning to Reconnecting.",
                         );
+                        self.task_handle.take(); // handle ya terminó, limpiar
+                        // self.sender ya es None: todos los tx fueron dropeados para que rx cerrara
                         self.set_state(ConsumerActorState::Reconnecting);
-                        self.set_sender(None);
                         ctx.address()
                             .do_send(ConsumerActorActionMessage::start_consuming());
                     }
@@ -128,18 +132,43 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
 //
 
 impl Handler<SendActorActionMessage> for DataConsumerActor {
-    type Result = ResponseFuture<SendActorActionMessageResult>;
+    type Result = ResponseActFuture<Self, SendActorActionMessageResult>;
 
     fn handle(&mut self, msg: SendActorActionMessage, ctx: &mut Self::Context) -> Self::Result {
         match msg.action() {
             ActorActions::Stop => {
                 LOGGER.info("DataConsumerActor: Stop action received.");
-                ctx.stop();
-                Box::pin(async move { Ok(ResponseActorActionMessage::stopped()) })
+                let context = ctx.address();
+                Box::pin(
+                    wrap_future::<_, Self>(async move {
+                        let stop_result = context
+                            .send(ConsumerActorActionMessage::stop_consuming())
+                            .await
+                            .map_err(|e| PipelineLifecycleError::InternalCommunication {
+                                reason: e.to_string(),
+                            })?;
+
+                        if stop_result != ConsumerActorState::Stopping
+                            && stop_result != ConsumerActorState::Stopped
+                        {
+                            LOGGER.warn(format!(
+                                "DataConsumerActor: Unexpected state after stop command: {:?}. Stop may have failed.",
+                                stop_result
+                            ));
+                            return Ok(ResponseActorActionMessage::failed());
+                        }
+                        LOGGER.info("DataConsumerActor: Stop command acknowledged, stopping consumption.");
+                        Ok(ResponseActorActionMessage::stopped())
+                    })
+                    .map(|result, _actor, ctx| {
+                        ctx.stop();
+                        result
+                    }),
+                )
             }
             ActorActions::Restart => {
                 let context = ctx.address();
-                Box::pin(async move {
+                Box::pin(wrap_future::<_, Self>(async move {
                     LOGGER.info("DataConsumerActor: Restart action received.");
                     let stop_result = context
                         .send(ConsumerActorActionMessage::stop_consuming())
@@ -174,22 +203,26 @@ impl Handler<SendActorActionMessage> for DataConsumerActor {
                     LOGGER.info("DataConsumerActor: Restart completed successfully.");
                     Ok(ResponseActorActionMessage::restarting())
                 })
+                .map(|result, _actor, _ctx| result))
             }
             ActorActions::Status => {
                 LOGGER.info("DataConsumerActor: Status action received.");
                 let current = self.state();
-                Box::pin(async move {
-                    let status = match current {
-                        ConsumerActorState::Consuming | ConsumerActorState::Reconnecting => {
-                            ResponseActorActionMessage::running()
-                        }
-                        ConsumerActorState::Stopped | ConsumerActorState::Stopping => {
-                            ResponseActorActionMessage::stopped()
-                        }
-                        ConsumerActorState::Idle => ResponseActorActionMessage::running(),
-                    };
-                    Ok(status)
-                })
+                Box::pin(
+                    wrap_future::<_, Self>(async move {
+                        let status = match current {
+                            ConsumerActorState::Consuming | ConsumerActorState::Reconnecting => {
+                                ResponseActorActionMessage::running()
+                            }
+                            ConsumerActorState::Stopped | ConsumerActorState::Stopping => {
+                                ResponseActorActionMessage::stopped()
+                            }
+                            ConsumerActorState::Idle => ResponseActorActionMessage::running(),
+                        };
+                        Ok(status)
+                    })
+                    .map(|result, _actor, _ctx| result),
+                )
             }
         }
     }

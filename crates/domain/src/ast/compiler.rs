@@ -1,4 +1,25 @@
 use super::ast::{Expr, Op};
+use super::schemas::{FieldSchema, ValidationRule};
+
+pub struct CompiledField {
+    pub required: bool,
+    pub default: Option<f64>,
+    pub validation: Option<ValidationRule>,
+    // None = no hay operación, pasar valor directo
+    pub program: Option<Program>,
+}
+
+impl From<FieldSchema> for CompiledField {
+    fn from(field: FieldSchema) -> Self {
+        let program = field.operation.map(|expr| Program::compile(&expr));
+        CompiledField {
+            required: field.required,
+            default: field.default,
+            validation: field.validation,
+            program,
+        }
+    }
+}
 
 // Una instrucción individual del bytecode
 #[derive(Debug, Clone)]

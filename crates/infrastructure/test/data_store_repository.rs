@@ -1,11 +1,11 @@
 /// Pruebas de integración del repositorio SQLite.
 /// Usan una base de datos en memoria para verificar el SQL real,
 /// los constraints (UNIQUE, FK) y el mapeo de filas a entidades.
-use iot_bee::domain::entities::data_store::PipelineDataStoreInputModel;
-use iot_bee::domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
-use iot_bee::domain::value_objects::pipelines_values::DataStoreId;
-use iot_bee::infrastructure::persistence::connection::InternalDataBase;
-use iot_bee::infrastructure::persistence::repositories::data_store_repository::DataStoreRepository;
+use domain::entities::data_store::PipelineDataStoreInputModel;
+use domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
+use domain::value_objects::pipelines_values::DataStoreId;
+use crate::persistence::connection::InternalDataBase;
+use crate::persistence::repositories::data_store_repository::DataStoreRepository;
 use std::sync::Arc;
 use uuid::Uuid;
 

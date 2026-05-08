@@ -1,3 +1,8 @@
+use adapters::actor_system::pipeline_actor_module::{
+    consumer_actor::data_consumer_actor::ConsumerActorBridge,
+    processor_actor::data_processor_actor::ProcessorActorBridge,
+    store_actor::data_store_actor::StoreActorBridge,
+};
 /// Test de integración de los tres actores del pipeline: Consumer → Processor → Store.
 ///
 /// A diferencia de los tests unitarios (que aíslan cada actor con fakes),
@@ -20,21 +25,18 @@
 ///   - Que StoreActorBridge conecta correctamente Processor y Store.
 ///   - Que todos los mensajes recorren el pipeline de extremo a extremo sin pérdidas.
 ///   - Que el orden relativo de llegada se mantiene.
-use actix::prelude::*;
+// use actix::prelude::*;
 use async_trait::async_trait;
-use iot_bee::adapters::actor_system::pipeline_actor_module::{
-    consumer_actor::data_consumer_actor::{ConsumerActorBridge, DataConsumerActor},
-    processor_actor::data_processor_actor::{DataProcessorActor, ProcessorActorBridge},
-    store_actor::data_store_actor::{DataStoreActor, StoreActorBridge},
+use domain::entities::data_consumer_types::DataConsumerRawType;
+use domain::error::IoTBeeError;
+use domain::outbound::{
+    data_external_store::DataExternalStore, data_processor_actions::DataProcessorActions,
+    data_source::DataSource,
 };
-use iot_bee::domain::entities::data_consumer_types::DataConsumerRawType;
-use iot_bee::domain::error::IoTBeeError;
-use iot_bee::domain::outbound::{data_external_store::DataExternalStore, data_source::DataSource};
-use iot_bee::logging::{AppLogger, init_tracing};
+use logging::{AppLogger, init_tracing};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::mpsc::Sender;
-
 
 static LOGGER: AppLogger = AppLogger::new("test::pipeline_integration");
 
@@ -43,6 +45,27 @@ static LOGGER: AppLogger = AppLogger::new("test::pipeline_integration");
 /// Fuente de datos falsa: emite exactamente los payloads indicados y termina.
 /// Al retornar, el Sender se descarta, lo que cierra el canal y detiene
 /// al DataConsumerActor de forma limpia.
+///
+///
+
+struct FakeDataProcessor;
+
+impl FakeDataProcessor {
+    fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl DataProcessorActions for FakeDataProcessor {
+    async fn process_data(
+        &self,
+        data: &DataConsumerRawType,
+    ) -> Result<DataConsumerRawType, IoTBeeError> {
+        Ok(data.clone())
+    }
+}
+
 struct FakeDataSource {
     payloads: Vec<String>,
 }
@@ -120,6 +143,9 @@ fn montar_pipeline(
         Arc::clone(&recibidos),
         Arc::clone(&sem),
     ));
+
+    let data_process = Arc::new(FakeDataProcessor::new());
+
     let store_bridge = StoreActorBridge::start_new_store_actor_with_impl(spy);
     // let store_bridge = Arc::new(StoreActorBridge::new(DataStoreActor::new(spy).start()));
 
@@ -127,7 +153,8 @@ fn montar_pipeline(
     // let processor_bridge = Arc::new(ProcessorActorBridge::new(
     //     DataProcessorActor::new(store_bridge).start(),
     // ));
-    let processor_bridge = ProcessorActorBridge::start_new_processor_actor_with_impl(store_bridge);
+    let processor_bridge =
+        ProcessorActorBridge::start_new_processor_actor_with_impl(store_bridge, data_process);
 
     // 3. DataConsumerActor (extremo de entrada; auto-inicia en started())
     let source = Arc::new(FakeDataSource::con_payloads(payloads));

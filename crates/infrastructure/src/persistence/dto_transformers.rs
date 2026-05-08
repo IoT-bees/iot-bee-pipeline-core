@@ -1,3 +1,7 @@
+use crate::persistence::models::{
+    ConnectionTypeRow, DataSourceRow, DataStoreRow, PipelineGroupRow, PipelineRowFlat,
+    ValidationSchemaRow, ValidationSchemaRowWhitId,
+};
 use domain::entities::connection_type::ConnectionTypeModel;
 use domain::entities::data_source::PipelineDataSourceOutputModel;
 use domain::entities::data_store::PipelineDataStoreOutputModel;
@@ -7,10 +11,6 @@ use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
 use domain::error::{IoTBeeError, PipelinePersistenceError};
-use crate::persistence::models::{
-    ConnectionTypeRow, DataSourceRow, DataStoreRow, PipelineGroupRow, PipelineRowFlat,
-    ValidationSchemaRow, ValidationSchemaRowWhitId,
-};
 
 use chrono::DateTime;
 
@@ -97,9 +97,9 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
         Ok(PipelineDataSourceOutputModel::new(
             row.id,
             row.name,
-            row.data_source_type_id,
             row.data_source_state,
             row.data_source_configuration,
+            row.source_type,
             row.data_source_description,
             created_at,
             updated_at,
