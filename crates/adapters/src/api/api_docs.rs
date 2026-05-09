@@ -1,6 +1,9 @@
 use utoipa::OpenApi;
 
 //MODELS
+//error
+use crate::api::error::ErrorResponse;
+use crate::api::pipeline_lifecycle::models::PipelineStatusResponse;
 //valiation schemas
 use crate::api::connection_types::models::ConnectionTypeResponse;
 use crate::api::data_sources::models::{
@@ -28,6 +31,14 @@ use crate::api::validation_schemas::routers as validation_routers;
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "IoT Bee API",
+        version = "0.1.0",
+        description = "REST API for IoT Bee — a platform that ingests data from IoT sources, \
+            validates and transforms it through configurable pipelines, \
+            and persists the results to configurable data stores. \
+            Base URL: http://127.0.0.1:8080"
+    ),
     paths(
         //validation schemas
         validation_routers::create_validation_schema,
@@ -91,6 +102,8 @@ use crate::api::validation_schemas::routers as validation_routers;
             DataStoreResponse,
             DataStoreId,
             UpdateDataSourceNameRequest,
+            ErrorResponse,
+            PipelineStatusResponse,
         )
     ),
     tags(

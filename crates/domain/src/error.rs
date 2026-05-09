@@ -12,7 +12,7 @@ pub enum PipelineError {
     NotFound { pipeline_id: String },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug,Clone)]
 pub enum PipelineLifecycleError {
     #[error("Pipeline with id {pipeline_id} is already running")]
     AlreadyRunning { pipeline_id: String },

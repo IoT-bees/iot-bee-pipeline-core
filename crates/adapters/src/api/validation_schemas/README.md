@@ -313,3 +313,54 @@ Content-Type: application/json
 | `400` | `name` empty or longer than 32 chars; invalid field type; `schema` empty |
 | `404` | Schema ID not found |
 | `409` | A schema with that `name` already exists |
+
+---
+
+## cURL Examples
+
+```bash
+# Create a schema
+curl -X POST http://127.0.0.1:8080/validation-schemas \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "temperature_sensor",
+    "schema": {
+      "temperature": {
+        "type": "float",
+        "required": true,
+        "default": null,
+        "validation": { "min": -40.0, "max": 125.0 },
+        "operation": null
+      }
+    }
+  }'
+
+# List all schemas
+curl http://127.0.0.1:8080/validation-schemas
+
+# Get by ID
+curl http://127.0.0.1:8080/validation-schemas/1
+
+# Update name
+curl -X PUT http://127.0.0.1:8080/validation-schemas/1/name \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "temperature_sensor_v2" }'
+
+# Replace schema fields
+curl -X PUT http://127.0.0.1:8080/validation-schemas/1/schema \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schema": {
+      "temperature": {
+        "type": "float",
+        "required": true,
+        "default": null,
+        "validation": { "min": -50.0, "max": 150.0 },
+        "operation": null
+      }
+    }
+  }'
+
+# Delete
+curl -X DELETE http://127.0.0.1:8080/validation-schemas/1
+```
