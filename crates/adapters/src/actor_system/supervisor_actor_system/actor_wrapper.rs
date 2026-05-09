@@ -7,7 +7,7 @@ use super::messages::{
     CreatePipelineMessage,
     DeletePipelineMessage,
     StatusPipelineMessage,
-    // ListPipelinesMessage, 
+    // ListPipelinesMessage,
     //SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
 };
@@ -91,7 +91,6 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
             .send(StatusPipelineMessage::new(pipeline_id.id()))
             .await
             .map_err(mailbox_err)?
-
     }
 }
 

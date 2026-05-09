@@ -7,7 +7,10 @@ use crate::actor_system::pipeline_actor_module::consumer_actor::{
     messages::{ConsumerActorAction, ConsumerActorActionMessage, ConsumerActorState},
 };
 use crate::actor_system::pipeline_actor_module::general_messages::{
-    ActorActions, ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
+   ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult, GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+};
+use domain::value_objects::lifecycle_values::{
+    ActorActions,ActorOperationStatus,
 };
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::PipelineLifecycleError;
@@ -29,6 +32,7 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                 if self.state() == ConsumerActorState::Consuming {
                     LOGGER
                         .warn("StartConsuming received but actor is already consuming. Ignoring.");
+                    self.set_operation_state(ActorOperationStatus::Healthy);
                     return Box::pin(async { ConsumerActorState::Consuming }.into_actor(self));
                 }
 
@@ -58,11 +62,13 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                             match result {
                                 Ok(_) => {
                                     actor.set_state(ConsumerActorState::Consuming);
+                                    actor.set_operation_state(ActorOperationStatus::Healthy);
                                     LOGGER.info("Consumer started successfully");
                                 }
                                 Err(e) => {
                                     actor.set_state(ConsumerActorState::Idle);
                                     actor.set_sender(None);
+                                    actor.set_operation_state(ActorOperationStatus::Degraded);
                                     LOGGER.error(&format!("Failed to start consuming: {}", e));
                                 }
                             }
@@ -88,6 +94,7 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                 }
                 self.set_sender(None);
                 self.set_state(ConsumerActorState::Stopping);
+                self.set_operation_state(ActorOperationStatus::Idle);
                 LOGGER
                     .info("StopConsuming received. Task aborted, rx dropped, RabbitMQ will detect sender.closed().");
 
@@ -103,6 +110,7 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                         self.task_handle.take(); // handle ya terminó, limpiar
                         // self.sender ya es None: todos los tx fueron dropeados para que rx cerrara
                         self.set_state(ConsumerActorState::Reconnecting);
+                        self.set_operation_state(ActorOperationStatus::Degraded);
                         ctx.address()
                             .do_send(ConsumerActorActionMessage::start_consuming());
                     }
@@ -225,5 +233,13 @@ impl Handler<SendActorActionMessage> for DataConsumerActor {
                 )
             }
         }
+    }
+}
+
+
+impl Handler<GetActorOperationStatusMessage> for DataConsumerActor {
+    type Result = GetActorOperationStatusMessageResult;
+    fn handle(&mut self, _msg: GetActorOperationStatusMessage, _ctx: &mut Self::Context) -> Self::Result {
+        Ok(self.get_operation_state())
     }
 }

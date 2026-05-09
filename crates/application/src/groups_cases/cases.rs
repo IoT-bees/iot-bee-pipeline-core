@@ -118,9 +118,22 @@ where
             LOGGER.warn(&format!(
                 "Cannot delete pipeline group id={} because it is used by {:?} pipelines",
                 group_id.id(),
-                pipelines_using_group.iter().map(|id| id.id()).collect::<Vec<u32>>()
+                pipelines_using_group
+                    .iter()
+                    .map(|id| id.id())
+                    .collect::<Vec<u32>>()
             ));
-            return Err(PipelinePersistenceError::DeleteFailed { reason: format!("Cannot delete pipeline group id={} because it is used by {:?} pipelines", group_id.id(), pipelines_using_group.iter().map(|id| id.id()).collect::<Vec<u32>>()) }.into());
+            return Err(PipelinePersistenceError::DeleteFailed {
+                reason: format!(
+                    "Cannot delete pipeline group id={} because it is used by {:?} pipelines",
+                    group_id.id(),
+                    pipelines_using_group
+                        .iter()
+                        .map(|id| id.id())
+                        .collect::<Vec<u32>>()
+                ),
+            }
+            .into());
         }
 
         self.repository
@@ -135,4 +148,3 @@ where
             })
     }
 }
-

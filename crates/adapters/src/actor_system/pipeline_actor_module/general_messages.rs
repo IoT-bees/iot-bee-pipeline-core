@@ -1,20 +1,9 @@
 use actix::prelude::*;
 use domain::error::IoTBeeError;
+use domain::value_objects::lifecycle_values::{
+    ActorActions, ActorStatus, ActorOperationStatus,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ActorActions {
-    // Start,
-    Stop,
-    Restart,
-    Status,
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ActorStatus {
-    Running,
-    Stopped,
-    Restarting,
-    Failed,
-}
 
 pub struct ResponseActorActionMessage(ActorStatus);
 impl ResponseActorActionMessage {
@@ -24,10 +13,6 @@ impl ResponseActorActionMessage {
     pub fn status(&self) -> ActorStatus {
         self.0
     }
-
-    pub fn running() -> Self {
-        Self(ActorStatus::Running)
-    }
     pub fn stopped() -> Self {
         Self(ActorStatus::Stopped)
     }
@@ -36,6 +21,9 @@ impl ResponseActorActionMessage {
     }
     pub fn failed() -> Self {
         Self(ActorStatus::Failed)
+    }
+    pub fn running() -> Self {
+        Self(ActorStatus::Running)
     }
 }
 
@@ -47,7 +35,6 @@ impl SendActorActionMessage {
     pub fn action(&self) -> ActorActions {
         self.0
     }
-
     pub fn stop() -> Self {
         Self(ActorActions::Stop)
     }
@@ -62,4 +49,14 @@ impl SendActorActionMessage {
 pub type SendActorActionMessageResult = Result<ResponseActorActionMessage, IoTBeeError>;
 impl Message for SendActorActionMessage {
     type Result = SendActorActionMessageResult;
+}
+
+// Statos internos de las operaciones del actor
+
+
+pub struct GetActorOperationStatusMessage;
+
+pub type GetActorOperationStatusMessageResult = Result<ActorOperationStatus, IoTBeeError>;
+impl Message for GetActorOperationStatusMessage {
+    type Result = GetActorOperationStatusMessageResult;
 }

@@ -503,5 +503,4 @@ impl PipelineControllerRepository for PipelineDataRepository {
 
         Ok(())
     }
-
 }

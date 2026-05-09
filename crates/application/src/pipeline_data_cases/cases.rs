@@ -36,11 +36,7 @@ pub trait PipelineDataUseCases {
         pipeline_id: &u32,
         validation_schema_id: &u32,
     ) -> Result<(), IoTBeeError>;
-    async fn update_group(
-        &self,
-        pipeline_id: &u32,
-        group_id: &u32,
-    ) -> Result<(), IoTBeeError>;
+    async fn update_group(&self, pipeline_id: &u32, group_id: &u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
@@ -273,12 +269,11 @@ where
         ));
         Ok(())
     }
-    async fn update_group(
-        &self,
-        pipeline_id: &u32,
-        group_id: &u32,
-    ) -> Result<(), IoTBeeError> {
-        LOGGER.debug(&format!("update_group use case called for pipeline_id={} and group_id={}", pipeline_id, group_id));
+    async fn update_group(&self, pipeline_id: &u32, group_id: &u32) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "update_group use case called for pipeline_id={} and group_id={}",
+            pipeline_id, group_id
+        ));
         let pipeline_id = DataStoreId::new(*pipeline_id)?;
         let group_id = DataStoreId::new(*group_id)?;
         self.repository
@@ -299,5 +294,4 @@ where
         ));
         Ok(())
     }
-
 }

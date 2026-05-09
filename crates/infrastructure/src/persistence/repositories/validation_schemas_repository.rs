@@ -9,8 +9,8 @@ use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::value_objects::pipelines_values::DataStoreId;
 
 use crate::persistence::connection::InternalDataBase;
-use sqlx::Row;
 use sqlx::Error as SqlxError;
+use sqlx::Row;
 use std::sync::Arc;
 pub struct ValidationSchemaRepository {
     pipeline_store_repository: Arc<InternalDataBase>,
@@ -86,9 +86,9 @@ impl PipelineValidationSchemaRepository for ValidationSchemaRepository {
         })?;
 
         if result.rows_affected() == 0 {
-        return Err(IoTBeeError::from(PipelinePersistenceError::IdNotFound {
-            id: schema_id.id(),
-        }));
+            return Err(IoTBeeError::from(PipelinePersistenceError::IdNotFound {
+                id: schema_id.id(),
+            }));
         }
 
         Ok(())
@@ -212,34 +212,34 @@ impl PipelineValidationSchemaRepository for ValidationSchemaRepository {
         }
     }
 
-        async fn get_pipelines_using_validation_schema(
-            &self,
-            schema_id: &DataStoreId,
-        ) -> Result<Vec<DataStoreId>, IoTBeeError> {
-            // Implementation to get the list of pipelines that are using a specific validation schema
-            let pool = self.data_base_connection().pool();
-            let rows = sqlx::query(
-                r#"
+    async fn get_pipelines_using_validation_schema(
+        &self,
+        schema_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError> {
+        // Implementation to get the list of pipelines that are using a specific validation schema
+        let pool = self.data_base_connection().pool();
+        let rows = sqlx::query(
+            r#"
                 SELECT id
                 FROM pipelines
                 WHERE validation_schema_id = ?
                 "#,
-            )
-            .bind(&schema_id.id())
-            .fetch_all(pool)
-            .await
-            .map_err(|e| PipelinePersistenceError::Database {
-                reason: e.to_string(),
-            })?;
-    
-            let result = rows
-                .into_iter()
-                .filter_map(|row| {
-                    let pipeline_id: i32 = row.try_get("id").ok()?;
-                    Some(DataStoreId::new(pipeline_id as u32).ok()?)
-                })
-                .collect();
-    
-            Ok(result)
-        }
+        )
+        .bind(&schema_id.id())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::Database {
+            reason: e.to_string(),
+        })?;
+
+        let result = rows
+            .into_iter()
+            .filter_map(|row| {
+                let pipeline_id: i32 = row.try_get("id").ok()?;
+                Some(DataStoreId::new(pipeline_id as u32).ok()?)
+            })
+            .collect();
+
+        Ok(result)
+    }
 }

@@ -223,18 +223,25 @@ where
                 ));
                 e
             })?;
-            
+
         if !pipeline_using_schema.is_empty() {
             LOGGER.warn(&format!(
                 "Cannot delete validation schema id={id} because it is used by pipelines: {:?}",
-                pipeline_using_schema.iter().map(|ds| ds.id()).collect::<Vec<_>>()
+                pipeline_using_schema
+                    .iter()
+                    .map(|ds| ds.id())
+                    .collect::<Vec<_>>()
             ));
             return Err(PipelinePersistenceError::DeleteFailed {
                 reason: format!(
                     "Cannot delete validation schema id={id} because it is used by pipelines: {:?}",
-                    pipeline_using_schema.iter().map(|ds| ds.id()).collect::<Vec<_>>()
+                    pipeline_using_schema
+                        .iter()
+                        .map(|ds| ds.id())
+                        .collect::<Vec<_>>()
                 ),
-            }.into());
+            }
+            .into());
         }
 
         self.repository

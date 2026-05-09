@@ -15,7 +15,7 @@ use super::messages::{
 };
 use super::system_supervisor::SystemActorSupervisor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
-use domain::value_objects::pipelines_values::{PipelineStatus};
+use domain::value_objects::pipelines_values::PipelineStatus;
 
 // fn not_found(pipeline_id: u32) -> IoTBeeError {
 //     PipelineLifecycleError::NotFound {
@@ -99,7 +99,6 @@ impl Handler<DeletePipelineMessage> for SystemActorSupervisor {
         )
     }
 }
- 
 
 impl Handler<StatusPipelineMessage> for SystemActorSupervisor {
     type Result = ResponseActFuture<Self, Result<PipelineStatus, IoTBeeError>>;
@@ -122,15 +121,14 @@ impl Handler<StatusPipelineMessage> for SystemActorSupervisor {
                 );
             }
         };
-        
+
         Box::pin(
-            async move { 
-                bridge.status_all().await?; 
+            async move {
+                bridge.status_all().await?;
                 Ok(PipelineStatus::Running) // Esto es un placeholder, deberia retornar el status real del pipeline
             }
-                .into_actor(self)
-                .map(move |result: Result<PipelineStatus, IoTBeeError>, _actor, _ctx| result),
+            .into_actor(self)
+            .map(move |result: Result<PipelineStatus, IoTBeeError>, _actor, _ctx| result),
         )
-
     }
 }

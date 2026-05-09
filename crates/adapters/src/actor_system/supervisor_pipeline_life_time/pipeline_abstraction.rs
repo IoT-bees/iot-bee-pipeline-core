@@ -1,18 +1,15 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::super::pipeline_actor_module::general_messages::SendActorActionMessageResult;
 use super::super::pipeline_actor_module::general_ports::SendActionToActor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
 // use crate::adapters::actor_system::pipeline_actor_module::general_messages::{ResponseActorActionMessage, ActorStatus};
 /// Resultado de una operación de ciclo de vida sobre un trío (consumer, processor, store).
-pub type TripleResult = (
-    SendActorActionMessageResult,
-    SendActorActionMessageResult,
-    SendActorActionMessageResult,
-);
 
-/// Resultado de una operación de ciclo de vida sobre todas las réplicas activas.
-pub type AllReplicasResult = Vec<TripleResult>;
+use domain::value_objects::lifecycle_values::{
+    ActorOperationStatus,
+};
+
 
 // ── PipelineAbstractionController ─────────────────────────────────────────────
 //
@@ -20,7 +17,6 @@ pub type AllReplicasResult = Vec<TripleResult>;
 // Las acciones de ciclo de vida se delegan a los tres en orden.
 
 use tokio::sync::Mutex;
-
 pub struct PipelineAbstractionController {
     consumer: Mutex<Option<Arc<dyn SendActionToActor + Send + Sync>>>,
     processor: Mutex<Option<Arc<dyn SendActionToActor + Send + Sync>>>,
@@ -84,7 +80,23 @@ impl PipelineAbstractionController {
         Ok(())
     }
 
-    pub async fn status(&self) -> Result<(), IoTBeeError> {
-        Ok(())
+    pub async fn status(&self) -> Result<HashMap<String, ActorOperationStatus>, IoTBeeError> {
+        let mut status_map = HashMap::new();
+
+        if let Some(consumer) = self.consumer.lock().await.as_ref() {
+            let result = consumer.get_actor_operation_status().await?;
+            status_map.insert("consumer".to_string(), result);
+        }
+
+        if let Some(processor) = self.processor.lock().await.as_ref() {
+            let result = processor.get_actor_operation_status().await?;
+            status_map.insert("processor".to_string(), result);
+        }
+
+        if let Some(store) = self.store.lock().await.as_ref() {
+            let result = store.get_actor_operation_status().await?;
+            status_map.insert("store".to_string(), result);
+        }
+        Ok(status_map)
     }
 }

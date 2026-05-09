@@ -77,7 +77,6 @@ pub trait PipelineGroupRepository {
         &self,
         group_id: &DataStoreId,
     ) -> Result<Vec<DataStoreId>, IoTBeeError>;
-
 }
 
 #[async_trait]

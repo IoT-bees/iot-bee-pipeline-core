@@ -5,8 +5,8 @@ use crate::outbound::{
     data_source::DataSource,
 };
 
-use crate::value_objects::pipelines_values::PipelineStatus;
 use crate::value_objects::pipelines_values::DataStoreId;
+use crate::value_objects::pipelines_values::PipelineStatus;
 use async_trait::async_trait;
 use std::sync::Arc;
 

@@ -5,7 +5,7 @@ use logging::AppLogger;
 
 use crate::api::error::ApiError;
 use crate::api::error::ErrorResponse;
-use actix_web::{HttpResponse, get, post, delete, web};
+use actix_web::{HttpResponse, delete, get, post, web};
 use validator::Validate;
 
 type UseCase = dyn PipelineGroupUseCases + Send + Sync;
@@ -118,7 +118,6 @@ pub async fn get_pipeline_group_by_id(
     Ok(HttpResponse::Ok().json(response))
 }
 
-
 #[utoipa::path(
     delete,
     path = "/pipeline-groups/{id}",
@@ -144,9 +143,13 @@ async fn delete_pipeline_group(
         .delete_pipeline_group(&group_id)
         .await
         .map_err(|e| {
-            LOGGER.error(&format!("Failed to delete pipeline group id={group_id}: {e}"));
+            LOGGER.error(&format!(
+                "Failed to delete pipeline group id={group_id}: {e}"
+            ));
             e
         })?;
-    LOGGER.info(&format!("Pipeline group id={group_id} deleted successfully"));
+    LOGGER.info(&format!(
+        "Pipeline group id={group_id} deleted successfully"
+    ));
     Ok(HttpResponse::NoContent().finish())
 }

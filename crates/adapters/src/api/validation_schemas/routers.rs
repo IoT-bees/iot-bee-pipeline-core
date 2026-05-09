@@ -245,7 +245,7 @@ pub async fn delete_validation_schema(
     LOGGER.debug(&format!(
         "delete_validation_schema handler called for id={id}"
     ));
-    
+
     use_case.delete_validation_schema(id).await.map_err(|e| {
         LOGGER.error(&format!("Failed to delete validation schema id={id}: {e}"));
         e

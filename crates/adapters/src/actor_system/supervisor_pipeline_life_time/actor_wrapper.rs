@@ -89,6 +89,7 @@ impl SupervisorPipelineBridge {
             .send(StatusAllReplicasMessage)
             .await
             .map_err(mailbox_err)?
+            
     }
 }
 

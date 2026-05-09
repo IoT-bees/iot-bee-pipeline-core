@@ -75,7 +75,6 @@ impl Message for RestartAllReplicasMessage {
     type Result = Result<(), IoTBeeError>;
 }
 
-
 // ── StatusReplica ───────────────────────────────────────────────────────────
 // Consulta el estado de un actor específico dentro de una réplica.
 pub struct StatusReplicasMessage(u32);
@@ -90,7 +89,6 @@ impl StatusReplicasMessage {
 impl Message for StatusReplicasMessage {
     type Result = Result<(), IoTBeeError>;
 }
-
 
 // ── StatusAllReplicas ─────────────────────────────────────────────────────────
 // Consulta el estado de todos los actores de todas las réplicas activas.

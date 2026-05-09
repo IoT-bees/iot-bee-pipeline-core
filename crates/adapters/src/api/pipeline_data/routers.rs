@@ -1,4 +1,3 @@
-
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
@@ -263,7 +262,6 @@ async fn update_pipeline_data_store(
     Ok(HttpResponse::Ok().finish())
 }
 
-
 #[utoipa::path(
     put,
     path = "/pipelines/validation_schema/{pipeline_id}/{schema_id}",
@@ -299,7 +297,6 @@ async fn update_pipeline_validation_schema(
     ));
     Ok(HttpResponse::Ok().finish())
 }
-
 
 #[utoipa::path(
     put,

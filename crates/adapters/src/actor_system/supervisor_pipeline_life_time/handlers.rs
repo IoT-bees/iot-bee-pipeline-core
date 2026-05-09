@@ -86,9 +86,11 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
             self_addr
                 .send(InternalInsertReplicasMessage(pipelines))
                 .await
-                .map_err(|e| IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
-                    reason: e.to_string(),
-                }))?
+                .map_err(|e| {
+                    IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                        reason: e.to_string(),
+                    })
+                })?
         })
     }
 }
@@ -208,7 +210,7 @@ impl Handler<RemoveReplicaMessage> for PipelineSupervisor {
                         reason: format!("No hay réplica con id={}", id),
                     }
                     .into())
-                })
+                });
             }
         };
         let self_addr = ctx.address();
@@ -273,8 +275,6 @@ impl Handler<StatusAllReplicasMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
     fn handle(&mut self, _msg: StatusAllReplicasMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        Box::pin(async move {
-            Ok(())
-        })
+        Box::pin(async move { Ok(()) })
     }
 }
