@@ -6,18 +6,17 @@ use tokio::task::JoinHandle;
 use crate::actor_system::pipeline_actor_module::consumer_actor::messages::{
     ConsumerActorActionMessage, ConsumerActorState,
 };
-use crate::actor_system::pipeline_actor_module::general_ports::SendDataToProcessor;
-use domain::entities::data_consumer_types::DataConsumerRawType;
-use domain::outbound::data_source::DataSource;
 use crate::actor_system::pipeline_actor_module::general_messages::{
-    SendActorActionMessage, SendActorActionMessageResult,GetActorOperationStatusMessage, GetActorOperationStatusMessageResult
-};
-use domain::value_objects::lifecycle_values::{
-  ActorOperationStatus,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult, SendActorActionMessage,
+    SendActorActionMessageResult,
 };
 use crate::actor_system::pipeline_actor_module::general_ports::SendActionToActor;
+use crate::actor_system::pipeline_actor_module::general_ports::SendDataToProcessor;
 use async_trait::async_trait;
+use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::PipelineLifecycleError;
+use domain::outbound::data_source::DataSource;
+use domain::value_objects::lifecycle_values::ActorOperationStatus;
 
 use logging::AppLogger;
 static LOGGER: AppLogger = AppLogger::new(
@@ -72,8 +71,6 @@ impl DataConsumerActor {
     pub fn set_operation_state(&mut self, new_state: ActorOperationStatus) {
         self.actor_operation_state = new_state;
     }
-
-
 }
 
 impl Actor for DataConsumerActor {

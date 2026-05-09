@@ -1,7 +1,8 @@
 // brigde wrapper para enviar mensajes a SystemActorSupervisor sin exponer su ActorAddr ni lógica de routing a handlers.rs
 use async_trait::async_trait;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
-use domain::value_objects::pipelines_values::{DataStoreId, PipelineStatus};
+use domain::value_objects::pipelines_values::DataStoreId;
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 
 use super::messages::{
     CreatePipelineMessage,
@@ -86,7 +87,7 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
     async fn get_status_by_id(
         &self,
         pipeline_id: &DataStoreId,
-    ) -> Result<PipelineStatus, IoTBeeError> {
+    ) -> Result<PipelineStatusReport, IoTBeeError> {
         self.supervisor_addr
             .send(StatusPipelineMessage::new(pipeline_id.id()))
             .await

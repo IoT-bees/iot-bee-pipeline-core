@@ -3,17 +3,20 @@ use actix::prelude::*;
 use super::messges::{
     AddReplicaMessage, InternalInsertReplicasMessage, InternalReInsertReplicasMessage,
     RemoveReplicaMessage, ReplicaCountMessage, RestartAllReplicasMessage, StartPipelineMessage,
-    StatusAllReplicasMessage, StopAllReplicasMessage,
-};
+    StatusAllReplicasMessage, StopAllReplicasMessage, StatusAllReplicasMessageResult
+};    
 use super::pipeline_supervisor::PipelineSupervisor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
-
+use domain::value_objects::lifecycle_values::{PipelineStatusReport};
 use super::pipeline_abstraction::PipelineAbstractionController;
 use crate::actor_system::pipeline_actor_module::{
     consumer_actor::data_consumer_actor::ConsumerActorBridge,
     processor_actor::data_processor_actor::ProcessorActorBridge,
     store_actor::data_store_actor::StoreActorBridge,
-};
+};    
+use std::collections::HashMap;
+// use domain::value_objects::lifecycle_values::PipelinepartsStatus;
+
 use std::sync::Arc;
 
 use logging::AppLogger;
@@ -33,7 +36,7 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
         LOGGER.info(&format!(
             "Iniciando pipeline con {} réplicas...",
             replica_count
-        ));
+        ));    
         Box::pin(async move {
             let mut tasks = Vec::new();
 
@@ -47,17 +50,17 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
                     let processor = ProcessorActorBridge::start_new_processor_actor_with_impl(
                         store.clone(),
                         data_processor,
-                    );
+                    );    
                     let consumer = ConsumerActorBridge::start_new_consumer_actor_with_impl(
                         data_source,
                         Arc::clone(&processor),
-                    );
+                    );    
                     Ok::<_, IoTBeeError>(PipelineAbstractionController::new(
                         consumer, processor, store,
-                    ))
-                });
+                    ))    
+                });    
                 tasks.push(task);
-            }
+            }    
 
             let mut pipelines = Vec::new();
             let mut errors: Vec<IoTBeeError> = Vec::new();
@@ -69,18 +72,18 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
                     Err(e) => errors.push(
                         PipelineLifecycleError::OperationFailed {
                             reason: e.to_string(),
-                        }
+                        }    
                         .into(),
-                    ),
-                }
-            }
+                    ),    
+                }    
+            }    
 
             if !errors.is_empty() {
                 for pipeline in pipelines {
                     pipeline.stop().await.ok();
-                }
+                }    
                 return Err(errors.remove(0));
-            }
+            }    
 
             // Insertar réplicas en el actor vía mensaje síncrono a self
             self_addr
@@ -89,11 +92,11 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
                 .map_err(|e| {
                     IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
                         reason: e.to_string(),
-                    })
-                })?
-        })
-    }
-}
+                    })    
+                })?    
+        })        
+    }    
+}    
 
 // ── InternalInsertReplicas ── síncrono ────────────────────────────────────────
 //
@@ -112,14 +115,14 @@ impl Handler<InternalInsertReplicasMessage> for PipelineSupervisor {
             let id = self.next_replica_id;
             self.next_replica_id += 1;
             self.replicas.insert(id, Arc::new(c));
-        }
+        }    
         LOGGER.info(&format!(
             "Réplicas insertadas, total activas: {}",
             self.replicas.len()
-        ));
+        ));    
         Ok(())
-    }
-}
+    }    
+}    
 
 // ── StopAllReplicas ── asíncrono ──────────────────────────────────────────────
 //
@@ -135,7 +138,7 @@ impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
     fn handle(&mut self, _msg: StopAllReplicasMessage, ctx: &mut Context<Self>) -> Self::Result {
         let entries: Vec<(u32, Arc<PipelineAbstractionController>)> =
             self.replicas.drain().collect();
-        let self_addr = ctx.address();
+        let self_addr = ctx.address();    
 
         Box::pin(async move {
             let mut failed: Vec<(u32, Arc<PipelineAbstractionController>)> = Vec::new();
@@ -147,31 +150,31 @@ impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
                     Err(e) => {
                         failed.push((id, replica));
                         errors.push(e.to_string());
-                    }
-                }
-            }
+                    }    
+                }    
+            }    
 
             if failed.is_empty() {
                 return Ok(());
-            }
+            }    
 
             // Re-insertar las que fallaron para que el próximo intento las vea
             self_addr
                 .send(InternalReInsertReplicasMessage(failed))
                 .await
-                .ok();
+                .ok();    
 
             Err(PipelineLifecycleError::OperationFailed {
                 reason: format!(
                     "{} réplica(s) no pudieron detenerse: {:?}",
                     errors.len(),
                     errors
-                ),
-            }
+                ),    
+            }    
             .into())
-        })
-    }
-}
+        })    
+    }    
+}    
 
 // ── InternalReInsertReplicas ── síncrono ──────────────────────────────────────
 //
@@ -188,9 +191,9 @@ impl Handler<InternalReInsertReplicasMessage> for PipelineSupervisor {
     ) -> Self::Result {
         for (id, arc) in msg.0 {
             self.replicas.insert(id, arc);
-        }
-    }
-}
+        }    
+    }    
+}    
 
 // ── RemoveReplica ── asíncrono ───────────────────────────────────────────
 //
@@ -208,11 +211,11 @@ impl Handler<RemoveReplicaMessage> for PipelineSupervisor {
                 return Box::pin(async move {
                     Err(PipelineLifecycleError::OperationFailed {
                         reason: format!("No hay réplica con id={}", id),
-                    }
+                    }    
                     .into())
-                });
-            }
-        };
+                });    
+            }    
+        };    
         let self_addr = ctx.address();
 
         Box::pin(async move {
@@ -222,13 +225,13 @@ impl Handler<RemoveReplicaMessage> for PipelineSupervisor {
                     self_addr
                         .send(InternalReInsertReplicasMessage(vec![(id, replica)]))
                         .await
-                        .ok();
+                        .ok();    
                     Err(e)
-                }
-            }
-        })
-    }
-}
+                }    
+            }    
+        })    
+    }    
+}    
 
 // ── AddReplica ── síncrono ────────────────────────────────────────────────────
 //
@@ -242,8 +245,8 @@ impl Handler<AddReplicaMessage> for PipelineSupervisor {
         self.next_replica_id += 1;
         self.replicas.insert(id, Arc::new(msg.controller));
         Ok(self.replicas.len())
-    }
-}
+    }    
+}    
 
 // ── ReplicaCount ── síncrono ──────────────────────────────────────────────────
 
@@ -252,8 +255,8 @@ impl Handler<ReplicaCountMessage> for PipelineSupervisor {
 
     fn handle(&mut self, _msg: ReplicaCountMessage, _ctx: &mut Context<Self>) -> Self::Result {
         Ok(self.replicas.len())
-    }
-}
+    }    
+}    
 
 // ── RestartAllReplicas ── asíncrono ───────────────────────────────────────────
 
@@ -266,15 +269,25 @@ impl Handler<RestartAllReplicasMessage> for PipelineSupervisor {
         _ctx: &mut Context<Self>,
     ) -> Self::Result {
         Box::pin(async move { Ok(()) })
-    }
-}
+    }    
+}    
 
 // ── StatusAllReplicas ── asíncrono ────────────────────────────────────────────
 
 impl Handler<StatusAllReplicasMessage> for PipelineSupervisor {
-    type Result = ResponseFuture<Result<(), IoTBeeError>>;
+    type Result = ResponseFuture<StatusAllReplicasMessageResult>;
 
     fn handle(&mut self, _msg: StatusAllReplicasMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        Box::pin(async move { Ok(()) })
+        let replicas: Vec<(u32, Arc<PipelineAbstractionController>)> =
+            self.replicas.iter().map(|(id, r)| (*id, Arc::clone(r))).collect();
+
+        Box::pin(async move {
+            let mut status_map = HashMap::new();
+            for (id, replica) in replicas {
+                let status = replica.status().await?;
+                status_map.insert(id, status);
+            }
+            Ok(PipelineStatusReport::new(status_map))
+        })
     }
 }

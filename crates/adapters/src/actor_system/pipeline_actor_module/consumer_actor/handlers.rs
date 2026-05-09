@@ -7,13 +7,12 @@ use crate::actor_system::pipeline_actor_module::consumer_actor::{
     messages::{ConsumerActorAction, ConsumerActorActionMessage, ConsumerActorState},
 };
 use crate::actor_system::pipeline_actor_module::general_messages::{
-   ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult, GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
-};
-use domain::value_objects::lifecycle_values::{
-    ActorActions,ActorOperationStatus,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+    ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
 };
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::PipelineLifecycleError;
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus};
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new(
@@ -236,10 +235,13 @@ impl Handler<SendActorActionMessage> for DataConsumerActor {
     }
 }
 
-
 impl Handler<GetActorOperationStatusMessage> for DataConsumerActor {
     type Result = GetActorOperationStatusMessageResult;
-    fn handle(&mut self, _msg: GetActorOperationStatusMessage, _ctx: &mut Self::Context) -> Self::Result {
+    fn handle(
+        &mut self,
+        _msg: GetActorOperationStatusMessage,
+        _ctx: &mut Self::Context,
+    ) -> Self::Result {
         Ok(self.get_operation_state())
     }
 }

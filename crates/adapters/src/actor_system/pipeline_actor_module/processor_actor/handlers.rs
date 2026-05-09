@@ -4,15 +4,12 @@ use crate::actor_system::pipeline_actor_module::processor_actor::messages::{
 };
 
 use super::super::general_messages::{
-    GetActorOperationStatusMessage,
-    GetActorOperationStatusMessageResult, ResponseActorActionMessage, SendActorActionMessage,
-    SendActorActionMessageResult,
-};
-use domain::value_objects::lifecycle_values::{
-    ActorActions, ActorOperationStatus,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+    ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
 };
 use actix::prelude::*;
 use domain::error::PipelineLifecycleError;
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus};
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new(
@@ -54,7 +51,6 @@ impl Handler<ProcessDataMessage> for DataProcessorActor {
         )
     }
 }
-
 
 impl Handler<SendActorActionMessage> for DataProcessorActor {
     type Result = ResponseFuture<SendActorActionMessageResult>;

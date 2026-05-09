@@ -66,7 +66,8 @@ use crate::api::validation_schemas::routers as validation_routers;
         pipeline_data_routers::update_pipeline_group,
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
-        pipeline_lifecycle_routers::stop_pipeline
+        pipeline_lifecycle_routers::stop_pipeline,
+        pipeline_lifecycle_routers::get_pipeline_status
     ),
     components(
         schemas(

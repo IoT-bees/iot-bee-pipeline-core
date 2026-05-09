@@ -8,15 +8,13 @@ use async_trait::async_trait;
 use std::sync::Arc;
 
 use super::super::general_messages::{
-    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
-    SendActorActionMessage, SendActorActionMessageResult,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult, SendActorActionMessage,
+    SendActorActionMessageResult,
 };
 use super::super::general_ports::SendActionToActor;
 use super::messages::SendDataToStoreMessage;
 
-use domain::value_objects::lifecycle_values::{
-  ActorOperationStatus,
-};
+use domain::value_objects::lifecycle_values::ActorOperationStatus;
 
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::adapters::actor_system::pipeline_actor_module::store_actor::DataStoreActor",

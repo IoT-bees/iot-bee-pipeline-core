@@ -1,15 +1,12 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::super::pipeline_actor_module::general_ports::SendActionToActor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
 // use crate::adapters::actor_system::pipeline_actor_module::general_messages::{ResponseActorActionMessage, ActorStatus};
 /// Resultado de una operación de ciclo de vida sobre un trío (consumer, processor, store).
-
 use domain::value_objects::lifecycle_values::{
-    ActorOperationStatus,
+    PipelinepartsStatus,
 };
-
 
 // ── PipelineAbstractionController ─────────────────────────────────────────────
 //
@@ -80,23 +77,41 @@ impl PipelineAbstractionController {
         Ok(())
     }
 
-    pub async fn status(&self) -> Result<HashMap<String, ActorOperationStatus>, IoTBeeError> {
-        let mut status_map = HashMap::new();
+    pub async fn status(&self) -> Result<PipelinepartsStatus, IoTBeeError> {
+        let consumer_status = match self.consumer.lock().await.as_ref() {
+            Some(consumer) => consumer.get_actor_operation_status().await?,
+            None => {
+                return Err(PipelineLifecycleError::OperationFailed {
+                    reason: "Consumer actor is missing, cannot determine status".to_string(),
+                }
+                .into());
+            }
+        };
 
-        if let Some(consumer) = self.consumer.lock().await.as_ref() {
-            let result = consumer.get_actor_operation_status().await?;
-            status_map.insert("consumer".to_string(), result);
-        }
+        let processor_status = match self.processor.lock().await.as_ref() {
+            Some(processor) => processor.get_actor_operation_status().await?,
+            None => {
+                return Err(PipelineLifecycleError::OperationFailed {
+                    reason: "Processor actor is missing, cannot determine status".to_string(),
+                }
+                .into());
+            }
+        };
 
-        if let Some(processor) = self.processor.lock().await.as_ref() {
-            let result = processor.get_actor_operation_status().await?;
-            status_map.insert("processor".to_string(), result);
-        }
+        let store_status = match self.store.lock().await.as_ref() {
+            Some(store) => store.get_actor_operation_status().await?,
+            None => {
+                return Err(PipelineLifecycleError::OperationFailed {
+                    reason: "Store actor is missing, cannot determine status".to_string(),
+                }
+                .into());
+            }
+        };
 
-        if let Some(store) = self.store.lock().await.as_ref() {
-            let result = store.get_actor_operation_status().await?;
-            status_map.insert("store".to_string(), result);
-        }
-        Ok(status_map)
+        Ok(PipelinepartsStatus::new(
+            consumer_status,
+            processor_status,
+            store_status,
+        ))
     }
 }

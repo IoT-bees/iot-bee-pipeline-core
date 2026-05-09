@@ -6,13 +6,11 @@ use crate::actor_system::pipeline_actor_module::general_ports::SendDataToProcess
 use crate::actor_system::pipeline_actor_module::general_ports::SendDataToStore;
 
 use super::super::general_messages::{
-     GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
-    SendActorActionMessage, SendActorActionMessageResult,
-};
-use domain::value_objects::lifecycle_values::{
-  ActorOperationStatus,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult, SendActorActionMessage,
+    SendActorActionMessageResult,
 };
 use super::super::general_ports::SendActionToActor;
+use domain::value_objects::lifecycle_values::ActorOperationStatus;
 
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{IoTBeeError, PipelineLifecycleError};

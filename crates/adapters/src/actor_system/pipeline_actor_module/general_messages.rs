@@ -1,9 +1,6 @@
 use actix::prelude::*;
 use domain::error::IoTBeeError;
-use domain::value_objects::lifecycle_values::{
-    ActorActions, ActorStatus, ActorOperationStatus,
-};
-
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus, ActorStatus};
 
 pub struct ResponseActorActionMessage(ActorStatus);
 impl ResponseActorActionMessage {
@@ -52,7 +49,6 @@ impl Message for SendActorActionMessage {
 }
 
 // Statos internos de las operaciones del actor
-
 
 pub struct GetActorOperationStatusMessage;
 

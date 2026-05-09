@@ -10,7 +10,7 @@ use domain::outbound::pipeline_persistence::{
     PipelineValidationSchemaRepository,
 };
 use domain::value_objects::pipelines_values::DataStoreId;
-
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::pipeline_lifecycle_cases::cases");
@@ -20,6 +20,7 @@ pub trait PipelineLifecycleCases {
     async fn start_all_pipelines_in_system(&self) -> Result<(), IoTBeeError>;
     async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -321,4 +322,10 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             .await?;
         self.pipeline_lifecycle.stop(&pipeline_id).await
     }
+
+    async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError> {
+        let pipeline_id = DataStoreId::new(id)?;
+        self.pipeline_lifecycle.get_status_by_id(&pipeline_id).await
+    }
+
 }

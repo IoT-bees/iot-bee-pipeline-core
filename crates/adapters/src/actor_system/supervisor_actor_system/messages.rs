@@ -1,8 +1,6 @@
 use actix::prelude::*;
 
-use super::super::supervisor_pipeline_life_time::pipeline_abstraction::{
-    AllReplicasResult, PipelineAbstractionController,
-};
+use super::super::supervisor_pipeline_life_time::pipeline_abstraction::PipelineAbstractionController;
 use domain::error::IoTBeeError;
 
 // ── CreatePipeline ────────────────────────────────────────────────────────────
@@ -125,7 +123,7 @@ impl StopPipelineMessage {
 }
 
 impl Message for StopPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<(), IoTBeeError>;
 }
 
 // ── RestartPipeline ───────────────────────────────────────────────────────────
@@ -142,7 +140,7 @@ impl RestartPipelineMessage {
 }
 
 impl Message for RestartPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<(), IoTBeeError>;
 }
 
 // ── StatusPipeline ────────────────────────────────────────────────────────────
@@ -158,9 +156,9 @@ impl StatusPipelineMessage {
         self.0
     }
 }
-use domain::value_objects::pipelines_values::PipelineStatus;
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 impl Message for StatusPipelineMessage {
-    type Result = Result<PipelineStatus, IoTBeeError>;
+    type Result = Result<PipelineStatusReport, IoTBeeError>;
 }
 
 // StartAllPipelinesInLocalStorageMessage

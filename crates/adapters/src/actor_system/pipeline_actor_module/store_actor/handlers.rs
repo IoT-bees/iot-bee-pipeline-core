@@ -1,12 +1,10 @@
 use super::super::general_messages::{
-     GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
-     ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+    ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
 };
 use super::data_store_actor::DataStoreActor;
 use super::messages::{SendDataToStoreMessage, StoreActorResult};
-use domain::value_objects::lifecycle_values::{
-    ActorActions, ActorOperationStatus,
-};
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus};
 
 use actix::prelude::*;
 use domain::error::PipelineLifecycleError;
@@ -32,24 +30,22 @@ impl Handler<SendDataToStoreMessage> for DataStoreActor {
                 external_store.save(data).await
             }
             .into_actor(self)
-            .map(|res, actor, _ctx| 
-                match res {
-                    Ok(_) => {
-                        // LOGGER.info("Data successfully saved to external store.");
-                        if actor.get_operation_state() != ActorOperationStatus::Healthy {
-                            actor.set_operation_state(ActorOperationStatus::Healthy);
-                        }
-                        Ok(())
+            .map(|res, actor, _ctx| match res {
+                Ok(_) => {
+                    // LOGGER.info("Data successfully saved to external store.");
+                    if actor.get_operation_state() != ActorOperationStatus::Healthy {
+                        actor.set_operation_state(ActorOperationStatus::Healthy);
                     }
-                    Err(e) => {
-                        LOGGER.error(&format!("Error saving data to external store: {}", e));
-                        actor.set_operation_state(ActorOperationStatus::Degraded);
-                        Err(PipelineLifecycleError::OperationFailed {
-                            reason: format!("Error saving data to external store: {}", e),
-                        }
-                        .into())
+                    Ok(())
+                }
+                Err(e) => {
+                    LOGGER.error(&format!("Error saving data to external store: {}", e));
+                    actor.set_operation_state(ActorOperationStatus::Degraded);
+                    Err(PipelineLifecycleError::OperationFailed {
+                        reason: format!("Error saving data to external store: {}", e),
                     }
-                
+                    .into())
+                }
             }),
         )
     }
