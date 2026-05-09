@@ -3,8 +3,13 @@ use crate::actor_system::pipeline_actor_module::processor_actor::messages::{
     ProcessDataMessage, ProcessDataResult,
 };
 
+use super::super::general_messages::{
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+    ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
+};
 use actix::prelude::*;
 use domain::error::PipelineLifecycleError;
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus};
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new(
@@ -12,29 +17,40 @@ static LOGGER: AppLogger = AppLogger::new(
 );
 
 impl Handler<ProcessDataMessage> for DataProcessorActor {
-    type Result = ResponseFuture<ProcessDataResult>;
+    type Result = ResponseActFuture<Self, ProcessDataResult>;
 
     fn handle(&mut self, msg: ProcessDataMessage, _ctx: &mut Self::Context) -> Self::Result {
         let data_store = self.data_store();
         let data_processor_actions = self.data_processor_actions();
 
-        Box::pin(async move {
-            let data = msg.data();
-            let message_process_result = data_processor_actions.process_data(data).await?;
-            data_store.send(&message_process_result).await.map_err(|e| {
-                LOGGER.error(&format!("Failed to send data to store: {}", e));
-                PipelineLifecycleError::InternalCommunication {
-                    reason: format!("Failed to send data to store: {}", e),
+        Box::pin(
+            async move {
+                let data = msg.data();
+
+                let message_process_result = data_processor_actions.process_data(data).await?;
+
+                data_store.send(&message_process_result).await
+            }
+            .into_actor(self)
+            .map(|res, actor, _ctx| match res {
+                Ok(_) => {
+                    if actor.get_operation_state() != ActorOperationStatus::Healthy {
+                        actor.set_operation_state(ActorOperationStatus::Healthy);
+                    }
+                    Ok(())
                 }
-                .into()
-            })
-        })
+                Err(e) => {
+                    LOGGER.error(&format!("Error sending data to store: {}", e));
+                    actor.set_operation_state(ActorOperationStatus::Degraded);
+                    Err(PipelineLifecycleError::OperationFailed {
+                        reason: format!("Error sending data to store: {}", e),
+                    }
+                    .into())
+                }
+            }),
+        )
     }
 }
-
-use super::super::general_messages::{
-    ActorActions, ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
-};
 
 impl Handler<SendActorActionMessage> for DataProcessorActor {
     type Result = ResponseFuture<SendActorActionMessageResult>;
@@ -65,5 +81,17 @@ impl Handler<SendActorActionMessage> for DataProcessorActor {
                 })
             }
         }
+    }
+}
+
+impl Handler<GetActorOperationStatusMessage> for DataProcessorActor {
+    type Result = GetActorOperationStatusMessageResult;
+
+    fn handle(
+        &mut self,
+        _msg: GetActorOperationStatusMessage,
+        _ctx: &mut Context<Self>,
+    ) -> Self::Result {
+        Ok(self.get_operation_state())
     }
 }

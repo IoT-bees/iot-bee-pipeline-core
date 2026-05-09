@@ -5,7 +5,7 @@ use super::models::{
 use crate::api::error::ApiError;
 use crate::api::error::ErrorResponse;
 
-use actix_web::{HttpResponse, get, post, put, web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 use application::data_sources_cases::cases::DataSourcesUseCases;
 use domain::entities::data_source::{PipelineDataSourceInputModel, PipelineDataSourceUpdateModel};
 use domain::error::PipelinePersistenceError;
@@ -24,6 +24,7 @@ pub fn data_sources_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(list_data_sources)
         .service(update_data_source_name)
         .service(update_data_source)
+        .service(delete_data_source)
 }
 
 #[utoipa::path(
@@ -215,4 +216,33 @@ pub async fn update_data_source(
         })?;
     LOGGER.info(&format!("Data source id={raw_id} updated successfully"));
     Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(
+    delete,
+    path = "/data-sources/{id}",
+    params(
+        ("id" = u32, Path, description = "Data source ID")
+    ),
+    responses(
+        (status = 204, description = "Data source deleted successfully"),
+        (status = 404, description = "Data source not found", body = ErrorResponse)
+    ),
+    tag = "Data Sources"
+)]
+#[delete("/{id}")]
+pub async fn delete_data_source(
+    use_case: web::Data<UseCase>,
+    id: web::Path<DataSourceId>,
+) -> Result<HttpResponse, ApiError> {
+    let raw_id = *id;
+    LOGGER.debug(&format!(
+        "delete_data_source handler called for id={raw_id}"
+    ));
+    use_case.delete_data_source(&id).await.map_err(|e| {
+        LOGGER.error(&format!("Failed to delete data source id={raw_id}: {e}"));
+        e
+    })?;
+    LOGGER.info(&format!("Data source id={raw_id} deleted successfully"));
+    Ok(HttpResponse::NoContent().finish())
 }

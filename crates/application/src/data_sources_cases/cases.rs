@@ -160,6 +160,57 @@ where
     }
 
     async fn delete_data_source(&self, _data_source_id: &u32) -> Result<(), IoTBeeError> {
-        unimplemented!()
+        // para poder eliminar un data source primero validar que el data source no este relacionado a un pipeline, si esta relacionado a un pipeline, lanzar un error indicando que no se puede eliminar el data source porque esta siendo usado por un pipeline, y listar los pipelines que estan usando ese data source.
+        let data_source_id = DataStoreId::new(*_data_source_id)?;
+        let pipelines_using_data_source = self
+            .repository
+            .get_pipelines_using_data_source(&data_source_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to check pipelines using data source id={}: {e}",
+                    data_source_id.id()
+                ));
+                e
+            })?;
+
+        if !pipelines_using_data_source.is_empty() {
+            LOGGER.warn(&format!(
+                "Cannot delete data source id={} because it is being used by pipelines: {:?}",
+                data_source_id.id(),
+                pipelines_using_data_source
+                    .iter()
+                    .map(|id| id.id())
+                    .collect::<Vec<u32>>()
+            ));
+            return Err(PipelinePersistenceError::DeleteFailed {
+                reason: format!(
+                    "Cannot delete data source id={} because it is being used by pipelines: {:?}",
+                    data_source_id.id(),
+                    pipelines_using_data_source
+                        .iter()
+                        .map(|id| id.id())
+                        .collect::<Vec<u32>>()
+                ),
+            }
+            .into());
+        }
+
+        self.repository
+            .delete_pipeline_data_source(&data_source_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to delete data source id={}: {e}",
+                    data_source_id.id()
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Data source id={} deleted successfully",
+            data_source_id.id()
+        ));
+
+        Ok(())
     }
 }

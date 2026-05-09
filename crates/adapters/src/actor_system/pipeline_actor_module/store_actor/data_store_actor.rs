@@ -7,9 +7,14 @@ use actix::prelude::*;
 use async_trait::async_trait;
 use std::sync::Arc;
 
-use super::super::general_messages::{SendActorActionMessage, SendActorActionMessageResult};
+use super::super::general_messages::{
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult, SendActorActionMessage,
+    SendActorActionMessageResult,
+};
 use super::super::general_ports::SendActionToActor;
 use super::messages::SendDataToStoreMessage;
+
+use domain::value_objects::lifecycle_values::ActorOperationStatus;
 
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::adapters::actor_system::pipeline_actor_module::store_actor::DataStoreActor",
@@ -20,14 +25,24 @@ pub type DataExternalStoreThreadSafe = Arc<dyn DataExternalStore + Send + Sync +
 // ── Actor ────────────────────────────────────────────────────────────────────
 pub struct DataStoreActor {
     external_store: DataExternalStoreThreadSafe,
+    internal_operation_state: ActorOperationStatus,
 }
 
 impl DataStoreActor {
     pub fn new(external_store: DataExternalStoreThreadSafe) -> Self {
-        Self { external_store }
+        Self {
+            external_store,
+            internal_operation_state: ActorOperationStatus::Idle,
+        }
     }
     pub fn external_store(&self) -> DataExternalStoreThreadSafe {
         Arc::clone(&self.external_store)
+    }
+    pub fn set_operation_state(&mut self, new_state: ActorOperationStatus) {
+        self.internal_operation_state = new_state;
+    }
+    pub fn get_operation_state(&self) -> ActorOperationStatus {
+        self.internal_operation_state.clone()
     }
 }
 
@@ -42,8 +57,6 @@ impl Actor for DataStoreActor {
         LOGGER.info("DataStoreActor stopped.");
     }
 }
-
-
 
 //────Bridge────────────────────────────────────────────────────────────────────────────────────────────────
 //
@@ -96,9 +109,9 @@ impl SendActionToActor for StoreActorBridge {
             })?
     }
 
-    async fn get_actor_status(&self) -> SendActorActionMessageResult {
+    async fn get_actor_operation_status(&self) -> GetActorOperationStatusMessageResult {
         self.addr
-            .send(SendActorActionMessage::status())
+            .send(GetActorOperationStatusMessage)
             .await
             .map_err(|e| PipelineLifecycleError::InternalCommunication {
                 reason: format!("Failed to send status message to store actor: {}", e),

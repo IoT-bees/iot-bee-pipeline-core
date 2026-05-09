@@ -1,9 +1,13 @@
+use super::super::general_messages::{
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult,
+    ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
+};
 use super::data_store_actor::DataStoreActor;
 use super::messages::{SendDataToStoreMessage, StoreActorResult};
-use crate::actor_system::pipeline_actor_module::general_messages::{
-    ActorActions, ResponseActorActionMessage, SendActorActionMessage, SendActorActionMessageResult,
-};
+use domain::value_objects::lifecycle_values::{ActorActions, ActorOperationStatus};
+
 use actix::prelude::*;
+use domain::error::PipelineLifecycleError;
 use logging::AppLogger;
 
 static LOGGER: AppLogger =
@@ -13,17 +17,37 @@ use async_trait::async_trait;
 
 #[async_trait]
 impl Handler<SendDataToStoreMessage> for DataStoreActor {
-    type Result = ResponseFuture<StoreActorResult>;
+    type Result = ResponseActFuture<Self, StoreActorResult>;
 
     fn handle(&mut self, msg: SendDataToStoreMessage, _ctx: &mut Context<Self>) -> Self::Result {
         let data = msg.data().clone();
         let external_store = self.external_store();
 
-        Box::pin(async move {
-            //TODO: agregar el manejo de errores el, retray y las ultimas validaciones de datos antes de insertar en el store.
-            LOGGER.info("Received SendDataToStoreMessage, saving data to external store...");
-            external_store.save(data).await
-        })
+        Box::pin(
+            async move {
+                //TODO: agregar el manejo de errores el, retray y las ultimas validaciones de datos antes de insertar en el store.
+                LOGGER.info("Received SendDataToStoreMessage, saving data to external store...");
+                external_store.save(data).await
+            }
+            .into_actor(self)
+            .map(|res, actor, _ctx| match res {
+                Ok(_) => {
+                    // LOGGER.info("Data successfully saved to external store.");
+                    if actor.get_operation_state() != ActorOperationStatus::Healthy {
+                        actor.set_operation_state(ActorOperationStatus::Healthy);
+                    }
+                    Ok(())
+                }
+                Err(e) => {
+                    LOGGER.error(&format!("Error saving data to external store: {}", e));
+                    actor.set_operation_state(ActorOperationStatus::Degraded);
+                    Err(PipelineLifecycleError::OperationFailed {
+                        reason: format!("Error saving data to external store: {}", e),
+                    }
+                    .into())
+                }
+            }),
+        )
     }
 }
 
@@ -49,15 +73,26 @@ impl Handler<SendActorActionMessage> for DataStoreActor {
                     Ok(ResponseActorActionMessage::restarting())
                 })
             }
-
             ActorActions::Status => {
+                //Nota: esto funciona como un healtcheck de que el actor esta activo
                 LOGGER.info("DataStoreActor: Status action received.");
-                //TODO: implementar la logica de status.
                 Box::pin(async move {
                     LOGGER.info("DataStoreActor running");
                     Ok(ResponseActorActionMessage::running())
                 })
             }
         }
+    }
+}
+
+impl Handler<GetActorOperationStatusMessage> for DataStoreActor {
+    type Result = GetActorOperationStatusMessageResult;
+
+    fn handle(
+        &mut self,
+        _msg: GetActorOperationStatusMessage,
+        _ctx: &mut Context<Self>,
+    ) -> Self::Result {
+        Ok(self.get_operation_state())
     }
 }

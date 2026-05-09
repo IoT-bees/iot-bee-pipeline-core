@@ -17,16 +17,14 @@ use crate::api::validation_schemas::models::{
     UpdateValidationSchemaRequestName, ValidationSchemaByIdResponse, ValidationSchemaResponse,
 };
 
- 
-
 //ROUTERS
 use crate::api::connection_types::routers as connection_routers;
 use crate::api::data_sources::routers as data_sources_routers;
 use crate::api::data_store::routers as data_store_routers;
 use crate::api::pipeline_data::routers as pipeline_data_routers;
 use crate::api::pipeline_groups::routers as pipeline_groups_routers;
-use crate::api::validation_schemas::routers as validation_routers;
 use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
+use crate::api::validation_schemas::routers as validation_routers;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -46,10 +44,12 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         data_sources_routers::list_data_sources,
         data_sources_routers::update_data_source_name,
         data_sources_routers::update_data_source,
+        data_sources_routers::delete_data_source,
         //pipeline groups
         pipeline_groups_routers::create_pipeline_group,
         pipeline_groups_routers::get_pipeline_groups,
         pipeline_groups_routers::get_pipeline_group_by_id,
+        pipeline_groups_routers::delete_pipeline_group,
         //data stores
         data_store_routers::create_data_store,
         data_store_routers::get_data_store,
@@ -58,9 +58,16 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         pipeline_data_routers::create_pipeline_data,
         pipeline_data_routers::get_pipeline_data,
         pipeline_data_routers::get_pipeline_data_by_id,
+        pipeline_data_routers::delete_pipeline_data_by_id,
+        pipeline_data_routers::get_pipeline_data_by_group_id,
+        pipeline_data_routers::update_pipeline_data_source,
+        pipeline_data_routers::update_pipeline_data_store,
+        pipeline_data_routers::update_pipeline_validation_schema,
+        pipeline_data_routers::update_pipeline_group,
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
-        pipeline_lifecycle_routers::stop_pipeline
+        pipeline_lifecycle_routers::stop_pipeline,
+        pipeline_lifecycle_routers::get_pipeline_status
     ),
     components(
         schemas(
@@ -92,7 +99,8 @@ use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
         (name = "Data Sources", description = "CRUD operations for data sources"),
         (name = "Pipeline Groups", description = "CRUD operations for pipeline groups"),
         (name = "Data Stores", description = "CRUD operations for data stores"),
-        (name = "Pipeline Data", description = "CRUD operations for pipeline data")
+        (name = "Pipelines", description = "CRUD operations for pipeline data"),
+        (name = "Pipeline Lifecycle", description = "Endpoints to control the lifecycle of the pipelines")
     )
 )]
 pub struct ApiDoc;

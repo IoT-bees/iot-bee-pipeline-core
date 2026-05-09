@@ -10,7 +10,7 @@ use domain::outbound::pipeline_persistence::{
     PipelineValidationSchemaRepository,
 };
 use domain::value_objects::pipelines_values::DataStoreId;
-
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::pipeline_lifecycle_cases::cases");
@@ -20,6 +20,7 @@ pub trait PipelineLifecycleCases {
     async fn start_all_pipelines_in_system(&self) -> Result<(), IoTBeeError>;
     async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -117,8 +118,6 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
                     continue;
                 }
             };
-
-
 
             let (Some(data_source), Some(validation_schema), Some(data_store)) =
                 (data_source, validation_schema, data_store)
@@ -218,59 +217,74 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
     }
 
     async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError> {
-
         let pipeline_id = DataStoreId::new(id)?;
 
         let pipeline = self
             .pipeline_controller
             .get_pipeline_by_id(&pipeline_id)
             .await?
-            .ok_or_else(||{
+            .ok_or_else(|| {
                 LOGGER.error(&format!("Pipeline not found for id={}", pipeline_id.id()));
                 PipelineLifecycleError::NotFound {
                     pipeline_id: (pipeline_id.id().to_string()),
                 }
             })?;
 
-
         let data_source = self
             .data_source_repository
             .get_pipeline_data_source(&DataStoreId::new(pipeline.data_source_id())?)
             .await?
             .ok_or_else(|| {
-            LOGGER.error(&format!("Data source not found for pipeline id={}", pipeline_id.id()));
-            PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+                LOGGER.error(&format!(
+                    "Data source not found for pipeline id={}",
+                    pipeline_id.id()
+                ));
+                PipelineLifecycleError::NotFound {
+                    pipeline_id: pipeline_id.id().to_string(),
+                }
             })?;
-                
+
         let data_store = self
             .data_store_repository
             .get_pipeline_data_store_by_id(&DataStoreId::new(pipeline.store_id())?)
             .await?
             .ok_or_else(|| {
-                LOGGER.error(&format!("Data store not found for pipeline id={}", pipeline_id.id()));
-                PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+                LOGGER.error(&format!(
+                    "Data store not found for pipeline id={}",
+                    pipeline_id.id()
+                ));
+                PipelineLifecycleError::NotFound {
+                    pipeline_id: pipeline_id.id().to_string(),
+                }
             })?;
 
         let validation_schema = self
             .validation_schema_repository
             .get_pipeline_validation_schema(&DataStoreId::new(pipeline.validation_schema_id())?)
             .await?
-            .ok_or_else(||{
-                LOGGER.error(&format!("Validation schema not found for pipeline id={}", pipeline_id.id()));
-                PipelineLifecycleError::NotFound { pipeline_id: pipeline_id.id().to_string() }
+            .ok_or_else(|| {
+                LOGGER.error(&format!(
+                    "Validation schema not found for pipeline id={}",
+                    pipeline_id.id()
+                ));
+                PipelineLifecycleError::NotFound {
+                    pipeline_id: pipeline_id.id().to_string(),
+                }
             })?;
 
-
-        let pipeline_config = PipelineConfiguration::new(
-            pipeline.name(),
-            pipeline.pipeline_replication(),
-        )?;
+        let pipeline_config =
+            PipelineConfiguration::new(pipeline.name(), pipeline.pipeline_replication())?;
 
         let data_source_component = self.component_factory.create_data_source(&data_source)?;
-        let data_processor_component = self.component_factory.create_data_processor(&validation_schema)?;
+        let data_processor_component = self
+            .component_factory
+            .create_data_processor(&validation_schema)?;
         let data_store_component = self.component_factory.create_data_store(&data_store)?;
 
-        LOGGER.info(&format!("Trying to start pipeline with id={}", pipeline_id.id()));
+        LOGGER.info(&format!(
+            "Trying to start pipeline with id={}",
+            pipeline_id.id()
+        ));
         self.pipeline_lifecycle
             .start(
                 pipeline.id(),
@@ -281,14 +295,37 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             )
             .await?;
 
-        LOGGER.info(&format!("Pipeline with id={} started successfully", pipeline_id.id()));
+        let update_pipeline_state = self
+            .pipeline_controller
+            .update_pipeline_state(pipeline.id(), true)
+            .await;
+        if update_pipeline_state.is_err() {
+            LOGGER.error(&format!(
+                "Failed to update pipeline state to active for pipeline id={}",
+                pipeline_id.id()
+            ));
+            self.pipeline_lifecycle.stop(&pipeline_id).await?;
+        }
+
+        LOGGER.info(&format!(
+            "Pipeline with id={} started successfully",
+            pipeline_id.id()
+        ));
 
         Ok(())
     }
 
+    async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError> {
+        let pipeline_id = DataStoreId::new(id)?;
+        self.pipeline_controller
+            .update_pipeline_state(&pipeline_id, false)
+            .await?;
+        self.pipeline_lifecycle.stop(&pipeline_id).await
+    }
 
-    async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>{
-        self.pipeline_lifecycle.stop(&DataStoreId::new(id)?).await
-    }    
+    async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError> {
+        let pipeline_id = DataStoreId::new(id)?;
+        self.pipeline_lifecycle.get_status_by_id(&pipeline_id).await
+    }
 
 }

@@ -25,7 +25,7 @@ impl PipelineSystemComposer {
         // Inicializa el singleton del actor supervisor.
         // Aunque se llame varias veces a instance() en cualquier parte del programa,
         // el actor subyacente solo se crea aquí, la primera vez.
-       let pipeline_lifecycle = Box::new(PipelineActorSupervisorSystemBridge::instance());
+        let pipeline_lifecycle = Box::new(PipelineActorSupervisorSystemBridge::instance());
 
         let pipeline_controller = Box::new(PipelineDataRepository::new(db.clone()));
         let data_source_repository = Box::new(DataSourceRepository::new(db.clone()));

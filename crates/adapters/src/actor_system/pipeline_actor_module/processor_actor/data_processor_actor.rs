@@ -5,6 +5,13 @@ use super::messages::ProcessDataMessage;
 use crate::actor_system::pipeline_actor_module::general_ports::SendDataToProcessor;
 use crate::actor_system::pipeline_actor_module::general_ports::SendDataToStore;
 
+use super::super::general_messages::{
+    GetActorOperationStatusMessage, GetActorOperationStatusMessageResult, SendActorActionMessage,
+    SendActorActionMessageResult,
+};
+use super::super::general_ports::SendActionToActor;
+use domain::value_objects::lifecycle_values::ActorOperationStatus;
+
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
 use domain::outbound::data_processor_actions::DataProcessorActions;
@@ -21,6 +28,7 @@ type DataProcessorActionsThreadSafe = Arc<dyn DataProcessorActions + Send + Sync
 pub struct DataProcessorActor {
     data_store: DataStoreThreadSafe,
     data_processor_actions: DataProcessorActionsThreadSafe,
+    operation_state: ActorOperationStatus,
 }
 
 impl DataProcessorActor {
@@ -31,6 +39,7 @@ impl DataProcessorActor {
         Self {
             data_store,
             data_processor_actions: data_processor,
+            operation_state: ActorOperationStatus::Idle,
         }
     }
     pub fn data_store(&self) -> DataStoreThreadSafe {
@@ -38,6 +47,12 @@ impl DataProcessorActor {
     }
     pub fn data_processor_actions(&self) -> DataProcessorActionsThreadSafe {
         Arc::clone(&self.data_processor_actions)
+    }
+    pub fn set_operation_state(&mut self, new_state: ActorOperationStatus) {
+        self.operation_state = new_state;
+    }
+    pub fn get_operation_state(&self) -> ActorOperationStatus {
+        self.operation_state
     }
 }
 
@@ -52,8 +67,6 @@ impl Actor for DataProcessorActor {
         LOGGER.info("DataProcessorActor stopped.");
     }
 }
-
-
 
 // ── Bridge ───────────────────────────────────────────────────────────────────
 // Adapta Addr<DataProcessorActor> al trait SendDataToProcessor.
@@ -86,8 +99,6 @@ impl SendDataToProcessor for ProcessorActorBridge {
             })?
     }
 }
-use super::super::general_messages::{SendActorActionMessage, SendActorActionMessageResult};
-use super::super::general_ports::SendActionToActor;
 
 #[async_trait]
 impl SendActionToActor for ProcessorActorBridge {
@@ -109,9 +120,9 @@ impl SendActionToActor for ProcessorActorBridge {
             })?
     }
 
-    async fn get_actor_status(&self) -> SendActorActionMessageResult {
+    async fn get_actor_operation_status(&self) -> GetActorOperationStatusMessageResult {
         self.addr
-            .send(SendActorActionMessage::status())
+            .send(GetActorOperationStatusMessage)
             .await
             .map_err(|e| PipelineLifecycleError::InternalCommunication {
                 reason: format!(

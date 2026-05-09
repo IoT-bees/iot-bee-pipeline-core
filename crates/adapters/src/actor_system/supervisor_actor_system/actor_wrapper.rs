@@ -2,11 +2,14 @@
 use async_trait::async_trait;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
 use domain::value_objects::pipelines_values::DataStoreId;
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 
 use super::messages::{
     CreatePipelineMessage,
-    DeletePipelineMessage, 
-    // ListPipelinesMessage, SystemAddReplicaMessage,
+    DeletePipelineMessage,
+    StatusPipelineMessage,
+    // ListPipelinesMessage,
+    //SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
 };
 
@@ -79,9 +82,17 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
             .send(DeletePipelineMessage::new(pipeline_id.id()))
             .await
             .map_err(mailbox_err)?
-
     }
 
+    async fn get_status_by_id(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<PipelineStatusReport, IoTBeeError> {
+        self.supervisor_addr
+            .send(StatusPipelineMessage::new(pipeline_id.id()))
+            .await
+            .map_err(mailbox_err)?
+    }
 }
 
 fn mailbox_err(e: MailboxError) -> IoTBeeError {

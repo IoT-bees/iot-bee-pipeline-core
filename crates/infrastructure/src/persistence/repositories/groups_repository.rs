@@ -8,6 +8,7 @@ use domain::value_objects::pipelines_values::DataStoreId;
 use async_trait::async_trait;
 use chrono::Utc;
 use sqlx::Error as SqlxError;
+use sqlx::Row;
 use std::sync::Arc;
 pub struct GroupRepository {
     pipeline_store_repository: Arc<InternalDataBase>,
@@ -96,5 +97,60 @@ impl PipelineGroupRepository for GroupRepository {
                 reason: e.to_string(),
             })),
         }
+    }
+
+    async fn get_pipelines_using_group(
+        &self,
+        group_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let rows = sqlx::query(
+            r#"
+            SELECT id FROM pipelines WHERE group_id = ?
+            "#,
+        )
+        .bind(group_id.id())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::Database {
+            reason: e.to_string(),
+        })?;
+
+        let pipeline_ids = rows
+            .into_iter()
+            .map(|row| {
+                let pipeline_id: i64 =
+                    row.try_get("id")
+                        .map_err(|e| PipelinePersistenceError::Database {
+                            reason: e.to_string(),
+                        })?;
+                DataStoreId::new(pipeline_id as u32)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(pipeline_ids)
+    }
+
+    async fn delete_pipeline_group(&self, group_id: &DataStoreId) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            DELETE FROM pipeline_groups WHERE id = ?
+            "#,
+        )
+        .bind(group_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::Database {
+            reason: e.to_string(),
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(IoTBeeError::from(PipelinePersistenceError::IdNotFound {
+                id: group_id.id(),
+            }));
+        }
+
+        Ok(())
     }
 }

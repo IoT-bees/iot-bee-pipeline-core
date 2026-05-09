@@ -2,7 +2,7 @@ use actix::prelude::*;
 
 use super::messges::{
     AddReplicaMessage, RemoveReplicaMessage, ReplicaCountMessage, RestartAllReplicasMessage,
-    StartPipelineMessage, StatusAllReplicasMessage, StopAllReplicasMessage,
+    StartPipelineMessage, StatusAllReplicasMessage, StopAllReplicasMessage, StatusAllReplicasMessageResult,
 };
 use super::pipeline_abstraction::PipelineAbstractionController;
 use super::pipeline_supervisor::PipelineSupervisor;
@@ -63,9 +63,9 @@ impl SupervisorPipelineBridge {
             .map_err(mailbox_err)?
     }
 
-    pub async fn remove_replica(&self) -> Result<(), IoTBeeError> {
+    pub async fn remove_replica(&self, replica_id: u32) -> Result<(), IoTBeeError> {
         self.addr
-            .send(RemoveReplicaMessage)
+            .send(RemoveReplicaMessage::new(replica_id))
             .await
             .map_err(mailbox_err)?
     }
@@ -84,7 +84,7 @@ impl SupervisorPipelineBridge {
             .map_err(mailbox_err)?
     }
 
-    pub async fn status_all(&self) -> Result<(), IoTBeeError> {
+    pub async fn status_all(&self) -> StatusAllReplicasMessageResult {
         self.addr
             .send(StatusAllReplicasMessage)
             .await

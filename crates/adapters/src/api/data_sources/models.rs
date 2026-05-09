@@ -19,6 +19,7 @@ pub struct CreateDataSourceRequest {
     #[validate(length(min = 1))]
     pub data_source_state: String,
     #[serde(rename = "dataSourceConfiguration")]
+    #[validate(nested)]
     pub data_source_configuration: DataSourceConfig,
     #[serde(rename = "dataSourceDescription")]
     #[validate(length(min = 1, max = 255))]
@@ -90,6 +91,7 @@ pub struct UpdateDataSourceRequest {
     #[serde(rename = "dataSourceState")]
     pub data_source_state: Option<String>,
     #[serde(rename = "dataSourceConfiguration")]
+    #[validate(nested)]
     pub data_source_configuration: Option<DataSourceConfig>,
     #[serde(rename = "dataSourceDescription")]
     pub data_source_description: Option<String>,

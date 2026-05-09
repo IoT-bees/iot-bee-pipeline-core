@@ -22,7 +22,7 @@ pub trait PipelineGroupUseCases {
         &self,
         group_id: &u32,
     ) -> Result<PipelineGroupOutputModel, IoTBeeError>;
-    // async fn delete_pipeline_group(&self, group_id: &u32) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_group(&self, group_id: &u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineGroupUseCasesImpl<T: PipelineGroupRepository + Send + Sync> {
@@ -95,5 +95,56 @@ where
             LOGGER.warn(&format!("Pipeline group id={} not found", group_id.id()));
             Err(PipelinePersistenceError::IdNotFound { id: group_id.id() }.into())
         }
+    }
+    async fn delete_pipeline_group(&self, group_id: &u32) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "delete_pipeline_group use case called for id={group_id}"
+        ));
+        let group_id = DataStoreId::new(*group_id)?;
+
+        let pipelines_using_group = self
+            .repository
+            .get_pipelines_using_group(&group_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to get pipelines using group id={}: {e}",
+                    group_id.id()
+                ));
+                e
+            })?;
+
+        if !pipelines_using_group.is_empty() {
+            LOGGER.warn(&format!(
+                "Cannot delete pipeline group id={} because it is used by {:?} pipelines",
+                group_id.id(),
+                pipelines_using_group
+                    .iter()
+                    .map(|id| id.id())
+                    .collect::<Vec<u32>>()
+            ));
+            return Err(PipelinePersistenceError::DeleteFailed {
+                reason: format!(
+                    "Cannot delete pipeline group id={} because it is used by {:?} pipelines",
+                    group_id.id(),
+                    pipelines_using_group
+                        .iter()
+                        .map(|id| id.id())
+                        .collect::<Vec<u32>>()
+                ),
+            }
+            .into());
+        }
+
+        self.repository
+            .delete_pipeline_group(&group_id)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to delete pipeline group id={}: {e}",
+                    group_id.id()
+                ));
+                e
+            })
     }
 }

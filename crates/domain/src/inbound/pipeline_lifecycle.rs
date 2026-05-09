@@ -5,6 +5,7 @@ use crate::outbound::{
     data_source::DataSource,
 };
 use crate::value_objects::pipelines_values::DataStoreId;
+use crate::value_objects::lifecycle_values::PipelineStatusReport;
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -20,9 +21,9 @@ pub trait PipelineLifecycle {
     ) -> Result<(), IoTBeeError>;
 
     async fn stop(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
-    // async fn get_status_by_id(
-    //     &self,
-    //     pipeline_id: &DataStoreId,
-    // ) -> Result<PipelineStatus, IoTBeeError>;
+    async fn get_status_by_id(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<PipelineStatusReport, IoTBeeError>;
     // async fn get_status(&self) -> Result<Vec<(DataStoreId, PipelineStatus)>, IoTBeeError>;
 }

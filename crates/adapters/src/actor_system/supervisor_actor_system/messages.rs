@@ -1,8 +1,6 @@
 use actix::prelude::*;
 
-use super::super::supervisor_pipeline_life_time::pipeline_abstraction::{
-    AllReplicasResult, PipelineAbstractionController,
-};
+use super::super::supervisor_pipeline_life_time::pipeline_abstraction::PipelineAbstractionController;
 use domain::error::IoTBeeError;
 
 // ── CreatePipeline ────────────────────────────────────────────────────────────
@@ -125,7 +123,7 @@ impl StopPipelineMessage {
 }
 
 impl Message for StopPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<(), IoTBeeError>;
 }
 
 // ── RestartPipeline ───────────────────────────────────────────────────────────
@@ -142,24 +140,25 @@ impl RestartPipelineMessage {
 }
 
 impl Message for RestartPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<(), IoTBeeError>;
 }
 
 // ── StatusPipeline ────────────────────────────────────────────────────────────
 // Consulta el estado de todas las réplicas del pipeline dado.
 
-pub struct StatusPipelineMessage {
-    pub pipeline_id: u32,
-}
+pub struct StatusPipelineMessage(u32);
 
 impl StatusPipelineMessage {
     pub fn new(pipeline_id: u32) -> Self {
-        Self { pipeline_id }
+        Self(pipeline_id)
+    }
+    pub fn pipeline_id(&self) -> u32 {
+        self.0
     }
 }
-
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 impl Message for StatusPipelineMessage {
-    type Result = Result<AllReplicasResult, IoTBeeError>;
+    type Result = Result<PipelineStatusReport, IoTBeeError>;
 }
 
 // StartAllPipelinesInLocalStorageMessage

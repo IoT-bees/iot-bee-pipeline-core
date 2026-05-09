@@ -1,17 +1,12 @@
 use crate::api::connection_types::models::ConnectionTypeResponse;
-use crate::api::error::ApiError;
+use crate::api::data_sources::config::DataSourceConfig;
 use actix_web::{HttpResponse, get, web};
-use application::connection_types_cases::cases::ConnectionTypesUseCases;
 use logging::AppLogger;
-
-type UseCase = dyn ConnectionTypesUseCases + Send + Sync;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::adapters::api::connection_types::routers");
 
-pub fn connection_types_scope(use_cases: web::Data<UseCase>) -> actix_web::Scope {
-    web::scope("/connection-types")
-        .app_data(use_cases)
-        .service(get_connection_types)
+pub fn connection_types_scope() -> actix_web::Scope {
+    web::scope("/connection-types").service(get_connection_types)
 }
 
 #[utoipa::path(
@@ -23,22 +18,17 @@ pub fn connection_types_scope(use_cases: web::Data<UseCase>) -> actix_web::Scope
     tag = "Connection Types"
 )]
 #[get("")]
-pub async fn get_connection_types(use_cases: web::Data<UseCase>) -> Result<HttpResponse, ApiError> {
+pub async fn get_connection_types() -> HttpResponse {
     LOGGER.debug("get_connection_types handler called");
 
-    let connection_types = use_cases.get_all_connection_types().await.map_err(|e| {
-        LOGGER.error(&format!("Failed to get connection types: {e}"));
-        e
-    })?;
-
-    let connection_types = connection_types
+    let connection_types = DataSourceConfig::available_source_types()
         .into_iter()
-        .map(|data| data.into())
-        .collect::<Vec<ConnectionTypeResponse>>();
+        .map(ConnectionTypeResponse::from)
+        .collect::<Vec<_>>();
 
     LOGGER.info(&format!(
         "Returning {} connection types",
         connection_types.len()
     ));
-    Ok(HttpResponse::Ok().json(connection_types))
+    HttpResponse::Ok().json(connection_types)
 }

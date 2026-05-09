@@ -13,6 +13,7 @@ use domain::value_objects::pipelines_values::{DataStoreId, FieldName};
 use async_trait::async_trait;
 use chrono::Utc;
 use sqlx::Error as SqlxError;
+use sqlx::Row;
 use std::sync::Arc;
 
 pub struct DataSourceRepository {
@@ -194,5 +195,65 @@ impl PipelineDataSourceRepository for DataSourceRepository {
             reason: e.to_string(),
         })?;
         Ok(())
+    }
+
+    async fn delete_pipeline_data_source(
+        &self,
+        data_source_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError> {
+        // Implementation to delete the pipeline data source from the database
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            DELETE FROM data_sources
+            WHERE id = ?
+            "#,
+        )
+        .bind(&data_source_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::Database {
+            reason: e.to_string(),
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(IoTBeeError::from(PipelinePersistenceError::IdNotFound {
+                id: data_source_id.id(),
+            }));
+        }
+
+        Ok(())
+    }
+    async fn get_pipelines_using_data_source(
+        &self,
+        data_source_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError> {
+        // Implementation to get the pipelines that are using a specific data source from the database
+        let pool = self.data_base_connection().pool();
+        let rows = sqlx::query(
+            r#"
+            SELECT id
+            FROM pipelines
+            WHERE data_source_id = ?
+            "#,
+        )
+        .bind(&data_source_id.id())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::Database {
+            reason: e.to_string(),
+        })?;
+        let pipeline_ids = rows
+            .into_iter()
+            .map(|row| -> Result<DataStoreId, IoTBeeError> {
+                let pipeline_id: i64 =
+                    row.try_get("id")
+                        .map_err(|e| PipelinePersistenceError::Database {
+                            reason: e.to_string(),
+                        })?;
+                DataStoreId::new(pipeline_id as u32)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(pipeline_ids)
     }
 }
