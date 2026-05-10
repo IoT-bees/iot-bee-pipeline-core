@@ -7,22 +7,15 @@ use domain::outbound::data_processor_actions::DataProcessorActions;
 use domain::outbound::data_source::DataSource;
 use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
 
-use crate::data_external_persistence::data_store::InfluxDbDataExternalStore;
+use crate::data_external_persistence::external_persistence_factory::ExternalPersistenceFactory;
+use crate::data_external_persistence::external_persistence_type::ExternalPersistenceType;
+
 use crate::data_processor::data_process::PipelineDataProcessorCore;
-use crate::data_source::kafka_data_source::KafkaDataSource;
-use crate::data_source::mqtt_data_source::MqttDataSource;
-use crate::data_source::rabbitmq_data_source::RabbitMQDataSource;
 use crate::data_source::source_type::SourceType;
 
-use serde::Deserialize;
-use std::sync::Arc;
+use crate::data_source::data_source_factory::DataSourceFactory;
 
-#[derive(Deserialize)]
-struct RabbitMQConfig {
-    url: String,
-    queue_name: String,
-    consumer_name: String,
-}
+use std::sync::Arc;
 
 pub struct InfrastructurePipelineComponentFactory;
 
@@ -38,28 +31,16 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
         config: &PipelineDataSourceOutputModel,
     ) -> Result<Arc<dyn DataSource + Send + Sync>, IoTBeeError> {
         let source_type = SourceType::try_from(config.source_type())?;
-
-        match source_type {
-            SourceType::RabbitMq => {
-                let rabbitmq_config: RabbitMQConfig =
-                    serde_json::from_str(config.data_source_configuration()).map_err(|e| {
-                        DomainValidationError::DataFormatError {
-                            reason: format!(
-                                "Invalid RabbitMQ configuration for source id {}: {}",
-                                config.id(),
-                                e
-                            ),
-                        }
-                    })?;
-                Ok(Arc::new(RabbitMQDataSource::new(
-                    rabbitmq_config.url,
-                    rabbitmq_config.queue_name,
-                    rabbitmq_config.consumer_name,
-                )))
-            }
-            SourceType::Mqtt => Ok(Arc::new(MqttDataSource)),
-            SourceType::Kafka => Ok(Arc::new(KafkaDataSource)),
-        }
+        let data_source =
+            DataSourceFactory::create_data_source(source_type, config.data_source_configuration())
+                .map_err(|e| DomainValidationError::DataFormatError {
+                    reason: format!(
+                        "Invalid RabbitMQ configuration for source id {}: {}",
+                        config.id(),
+                        e
+                    ),
+                })?;
+        Ok(data_source)
     }
 
     fn create_data_processor(
@@ -72,8 +53,31 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
 
     fn create_data_store(
         &self,
-        _store: &PipelineDataStoreOutputModel,
+        store: &PipelineDataStoreOutputModel,
     ) -> Result<Arc<dyn DataExternalStore + Send + Sync>, IoTBeeError> {
-        Ok(Arc::new(InfluxDbDataExternalStore))
+        let data_store_type =
+            ExternalPersistenceType::try_from(store.store_type()).map_err(|e| {
+                DomainValidationError::DataFormatError {
+                    reason: format!(
+                        "Invalid external persistence type for store id {}: {}",
+                        store.id(),
+                        e
+                    ),
+                }
+            })?;
+
+        let data_external_store = ExternalPersistenceFactory::create_external_persistence(
+            data_store_type,
+            store.configuration(),
+        )
+        .map_err(|e| DomainValidationError::DataFormatError {
+            reason: format!(
+                "Invalid configuration for external persistence store id {}: {}",
+                store.id(),
+                e
+            ),
+        })?;
+
+        Ok(data_external_store)
     }
 }

@@ -97,7 +97,6 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
         Ok(PipelineDataSourceOutputModel::new(
             row.id,
             row.name,
-            row.data_source_state,
             row.data_source_configuration,
             row.source_type,
             row.data_source_description,
@@ -153,6 +152,7 @@ impl TryFrom<DataStoreRow> for PipelineDataStoreOutputModel {
             row.id,
             row.name,
             row.type_id,
+            row.store_type,
             row.json_schema,
             row.description,
             created_at,

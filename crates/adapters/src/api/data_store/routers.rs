@@ -44,7 +44,7 @@ pub async fn create_data_store(
     get,
     path = "/data-stores/{id}",
     params(
-        ("id" = i32, Path, description = "Schema ID")
+        ("id" = u32, Path, description = "Data store ID")
     ),
     responses(
         (status = 200, description = "Data store retrieved successfully", body = DataStoreResponse),

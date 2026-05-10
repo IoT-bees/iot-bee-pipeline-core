@@ -24,6 +24,9 @@ pub fn pipeline_lifecycle_scope(use_case: web::Data<UseCase>) -> actix_web::Scop
 #[utoipa::path(
     post,
     path = "/pipeline-lifecycle/start/{pipeline_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "Numeric ID of the pipeline to start")
+    ),
     responses(
         (status = 200, description = "Pipeline started successfully"),
         (status = 400, description = "Invalid pipeline ID", body = ErrorResponse),
@@ -57,6 +60,9 @@ pub async fn start_new_pipeline(
 #[utoipa::path(
     post,
     path = "/pipeline-lifecycle/stop/{pipeline_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "Numeric ID of the pipeline to stop")
+    ),
     responses(
         (status = 200, description = "Pipeline stopped successfully"),
         (status = 400, description = "Invalid pipeline ID", body = ErrorResponse),
@@ -86,6 +92,9 @@ pub async fn stop_pipeline(
 #[utoipa::path(
     get,
     path = "/pipeline-lifecycle/status/{pipeline_id}",
+    params(
+        ("pipeline_id" = u32, Path, description = "Numeric ID of the pipeline to query")
+    ),
     responses(
         (status = 200, description = "Pipeline status retrieved successfully", body = PipelineStatusResponse),
         (status = 400, description = "Invalid pipeline ID", body = ErrorResponse),
@@ -104,10 +113,13 @@ pub async fn get_pipeline_status(
         "el pipeline id recibido por el endpoint es {}",
         pipeline_id.clone()
     ));
-    let status = use_case.get_pipeline_status(pipeline_id).await.map_err(|e| {
-        LOGGER.error(&format!("Failed to get pipeline status: {e}"));
-        e
-    })?;
+    let status = use_case
+        .get_pipeline_status(pipeline_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!("Failed to get pipeline status: {e}"));
+            e
+        })?;
     LOGGER.info("Pipeline status retrieved successfully");
     let response: PipelineStatusResponse = status.try_into().map_err(|e: String| {
         ApiError(PipelineLifecycleError::OperationFailed { reason: e }.into())

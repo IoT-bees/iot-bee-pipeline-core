@@ -44,6 +44,7 @@ pub struct PipelineDataStoreOutputModel {
     id: DataStoreId,
     name: FieldName,
     type_id: DataStoreId,
+    store_type: String,
     configuration: PipelineDataStoreModel,
     data_store_description: DescriptionField,
     created_at: DateTime<Utc>,
@@ -54,6 +55,7 @@ impl PipelineDataStoreOutputModel {
         id: u32,
         name: impl Into<String>,
         type_id: u32,
+        store_type: impl Into<String>,
         configuration: impl Into<String>,
         data_store_description: impl Into<String>,
         created_at: DateTime<Utc>,
@@ -63,6 +65,7 @@ impl PipelineDataStoreOutputModel {
             id: DataStoreId::new(id)?,
             name: FieldName::new(name)?,
             type_id: DataStoreId::new(type_id)?,
+            store_type: store_type.into(),
             configuration: PipelineDataStoreModel::new(configuration)?,
             data_store_description: DescriptionField::new(data_store_description)?,
             created_at,
@@ -89,5 +92,8 @@ impl PipelineDataStoreOutputModel {
     }
     pub fn updated_at(&self) -> DateTime<Utc> {
         self.updated_at
+    }
+    pub fn store_type(&self) -> &str {
+        &self.store_type
     }
 }

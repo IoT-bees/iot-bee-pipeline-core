@@ -48,6 +48,8 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio", "sqlite"] }
 # Messaging
 lapin = "4.4.0"
 
+influxdb = {version = "0.8.0", features = ["chrono", "serde"] }
+
 [package]
 name = "iot-bee"
 version = "0.1.0"

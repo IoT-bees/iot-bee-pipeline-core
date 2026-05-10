@@ -9,11 +9,19 @@ use uuid::Uuid;
 
 use lapin::{Connection, ConnectionProperties, options::*, types::FieldTable};
 use logging::AppLogger;
+use serde::Deserialize;
 use std::time::Duration;
-
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::infrastructure::data_source::rabbitmq_data_source::RabbitMQDataSource",
 );
+
+#[derive(Deserialize)]
+pub struct RabbitMQConfig {
+    pub url: String,
+    pub queue_name: String,
+    pub consumer_name: String,
+}
+
 pub struct RabbitMQDataSource {
     url: String,
     queue_name: String,

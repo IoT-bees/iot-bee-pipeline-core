@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use super::pipeline_abstraction::PipelineAbstractionController;
 use domain::error::IoTBeeError;
-use domain::value_objects::lifecycle_values::{PipelineStatusReport};
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
 // StartPipeline
 // Inicia todos el pipeline
 pub struct StartPipelineMessage;

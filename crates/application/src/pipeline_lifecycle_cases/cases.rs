@@ -9,8 +9,8 @@ use domain::outbound::pipeline_persistence::{
     PipelineControllerRepository, PipelineDataSourceRepository, PipelineDataStoreRepository,
     PipelineValidationSchemaRepository,
 };
-use domain::value_objects::pipelines_values::DataStoreId;
 use domain::value_objects::lifecycle_values::PipelineStatusReport;
+use domain::value_objects::pipelines_values::DataStoreId;
 use logging::AppLogger;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::pipeline_lifecycle_cases::cases");
@@ -327,5 +327,4 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
         let pipeline_id = DataStoreId::new(id)?;
         self.pipeline_lifecycle.get_status_by_id(&pipeline_id).await
     }
-
 }

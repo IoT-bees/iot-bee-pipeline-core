@@ -126,5 +126,4 @@ impl PipelineStatusReport {
             })
             .collect()
     }
-
 }
