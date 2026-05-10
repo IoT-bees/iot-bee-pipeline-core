@@ -113,10 +113,13 @@ pub async fn get_pipeline_status(
         "el pipeline id recibido por el endpoint es {}",
         pipeline_id.clone()
     ));
-    let status = use_case.get_pipeline_status(pipeline_id).await.map_err(|e| {
-        LOGGER.error(&format!("Failed to get pipeline status: {e}"));
-        e
-    })?;
+    let status = use_case
+        .get_pipeline_status(pipeline_id)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!("Failed to get pipeline status: {e}"));
+            e
+        })?;
     LOGGER.info("Pipeline status retrieved successfully");
     let response: PipelineStatusResponse = status.try_into().map_err(|e: String| {
         ApiError(PipelineLifecycleError::OperationFailed { reason: e }.into())

@@ -1,20 +1,16 @@
-use domain::value_objects::lifecycle_values::{PipelineStatusReport};
-use serde::{Serialize};
+use domain::value_objects::lifecycle_values::PipelineStatusReport;
+use serde::Serialize;
 // use validator::Validate;
-use utoipa::ToSchema;
 use std::collections::HashMap;
-
-
+use utoipa::ToSchema;
 
 pub type PipelineId = u32;
 
-
 #[derive(Serialize, ToSchema)]
-pub struct PipelineStatusResponse{
+pub struct PipelineStatusResponse {
     pub pipeline_general_status: String,
-    pub replica_statuses: HashMap<u32, String>
+    pub replica_statuses: HashMap<u32, String>,
 }
-
 
 impl TryFrom<PipelineStatusReport> for PipelineStatusResponse {
     type Error = String;

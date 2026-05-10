@@ -2,7 +2,8 @@ use actix::prelude::*;
 
 use super::messges::{
     AddReplicaMessage, RemoveReplicaMessage, ReplicaCountMessage, RestartAllReplicasMessage,
-    StartPipelineMessage, StatusAllReplicasMessage, StopAllReplicasMessage, StatusAllReplicasMessageResult,
+    StartPipelineMessage, StatusAllReplicasMessage, StatusAllReplicasMessageResult,
+    StopAllReplicasMessage,
 };
 use super::pipeline_abstraction::PipelineAbstractionController;
 use super::pipeline_supervisor::PipelineSupervisor;

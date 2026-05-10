@@ -50,6 +50,7 @@ pub struct DataStoreRow {
     pub name: String,
     #[sqlx(rename = "type")]
     pub type_id: u32,
+    pub store_type: String,
     pub json_schema: String,
     pub description: String,
     pub created_at: String,

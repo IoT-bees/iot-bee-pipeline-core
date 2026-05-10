@@ -15,9 +15,6 @@ pub struct CreateDataSourceRequest {
     #[serde(rename = "name")]
     #[validate(length(min = 1, max = 30))]
     pub name: String,
-    #[serde(rename = "dataSourceState")]
-    #[validate(length(min = 1))]
-    pub data_source_state: String,
     #[serde(rename = "dataSourceConfiguration")]
     #[validate(nested)]
     pub data_source_configuration: DataSourceConfig,
@@ -55,8 +52,6 @@ pub struct DataSourceResponse {
     pub id: u32,
     #[serde(rename = "name")]
     pub name: String,
-    #[serde(rename = "dataSourceState")]
-    pub data_source_state: String,
     #[serde(rename = "dataSourceConfiguration")]
     pub data_source_configuration: String,
     #[serde(rename = "sourceType")]
@@ -76,7 +71,6 @@ impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
         Ok(DataSourceResponse {
             id: output_model.id(),
             name: output_model.name().to_string(),
-            data_source_state: output_model.data_source_state().to_string(),
             data_source_configuration: output_model.data_source_configuration().to_string(),
             source_type: output_model.source_type().to_string(),
             data_source_description: output_model.description().to_string(),

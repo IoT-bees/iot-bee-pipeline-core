@@ -123,11 +123,9 @@ impl Handler<StatusPipelineMessage> for SystemActorSupervisor {
         };
 
         Box::pin(
-            async move {
-                bridge.status_all().await
-            }
-            .into_actor(self)
-            .map(move |result: Result<PipelineStatusReport, IoTBeeError>, _actor, _ctx| result),
+            async move { bridge.status_all().await }
+                .into_actor(self)
+                .map(move |result: Result<PipelineStatusReport, IoTBeeError>, _actor, _ctx| result),
         )
     }
 }

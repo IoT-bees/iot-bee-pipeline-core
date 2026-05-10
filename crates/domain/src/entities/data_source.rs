@@ -41,7 +41,6 @@ impl PipelineDataSourceInputModel {
 pub struct PipelineDataSourceOutputModel {
     id: DataStoreId,
     name: FieldName,
-    data_source_state: String,
     data_source_configuration: String,
     data_source_description: DescriptionField,
     source_type: String,
@@ -53,7 +52,6 @@ impl PipelineDataSourceOutputModel {
     pub fn new(
         id: u32,
         name: impl Into<String>,
-        data_source_state: impl Into<String>,
         data_source_configuration: impl Into<String>,
         source_type: impl Into<String>,
         data_source_description: impl Into<String>,
@@ -63,7 +61,6 @@ impl PipelineDataSourceOutputModel {
         Ok(Self {
             id: DataStoreId::new(id)?,
             name: FieldName::new(name)?,
-            data_source_state: data_source_state.into(),
             data_source_configuration: data_source_configuration.into(),
             data_source_description: DescriptionField::new(data_source_description)?,
             source_type: source_type.into(),
@@ -80,9 +77,6 @@ impl PipelineDataSourceOutputModel {
     }
     pub fn description(&self) -> &str {
         self.data_source_description.description()
-    }
-    pub fn data_source_state(&self) -> &str {
-        &self.data_source_state
     }
     pub fn data_source_configuration(&self) -> &str {
         &self.data_source_configuration

@@ -1,8 +1,9 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
-use domain::error::{IoTBeeError, 
-    PipelinePersistenceError, // ya 
-    PipelineLifecycleError, 
+use domain::error::{
+    IoTBeeError,
+    PipelineLifecycleError,
+    PipelinePersistenceError, // ya
 };
 use serde::Serialize;
 
@@ -55,8 +56,6 @@ impl fmt::Display for LifecycleError {
     }
 }
 
-
-
 impl ResponseError for PersistenceError {
     fn status_code(&self) -> StatusCode {
         match &self.0 {
@@ -96,14 +95,14 @@ impl ResponseError for PersistenceError {
     }
 }
 
-
-
 impl ResponseError for LifecycleError {
     fn status_code(&self) -> StatusCode {
         match &self.0 {
             PipelineLifecycleError::NotFound { .. } => StatusCode::NOT_FOUND,
             PipelineLifecycleError::OperationFailed { .. } => StatusCode::BAD_REQUEST,
-            PipelineLifecycleError::InternalCommunication { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            PipelineLifecycleError::InternalCommunication { .. } => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             PipelineLifecycleError::AlreadyStopped { .. }
             | PipelineLifecycleError::AlreadyRunning { .. } => StatusCode::CONFLICT,
         }
@@ -116,7 +115,9 @@ impl ResponseError for LifecycleError {
                 format!("Pipeline with id '{}' not found", pipeline_id)
             }
             PipelineLifecycleError::OperationFailed { reason } => reason.clone(),
-            PipelineLifecycleError::InternalCommunication { .. } => "Internal server error".to_string(),
+            PipelineLifecycleError::InternalCommunication { .. } => {
+                "Internal server error".to_string()
+            }
             PipelineLifecycleError::AlreadyStopped { pipeline_id } => {
                 format!("Pipeline with id '{}' is already stopped", pipeline_id)
             }
@@ -129,19 +130,6 @@ impl ResponseError for LifecycleError {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
         match &self.0 {
@@ -149,9 +137,9 @@ impl ResponseError for ApiError {
                 PersistenceError(inner.clone()).status_code()
             }
             IoTBeeError::PipelineError(_) => StatusCode::BAD_REQUEST,
-            IoTBeeError::PipelineLifecycleError(inner) =>{
+            IoTBeeError::PipelineLifecycleError(inner) => {
                 LifecycleError(inner.clone()).status_code()
-            },
+            }
             IoTBeeError::DataSourceError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DomainValidationError(_) => StatusCode::BAD_REQUEST,
         }

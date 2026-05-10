@@ -12,7 +12,7 @@ pub enum PipelineError {
     NotFound { pipeline_id: String },
 }
 
-#[derive(Error, Debug,Clone)]
+#[derive(Error, Debug, Clone)]
 pub enum PipelineLifecycleError {
     #[error("Pipeline with id {pipeline_id} is already running")]
     AlreadyRunning { pipeline_id: String },
@@ -34,6 +34,16 @@ pub enum DataSourceError {
     Timeout,
     #[error("Could not decode payload: {reason}")]
     InvalidPayload { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
+pub enum DataExternalStoreError {
+    #[error("Failed to save data: {reason}")]
+    SaveFailed { reason: String },
+    #[error("Failed to parse data: {reason}")]
+    ParseError { reason: String },
+    #[error("Failed to connect to external store: {reason}")]
+    ConnectionFailed { reason: String },
 }
 
 #[derive(Error, Debug, Clone)]
@@ -83,4 +93,6 @@ pub enum IoTBeeError {
     PipelinePersistenceError(#[from] PipelinePersistenceError),
     #[error("Domain validation error: {0}")]
     DomainValidationError(#[from] DomainValidationError),
+    #[error("Data external store error: {0}")]
+    DataExternalStoreError(#[from] DataExternalStoreError),
 }

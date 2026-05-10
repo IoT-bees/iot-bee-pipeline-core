@@ -57,6 +57,7 @@ impl PipelineDataStoreRepository for FakeRepoConDatos {
             1,
             "store-ejemplo",
             1,
+            "INFLUXDB",
             r#"{"host":"localhost","port":5432}"#,
             "Store de ejemplo para tests",
             Utc::now(),
@@ -74,6 +75,7 @@ impl PipelineDataStoreRepository for FakeRepoConDatos {
             1,
             "store-ejemplo",
             1,
+            "INFLUXDB",
             r#"{"host":"localhost","port":5432}"#,
             "Store de ejemplo para tests",
             Utc::now(),
@@ -127,6 +129,7 @@ fn input_valido() -> PipelineDataStoreInputModel {
     PipelineDataStoreInputModel::new(
         "mi-store",
         1,
+        // "INFLUXDB",
         r#"{"host":"localhost"}"#,
         "Descripción del store de prueba",
     )
