@@ -97,9 +97,11 @@ impl TryFrom<DataSourceConfig> for PipelineDataSourceConfig {
             DataSourceConfig::RabbitMq(c) => Ok(PipelineDataSourceConfig::RabbitMq(
                 DomainRabbitmqConfig::new(c.url, c.queue_name, c.consumer_name)?,
             )),
-            DataSourceConfig::Mqtt(c) => Ok(PipelineDataSourceConfig::Mqtt(
-                DomainMqttConfig::new(c.broker_url, c.topic, c.client_id)?,
-            )),
+            DataSourceConfig::Mqtt(c) => Ok(PipelineDataSourceConfig::Mqtt(DomainMqttConfig::new(
+                c.broker_url,
+                c.topic,
+                c.client_id,
+            )?)),
             DataSourceConfig::Kafka(c) => Ok(PipelineDataSourceConfig::Kafka(
                 DomainKafkaConfig::new(c.brokers, c.topic, c.group_id)?,
             )),

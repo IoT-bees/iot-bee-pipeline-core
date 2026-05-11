@@ -1153,6 +1153,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "uuid",

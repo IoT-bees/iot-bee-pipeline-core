@@ -1,9 +1,11 @@
 use super::ast::{Expr, Op};
-use super::schemas::{FieldSchema, ValidationRule};
+use super::schemas::{FieldSchema, FieldType, ValidationRule};
+use serde_json::Value;
 
 pub struct CompiledField {
+    pub is_string: bool,
     pub required: bool,
-    pub default: Option<f64>,
+    pub default: Option<Value>,
     pub validation: Option<ValidationRule>,
     // None = no hay operación, pasar valor directo
     pub program: Option<Program>,
@@ -11,8 +13,10 @@ pub struct CompiledField {
 
 impl From<FieldSchema> for CompiledField {
     fn from(field: FieldSchema) -> Self {
+        let is_string = matches!(field.field_type, FieldType::String);
         let program = field.operation.map(|expr| Program::compile(&expr));
         CompiledField {
+            is_string,
             required: field.required,
             default: field.default,
             validation: field.validation,

@@ -1,10 +1,11 @@
 use super::{
-    kafka_data_source::KafkaDataSource,
-    mqtt_data_source::MqttDataSource,
+    kafka_data_source::KafkaDataSource, mqtt_data_source::MqttDataSource,
     rabbitmq_data_source::RabbitMQDataSource,
 };
 use domain::outbound::data_source::DataSource;
-use domain::value_objects::data_source_values::{DataSourceType, KafkaConfig, MqttConfig, RabbitmqConfig};
+use domain::value_objects::data_source_values::{
+    DataSourceType, KafkaConfig, MqttConfig, RabbitmqConfig,
+};
 use std::error::Error;
 use std::sync::Arc;
 pub struct DataSourceFactory;

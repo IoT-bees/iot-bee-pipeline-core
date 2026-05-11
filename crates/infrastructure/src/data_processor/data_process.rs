@@ -27,8 +27,8 @@ impl PipelineDataProcessorCore {
 
     pub fn process(
         &self,
-        record: &HashMap<String, f64>,
-    ) -> Result<HashMap<String, f64>, IoTBeeError> {
+        record: &HashMap<String, Value>,
+    ) -> Result<HashMap<String, Value>, IoTBeeError> {
         self.inner.process(record)
     }
 }
@@ -41,8 +41,7 @@ impl DataProcessorActions for PipelineDataProcessorCore {
         &self,
         data_to_process: &DataConsumerRawType,
     ) -> Result<DataConsumerRawType, IoTBeeError> {
-        // 1. Parsear el payload crudo a un mapa numérico
-        println!("PipelineDataProcessorCore: parseando data...");
+        // 1. Parsear el payload crudo a un mapa de valores
         let record = parse_record(data_to_process.value())?;
 
         // 2. Procesar con el schema ya compilado: aplica operaciones y validaciones
@@ -58,38 +57,25 @@ impl DataProcessorActions for PipelineDataProcessorCore {
     }
 }
 
-// Convierte un JSON string a HashMap<String, f64>.
-// Soporta Number, Bool (true→1.0, false→0.0). Falla para otros tipos.
-fn parse_record(json: &str) -> Result<HashMap<String, f64>, IoTBeeError> {
+// Convierte un JSON string a HashMap<String, Value>.
+// Soporta Number, Bool y String. Falla para arrays y objects anidados.
+fn parse_record(json: &str) -> Result<HashMap<String, Value>, IoTBeeError> {
     let raw: HashMap<String, Value> =
         serde_json::from_str(json).map_err(|e| DomainValidationError::DataFormatError {
             reason: format!("JSON de datos inválido: {}", e),
         })?;
 
-    let mut record = HashMap::new();
-    for (key, val) in raw {
-        let num: f64 = match val {
-            Value::Number(n) => {
-                n.as_f64()
-                    .ok_or_else(|| DomainValidationError::DataFormatError {
-                        reason: format!("Campo '{}' no puede convertirse a f64", key),
-                    })?
-            }
-            Value::Bool(b) => {
-                if b {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
+    for (key, val) in &raw {
+        match val {
+            Value::Number(_) | Value::Bool(_) | Value::String(_) => {}
             other => {
                 return Err(DomainValidationError::DataFormatError {
                     reason: format!("Campo '{}' tiene tipo no soportado: {:?}", key, other),
                 }
                 .into());
             }
-        };
-        record.insert(key, num);
+        }
     }
-    Ok(record)
+
+    Ok(raw)
 }

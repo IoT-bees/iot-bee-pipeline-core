@@ -1,6 +1,6 @@
 use crate::error::{IoTBeeError, PipelinePersistenceError};
-use crate::value_objects::pipelines_values::{DataStoreId, DescriptionField, FieldName};
 use crate::value_objects::data_source_values::{DataSourceType, PipelineDataSourceConfig};
+use crate::value_objects::pipelines_values::{DataStoreId, DescriptionField, FieldName};
 
 use chrono::{DateTime, Utc};
 

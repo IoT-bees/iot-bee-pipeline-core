@@ -128,7 +128,3 @@ impl ReplicationFactor {
         self.0
     }
 }
-
-
-
- 

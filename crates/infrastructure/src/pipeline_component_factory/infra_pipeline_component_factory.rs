@@ -28,19 +28,18 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
         config: &PipelineDataSourceOutputModel,
     ) -> Result<Arc<dyn DataSource + Send + Sync>, IoTBeeError> {
         let source_type = config.source_type();
-        let config_json = serde_json::to_string(config.data_source_configuration())
-            .map_err(|e| DomainValidationError::DataFormatError {
-                reason: format!("Failed to serialize data source config: {}", e),
+        let config_json =
+            serde_json::to_string(config.data_source_configuration()).map_err(|e| {
+                DomainValidationError::DataFormatError {
+                    reason: format!("Failed to serialize data source config: {}", e),
+                }
             })?;
         let data_source =
-            DataSourceFactory::create_data_source(source_type, config_json)
-                .map_err(|e| DomainValidationError::DataFormatError {
-                    reason: format!(
-                        "Invalid configuration for source id {}: {}",
-                        config.id(),
-                        e
-                    ),
-                })?;
+            DataSourceFactory::create_data_source(source_type, config_json).map_err(|e| {
+                DomainValidationError::DataFormatError {
+                    reason: format!("Invalid configuration for source id {}: {}", config.id(), e),
+                }
+            })?;
         Ok(data_source)
     }
 
@@ -56,16 +55,15 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
         &self,
         store: &PipelineDataStoreOutputModel,
     ) -> Result<Arc<dyn DataExternalStore + Send + Sync>, IoTBeeError> {
-        let data_external_store = ExternalPersistenceFactory::create_external_persistence(
-            store.configuration(),
-        )
-        .map_err(|e| DomainValidationError::DataFormatError {
-            reason: format!(
-                "Invalid configuration for external persistence store id {}: {}",
-                store.id(),
-                e
-            ),
-        })?;
+        let data_external_store =
+            ExternalPersistenceFactory::create_external_persistence(store.configuration())
+                .map_err(|e| DomainValidationError::DataFormatError {
+                    reason: format!(
+                        "Invalid configuration for external persistence store id {}: {}",
+                        store.id(),
+                        e
+                    ),
+                })?;
 
         Ok(data_external_store)
     }

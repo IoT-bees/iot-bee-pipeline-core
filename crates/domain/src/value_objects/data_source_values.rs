@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::error::{DomainValidationError, IoTBeeError};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "sourceType", rename_all = "SCREAMING_SNAKE_CASE")]
@@ -13,8 +13,8 @@ impl PipelineDataSourceConfig {
     pub fn source_type(&self) -> DataSourceType {
         match self {
             Self::RabbitMq(_) => DataSourceType::RabbitMq,
-            Self::Mqtt(_)     => DataSourceType::Mqtt,
-            Self::Kafka(_)    => DataSourceType::Kafka,
+            Self::Mqtt(_) => DataSourceType::Mqtt,
+            Self::Kafka(_) => DataSourceType::Kafka,
         }
     }
 }
@@ -40,27 +40,40 @@ impl RabbitmqConfig {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "url".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if queue_name.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "queue_name".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if consumer_name.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "consumer_name".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
 
-        Ok(Self { url, queue_name, consumer_name })
+        Ok(Self {
+            url,
+            queue_name,
+            consumer_name,
+        })
     }
 
-    pub fn url(&self) -> &str { &self.url }
-    pub fn queue_name(&self) -> &str { &self.queue_name }
-    pub fn consumer_name(&self) -> &str { &self.consumer_name }
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+    pub fn queue_name(&self) -> &str {
+        &self.queue_name
+    }
+    pub fn consumer_name(&self) -> &str {
+        &self.consumer_name
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -84,27 +97,40 @@ impl MqttConfig {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "broker_url".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if topic.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "topic".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if client_id.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "client_id".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
 
-        Ok(Self { broker_url, topic, client_id })
+        Ok(Self {
+            broker_url,
+            topic,
+            client_id,
+        })
     }
 
-    pub fn broker_url(&self) -> &str { &self.broker_url }
-    pub fn topic(&self) -> &str { &self.topic }
-    pub fn client_id(&self) -> &str { &self.client_id }
+    pub fn broker_url(&self) -> &str {
+        &self.broker_url
+    }
+    pub fn topic(&self) -> &str {
+        &self.topic
+    }
+    pub fn client_id(&self) -> &str {
+        &self.client_id
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -127,27 +153,40 @@ impl KafkaConfig {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "brokers".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if topic.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "topic".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if group_id.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "group_id".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
 
-        Ok(Self { brokers, topic, group_id })
+        Ok(Self {
+            brokers,
+            topic,
+            group_id,
+        })
     }
 
-    pub fn brokers(&self) -> &[String] { &self.brokers }
-    pub fn topic(&self) -> &str { &self.topic }
-    pub fn group_id(&self) -> &str { &self.group_id }
+    pub fn brokers(&self) -> &[String] {
+        &self.brokers
+    }
+    pub fn topic(&self) -> &str {
+        &self.topic
+    }
+    pub fn group_id(&self) -> &str {
+        &self.group_id
+    }
 }
 
 pub enum DataSourceType {
@@ -161,13 +200,14 @@ impl TryFrom<&str> for DataSourceType {
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
-            "RABBIT_MQ"  => Ok(Self::RabbitMq),
-            "MQTT"     => Ok(Self::Mqtt),
-            "KAFKA"    => Ok(Self::Kafka),
+            "RABBIT_MQ" => Ok(Self::RabbitMq),
+            "MQTT" => Ok(Self::Mqtt),
+            "KAFKA" => Ok(Self::Kafka),
             other => Err(DomainValidationError::InvalidFieldValue {
                 field_name: "DataSourceType".to_string(),
                 reason: format!("Unknown data source type: {}", other),
-            }.into()),
+            }
+            .into()),
         }
     }
 }
@@ -176,8 +216,8 @@ impl From<DataSourceType> for String {
     fn from(t: DataSourceType) -> Self {
         match t {
             DataSourceType::RabbitMq => "RABBIT_MQ".to_string(),
-            DataSourceType::Mqtt     => "MQTT".to_string(),
-            DataSourceType::Kafka    => "KAFKA".to_string(),
+            DataSourceType::Mqtt => "MQTT".to_string(),
+            DataSourceType::Kafka => "KAFKA".to_string(),
         }
     }
 }

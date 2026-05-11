@@ -1,6 +1,5 @@
 use crate::error::{DomainValidationError, IoTBeeError};
-use serde::{Deserialize, Serialize}; 
-
+use serde::{Deserialize, Serialize};
 
 pub enum DataStoreType {
     InfluxDb,
@@ -17,7 +16,8 @@ impl TryFrom<&str> for DataStoreType {
             _ => Err(DomainValidationError::InvalidFieldValue {
                 field_name: "DataStoreType".to_string(),
                 reason: "Invalid data store type".to_string(),
-            }.into()),
+            }
+            .into()),
         }
     }
 }
@@ -30,7 +30,6 @@ impl From<DataStoreType> for String {
         }
     }
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "persistenceType", rename_all = "SCREAMING_SNAKE_CASE")]
@@ -66,12 +65,15 @@ impl LocalLogConfig {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "log_name".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(Self { log_name })
     }
 
-    pub fn log_name(&self) -> &str { &self.log_name }
+    pub fn log_name(&self) -> &str {
+        &self.log_name
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -79,7 +81,7 @@ pub struct InfluxDbConfig {
     url: String,
     data_base: String,
     measurement: String,
-    token : String, 
+    token: String,
     tag_fields: Vec<String>,
 }
 impl InfluxDbConfig {
@@ -99,33 +101,53 @@ impl InfluxDbConfig {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "url".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if data_base.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "data_base".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if measurement.is_empty() {
             return Err(DomainValidationError::InvalidFieldValue {
                 field_name: "measurement".to_string(),
                 reason: "must not be empty".to_string(),
-            }.into());
+            }
+            .into());
         }
         if token.is_empty() {
-                return Err(DomainValidationError::InvalidFieldValue {
-                    field_name: "token".to_string(),
-                    reason: "must not be empty".to_string(),
-                }.into());
+            return Err(DomainValidationError::InvalidFieldValue {
+                field_name: "token".to_string(),
+                reason: "must not be empty".to_string(),
             }
+            .into());
+        }
 
-        Ok(Self { url, data_base, measurement, token, tag_fields })
+        Ok(Self {
+            url,
+            data_base,
+            measurement,
+            token,
+            tag_fields,
+        })
     }
 
-    pub fn url(&self) -> &str { &self.url }
-    pub fn data_base(&self) -> &str { &self.data_base }
-    pub fn measurement(&self) -> &str { &self.measurement }
-    pub fn token(&self) -> &str { &self.token }
-    pub fn tag_fields(&self) -> &[String] { &self.tag_fields }
+    pub fn url(&self) -> &str {
+        &self.url
+    }
+    pub fn data_base(&self) -> &str {
+        &self.data_base
+    }
+    pub fn measurement(&self) -> &str {
+        &self.measurement
+    }
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+    pub fn tag_fields(&self) -> &[String] {
+        &self.tag_fields
+    }
 }

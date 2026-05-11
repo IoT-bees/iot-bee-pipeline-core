@@ -26,7 +26,16 @@
 
 
 {
+"sensor_id", "prueba_Sensor",
 "pressure":400,
 "temperature": 70,
+"humidity":60
+}
+
+
+{
+"sensor_id":"prueba_Sensor",
+"pressure":400,
+"vibration": 70,
 "humidity":60
 }

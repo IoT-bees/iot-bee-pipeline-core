@@ -59,9 +59,15 @@ impl TryFrom<DataStoreConfig> for PipelineDataStoreModel {
 
     fn try_from(config: DataStoreConfig) -> Result<Self, Self::Error> {
         match config {
-            DataStoreConfig::InfluxDb(c) => Ok(PipelineDataStoreModel::InfluxDb(
-                DomainInfluxDbConfig::new(c.url, c.data_base, c.measurement, c.token, c.tag_fields)?,
-            )),
+            DataStoreConfig::InfluxDb(c) => {
+                Ok(PipelineDataStoreModel::InfluxDb(DomainInfluxDbConfig::new(
+                    c.url,
+                    c.data_base,
+                    c.measurement,
+                    c.token,
+                    c.tag_fields,
+                )?))
+            }
             DataStoreConfig::LocalLog(c) => Ok(PipelineDataStoreModel::LocalLog(
                 DomainLocalLogConfig::new(c.log_name)?,
             )),

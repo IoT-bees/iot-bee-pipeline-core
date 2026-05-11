@@ -1,5 +1,6 @@
 use super::ast::Expr;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 // La definición de un campo
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,9 +13,9 @@ pub struct FieldSchema {
 
     pub required: bool,
 
-    // Option<T> en serde = el campo puede ser null
-    // o directamente ausente en el JSON
-    pub default: Option<f64>,
+    // Option<Value> permite defaults numéricos ("default": 1013.25)
+    // o de string ("default": "sensor_a"), o null/ausente → None
+    pub default: Option<Value>,
 
     pub validation: Option<ValidationRule>,
 
@@ -28,6 +29,7 @@ pub enum FieldType {
     Float,
     Int,
     Bool,
+    String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

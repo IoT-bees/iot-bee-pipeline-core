@@ -53,10 +53,11 @@ impl TryFrom<PipelineDataStoreOutputModel> for DataStoreResponse {
     type Error = IoTBeeError;
 
     fn try_from(output_model: PipelineDataStoreOutputModel) -> Result<Self, Self::Error> {
-        let config_json = serde_json::to_string(output_model.configuration())
-            .map_err(|e| DomainValidationError::DataFormatError {
+        let config_json = serde_json::to_string(output_model.configuration()).map_err(|e| {
+            DomainValidationError::DataFormatError {
                 reason: format!("Failed to serialize data store configuration: {}", e),
-            })?;
+            }
+        })?;
         Ok(DataStoreResponse {
             id: output_model.id(),
             name: output_model.name().to_string(),

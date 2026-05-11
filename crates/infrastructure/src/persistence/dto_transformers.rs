@@ -4,15 +4,15 @@ use crate::persistence::models::{
 };
 use domain::entities::connection_type::ConnectionTypeModel;
 use domain::entities::data_source::PipelineDataSourceOutputModel;
-use domain::value_objects::data_source_values::PipelineDataSourceConfig;
 use domain::entities::data_store::PipelineDataStoreOutputModel;
-use domain::value_objects::data_store_values::PipelineDataStoreModel;
 use domain::entities::pipeline_data::PipelineDataOutputModel;
 use domain::entities::pipeline_groups::PipelineGroupOutputModel;
 use domain::entities::validation_schema::{
     PipelineNewValidateSchema, PipelineValidationSchemaModel,
 };
 use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::value_objects::data_source_values::PipelineDataSourceConfig;
+use domain::value_objects::data_store_values::PipelineDataStoreModel;
 
 use chrono::DateTime;
 
@@ -96,10 +96,11 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
             })?
             .with_timezone(&Utc);
 
-        let config = serde_json::from_str::<PipelineDataSourceConfig>(&row.data_source_configuration)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
-                reason: format!("invalid data_source_configuration: {}", e),
-            })?;
+        let config =
+            serde_json::from_str::<PipelineDataSourceConfig>(&row.data_source_configuration)
+                .map_err(|e| PipelinePersistenceError::InvalidData {
+                    reason: format!("invalid data_source_configuration: {}", e),
+                })?;
 
         Ok(PipelineDataSourceOutputModel::new(
             row.id,
@@ -154,9 +155,11 @@ impl TryFrom<DataStoreRow> for PipelineDataStoreOutputModel {
             })?
             .with_timezone(&Utc);
 
-        let config = serde_json::from_str::<PipelineDataStoreModel>(&row.json_schema)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
-                reason: format!("invalid json_schema: {}", e),
+        let config =
+            serde_json::from_str::<PipelineDataStoreModel>(&row.json_schema).map_err(|e| {
+                PipelinePersistenceError::InvalidData {
+                    reason: format!("invalid json_schema: {}", e),
+                }
             })?;
 
         Ok(PipelineDataStoreOutputModel::new(

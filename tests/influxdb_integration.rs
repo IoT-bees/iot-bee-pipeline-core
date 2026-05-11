@@ -72,7 +72,13 @@ fn cargar_env() -> Option<InfluxEnv> {
         .map(String::from)
         .collect();
 
-    Some(InfluxEnv { url, bucket, measurement, token, tag_fields })
+    Some(InfluxEnv {
+        url,
+        bucket,
+        measurement,
+        token,
+        tag_fields,
+    })
 }
 
 fn crear_model(env: &InfluxEnv) -> PipelineDataStoreModel {
@@ -121,7 +127,8 @@ async fn influxdb_save_campos_numericos() {
         String::new()
     } else {
         // Para cada tag field definido, añade un par "campo": "valor_test"
-        let pares: Vec<String> = env.tag_fields
+        let pares: Vec<String> = env
+            .tag_fields
             .iter()
             .map(|f| format!(r#""{f}": "test_valor""#))
             .collect();

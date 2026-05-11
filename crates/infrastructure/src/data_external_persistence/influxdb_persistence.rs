@@ -19,8 +19,7 @@ impl InfluxDbPersistence {
     pub fn new(config: &InfluxDbConfig) -> Self {
         // FIX 1: .with_token() es requerido para InfluxDB Cloud v2.
         // Sin esto, todas las escrituras fallan con 401 Unauthorized.
-        let client = Client::new(config.url(), config.data_base())
-            .with_token(config.token());
+        let client = Client::new(config.url(), config.data_base()).with_token(config.token());
 
         InfluxDbPersistence {
             tag_fields: config.tag_fields().to_vec(),
@@ -67,11 +66,11 @@ impl DataExternalStore for InfluxDbPersistence {
 
         for (key, value) in map {
             if self.tag_fields.contains(key) {
-                // Tags → siempre String
+                // Para ser tag debe estar en tag_fields Y ser string
                 let tag_val = value
                     .as_str()
                     .ok_or_else(|| DataExternalStoreError::ParseError {
-                        reason: format!("Tag '{}' must be a string", key),
+                        reason: format!("Tag '{}' must be a string, got {:?}", key, value),
                     })?;
                 write_query = write_query.add_tag(key, tag_val);
             } else {

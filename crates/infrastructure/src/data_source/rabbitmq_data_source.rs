@@ -1,8 +1,8 @@
+use async_trait::async_trait;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
 use domain::outbound::data_source::DataSource;
 use domain::value_objects::data_source_values::RabbitmqConfig;
-use async_trait::async_trait;
 use futures_util::StreamExt;
 use tokio::sync::mpsc::Sender;
 use uuid::Uuid;
@@ -11,13 +11,9 @@ use lapin::{Connection, ConnectionProperties, options::*, types::FieldTable};
 use logging::AppLogger;
 use std::time::Duration;
 
-
-
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::infrastructure::data_source::rabbitmq_data_source::RabbitMQDataSource",
 );
-
-
 
 pub struct RabbitMQDataSource {
     config: RabbitmqConfig,

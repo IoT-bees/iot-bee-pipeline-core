@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
 use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::value_objects::data_store_values::{LocalLogConfig, PipelineDataStoreModel};
 use serde_json::json;
 use std::sync::Arc;
 
@@ -42,11 +43,11 @@ impl DataStoreUseCases for UseCaseConDatos {
         Ok(())
     }
     async fn get_data_store(&self) -> Result<Vec<PipelineDataStoreOutputModel>, IoTBeeError> {
+        let config = PipelineDataStoreModel::LocalLog(LocalLogConfig::new("test-log").unwrap());
         let modelo = PipelineDataStoreOutputModel::new(
             1,
             "store-produccion",
-            1,
-            r#"{"host":"db.ejemplo.com"}"#,
+            config,
             "Store de producción",
             Utc::now(),
             Utc::now(),
@@ -58,11 +59,11 @@ impl DataStoreUseCases for UseCaseConDatos {
         &self,
         _: &u32,
     ) -> Result<PipelineDataStoreOutputModel, IoTBeeError> {
+        let config = PipelineDataStoreModel::LocalLog(LocalLogConfig::new("test-log").unwrap());
         Ok(PipelineDataStoreOutputModel::new(
             1,
             "store-produccion",
-            1,
-            r#"{"host":"db.ejemplo.com"}"#,
+            config,
             "Store de producción",
             Utc::now(),
             Utc::now(),
@@ -98,8 +99,10 @@ impl DataStoreUseCases for UseCaseNombreDuplicado {
 fn body_valido() -> serde_json::Value {
     json!({
         "name": "mi-store",
-        "dataStoreTypeId": 1,
-        "dataStoreConfiguration": "{\"host\":\"localhost\"}",
+        "dataStoreConfiguration": {
+            "persistenceType": "LOCAL_LOG",
+            "log_name": "test-log"
+        },
         "dataStoreDescription": "Store de prueba para tests de integración"
     })
 }
@@ -107,8 +110,10 @@ fn body_valido() -> serde_json::Value {
 fn body_nombre_vacio() -> serde_json::Value {
     json!({
         "name": "",
-        "dataStoreTypeId": 1,
-        "dataStoreConfiguration": "{\"host\":\"localhost\"}",
+        "dataStoreConfiguration": {
+            "persistenceType": "LOCAL_LOG",
+            "log_name": "test-log"
+        },
         "dataStoreDescription": "Una descripción válida"
     })
 }

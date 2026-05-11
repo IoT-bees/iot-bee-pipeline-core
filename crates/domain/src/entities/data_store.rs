@@ -21,10 +21,18 @@ impl PipelineDataStoreInputModel {
         })
     }
 
-    pub fn name(&self) -> &str { self.name.name() }
-    pub fn configuration(&self) -> &PipelineDataStoreModel { &self.configuration }
-    pub fn store_type_string(&self) -> String { String::from(self.configuration.store_type()) }
-    pub fn data_store_description(&self) -> &str { self.data_store_description.description() }
+    pub fn name(&self) -> &str {
+        self.name.name()
+    }
+    pub fn configuration(&self) -> &PipelineDataStoreModel {
+        &self.configuration
+    }
+    pub fn store_type_string(&self) -> String {
+        String::from(self.configuration.store_type())
+    }
+    pub fn data_store_description(&self) -> &str {
+        self.data_store_description.description()
+    }
 }
 
 #[derive(Debug)]
@@ -54,11 +62,25 @@ impl PipelineDataStoreOutputModel {
             updated_at,
         })
     }
-    pub fn id(&self) -> u32 { self.id.id() }
-    pub fn name(&self) -> &str { self.name.name() }
-    pub fn configuration(&self) -> &PipelineDataStoreModel { &self.configuration }
-    pub fn store_type_string(&self) -> String { String::from(self.configuration.store_type()) }
-    pub fn data_store_description(&self) -> &str { self.data_store_description.description() }
-    pub fn created_at(&self) -> DateTime<Utc> { self.created_at }
-    pub fn updated_at(&self) -> DateTime<Utc> { self.updated_at }
+    pub fn id(&self) -> u32 {
+        self.id.id()
+    }
+    pub fn name(&self) -> &str {
+        self.name.name()
+    }
+    pub fn configuration(&self) -> &PipelineDataStoreModel {
+        &self.configuration
+    }
+    pub fn store_type_string(&self) -> String {
+        String::from(self.configuration.store_type())
+    }
+    pub fn data_store_description(&self) -> &str {
+        self.data_store_description.description()
+    }
+    pub fn created_at(&self) -> DateTime<Utc> {
+        self.created_at
+    }
+    pub fn updated_at(&self) -> DateTime<Utc> {
+        self.updated_at
+    }
 }

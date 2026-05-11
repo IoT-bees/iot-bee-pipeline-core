@@ -69,7 +69,11 @@ async fn save_con_campos_y_tag_envia_al_servidor() {
     let json = r#"{"device_id": "sensor-01", "temperatura": 23.5, "humedad": 60}"#;
     let resultado = store.save(raw(json)).await;
 
-    assert!(resultado.is_ok(), "save debe tener éxito: {:?}", resultado.err());
+    assert!(
+        resultado.is_ok(),
+        "save debe tener éxito: {:?}",
+        resultado.err()
+    );
 }
 
 /// Un JSON con campos enteros debe guardarse sin errores de tipo.
@@ -91,7 +95,11 @@ async fn save_con_campo_entero_envia_al_servidor() {
     let json = r#"{"contador": 42, "activo": true}"#;
     let resultado = store.save(raw(json)).await;
 
-    assert!(resultado.is_ok(), "save con entero debe tener éxito: {:?}", resultado.err());
+    assert!(
+        resultado.is_ok(),
+        "save con entero debe tener éxito: {:?}",
+        resultado.err()
+    );
 }
 
 /// Un JSON que no es objeto debe devolver un error de parseo.

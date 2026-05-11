@@ -8,6 +8,8 @@ pub struct Config {
     pub data_source: Option<String>,
     pub queue_name: Option<String>,
     pub data_store: Option<String>,
+    pub api_host: Option<String>,
+    pub api_port: Option<u16>,
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
@@ -22,6 +24,8 @@ impl Config {
                 data_source: env::var("DATA_SOURCE").ok(),
                 queue_name: env::var("QUEUE_NAME").ok(),
                 data_store: env::var("DATA_STORE").ok(),
+                api_host: env::var("API_HOST").ok(),
+                api_port: env::var("API_PORT").ok().and_then(|s| s.parse().ok()),
             }
         })
     }
