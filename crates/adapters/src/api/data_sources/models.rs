@@ -3,7 +3,8 @@ use chrono::{DateTime, Utc};
 use domain::entities::data_source::{
     PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
 };
-use domain::error::{DomainValidationError, IoTBeeError};
+use domain::error::IoTBeeError;
+use domain::value_objects::data_source_values::PipelineDataSourceConfig;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -27,22 +28,8 @@ impl TryFrom<CreateDataSourceRequest> for PipelineDataSourceInputModel {
     type Error = IoTBeeError;
 
     fn try_from(request: CreateDataSourceRequest) -> Result<Self, Self::Error> {
-        let source_type = request
-            .data_source_configuration
-            .source_type_name()
-            .to_string();
-        let config_json =
-            serde_json::to_string(&request.data_source_configuration).map_err(|e| {
-                DomainValidationError::DataFormatError {
-                    reason: format!("Failed to serialize data source configuration: {}", e),
-                }
-            })?;
-        Ok(PipelineDataSourceInputModel::new(
-            request.name,
-            config_json,
-            source_type,
-            request.data_source_description,
-        )?)
+        let config = PipelineDataSourceConfig::try_from(request.data_source_configuration)?;
+        PipelineDataSourceInputModel::new(request.name, config, request.data_source_description)
     }
 }
 
@@ -95,10 +82,11 @@ impl TryFrom<UpdateDataSourceRequest> for PipelineDataSourceUpdateModel {
 
     fn try_from(request: UpdateDataSourceRequest) -> Result<Self, Self::Error> {
         let (config_json, source_type) = match request.data_source_configuration {
-            Some(config) => {
-                let source_type = config.source_type_name().to_string();
+            Some(dto) => {
+                let config = PipelineDataSourceConfig::try_from(dto)?;
+                let source_type: String = config.source_type().into();
                 let json = serde_json::to_string(&config).map_err(|e| {
-                    DomainValidationError::DataFormatError {
+                    domain::error::DomainValidationError::DataFormatError {
                         reason: format!("Failed to serialize data source configuration: {}", e),
                     }
                 })?;

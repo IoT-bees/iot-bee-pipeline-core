@@ -2,9 +2,18 @@ use async_trait::async_trait;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{DataSourceError, IoTBeeError};
 use domain::outbound::data_source::DataSource;
+use domain::value_objects::data_source_values::KafkaConfig;
 use tokio::sync::mpsc::Sender;
 
-pub struct KafkaDataSource;
+pub struct KafkaDataSource {
+    config: KafkaConfig,
+}
+
+impl KafkaDataSource {
+    pub fn new(config: KafkaConfig) -> Self {
+        KafkaDataSource { config }
+    }
+}
 
 #[async_trait]
 impl DataSource for KafkaDataSource {

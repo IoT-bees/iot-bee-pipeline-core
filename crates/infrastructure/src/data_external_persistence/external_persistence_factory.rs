@@ -1,7 +1,7 @@
 use super::{
-    external_persistence_type::ExternalPersistenceType,
     influxdb_persistence::{InfluxDbPersistence, InfluxDbStoreConfig},
 };
+use domain::value_objects::pipelines_values::ExternalPersistenceType;
 use domain::outbound::data_external_store::DataExternalStore;
 use serde_json;
 use std::error::Error;

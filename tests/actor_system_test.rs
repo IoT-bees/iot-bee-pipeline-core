@@ -2,27 +2,29 @@
 
 // use adapters::actor_system::supervisor_pipeline_life_time::actor_wrapper::SupervisorPipelineBridge;
 use adapters::actor_system::supervisor_actor_system::actor_wrapper::PipelineActorSupervisorSystemBridge;
-// use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::error::IoTBeeError;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
 use domain::outbound::data_external_store::DataExternalStore;
+use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
+
 use domain::value_objects::pipelines_values::DataStoreId;
-// use domain::outbound::data_source::DataSource;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::entities::pipeline_data::PipelineConfiguration;
 
-// use domain::outbound::data_source::DataSource;
 use async_trait::async_trait;
 use logging::{AppLogger, init_tracing};
 use std::sync::Arc;
 use std::sync::Mutex;
 
-//datos de infra real
-// use actix::prelude::*;
 
 use infrastructure::data_processor::data_process::PipelineDataProcessorCore;
-use infrastructure::data_source::rabbitmq_data_source::RabbitMQDataSource;
+
+use infrastructure::pipeline_component_factory::infra_pipeline_component_factory::InfrastructurePipelineComponentFactory;
+use domain::entities::data_source::PipelineDataSourceOutputModel;
 use iot_bee::config::Config;
+use serde_json;
+use chrono; 
+
 
 static LOGGER: AppLogger = AppLogger::new("test::actor_system_test");
 
@@ -73,10 +75,26 @@ async fn test_pipeline_lifecycle() {
         .queue_name
         .as_ref()
         .expect("QUEUE_NAME no configurada");
-    let data_source = RabbitMQDataSource::new(rabbitmq_url, queue_name, "test_consumer");
 
-    let data_source = Arc::new(data_source);
-
+        let infra_components = InfrastructurePipelineComponentFactory::new(); 
+        
+        let pipeline_data = PipelineDataSourceOutputModel::new(
+            1,
+            "DataSource de prueba",
+            serde_json::json!( {
+                "host": rabbitmq_url,
+                "queue_name": queue_name,
+                "consumer_name": "test_consumer"
+            }).to_string(),
+            "RABBITMQ",
+            "Descripción del data source de prueba",
+            chrono::Utc::now(),
+            chrono::Utc::now(),
+        );
+        let data_source = infra_components
+            .create_data_source(&pipeline_data.unwrap())
+            .expect("Error al crear data source desde configuración");
+        
     // data estore mock
     let data_store = Arc::new(SpyExternalStore::new(
         Arc::new(Mutex::new(vec![])),

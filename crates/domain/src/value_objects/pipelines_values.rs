@@ -140,3 +140,37 @@ impl PipelineDataStoreModel {
         &self.0
     }
 }
+
+
+#[derive(Debug)]
+pub struct PipelineDataSourceConfigurationModel(String);
+impl PipelineDataSourceConfigurationModel {
+    pub fn new(configuration: impl Into<String>) -> Result<Self, IoTBeeError>
+    {
+        //validar aca las caracteristicas que debe tener la configuracion del data source, por ejemplo que sea un json valido, o que tenga ciertas propiedades, etc.
+        // devolver el error de validacion de datos.
+        Ok(Self(configuration.into()))
+    }
+    pub fn configuration(&self) -> &str {
+        &self.0
+    }
+}
+
+
+
+pub enum ExternalPersistenceType {
+    InfluxDb,
+}
+
+impl TryFrom<&str> for ExternalPersistenceType {
+    type Error = IoTBeeError;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match s {
+            "INFLUXDB" => Ok(ExternalPersistenceType::InfluxDb),
+            other => Err(DomainValidationError::InvalidFieldValue {
+                field_name: "ExternalPersistenceType".to_string(),
+                reason: format!("Unknown external persistence type: {}", other),
+            }.into()),
+        }
+    }
+}

@@ -26,3 +26,4 @@ pub trait PipelineComponentFactory: Send + Sync {
         store: &PipelineDataStoreOutputModel,
     ) -> Result<Arc<dyn DataExternalStore + Send + Sync>, IoTBeeError>;
 }
+

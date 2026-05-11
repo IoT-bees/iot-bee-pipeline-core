@@ -1,7 +1,7 @@
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
 use domain::outbound::data_source::DataSource;
-
+use domain::value_objects::data_source_values::RabbitmqConfig;
 use async_trait::async_trait;
 use futures_util::StreamExt;
 use tokio::sync::mpsc::Sender;
@@ -9,38 +9,27 @@ use uuid::Uuid;
 
 use lapin::{Connection, ConnectionProperties, options::*, types::FieldTable};
 use logging::AppLogger;
-use serde::Deserialize;
 use std::time::Duration;
+
+
+
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::infrastructure::data_source::rabbitmq_data_source::RabbitMQDataSource",
 );
 
-#[derive(Deserialize)]
-pub struct RabbitMQConfig {
-    pub url: String,
-    pub queue_name: String,
-    pub consumer_name: String,
-}
+
 
 pub struct RabbitMQDataSource {
-    url: String,
-    queue_name: String,
-    consumer_name: String,
+    config: RabbitmqConfig,
     prefetch_count: u16,
     reconnect_delay: Duration,
     max_retries: u16,
     connection_timeout: Duration,
 }
 impl RabbitMQDataSource {
-    pub fn new(
-        url: impl Into<String>,
-        queue_name: impl Into<String>,
-        consumer_name: impl Into<String>,
-    ) -> Self {
+    pub fn new(config: RabbitmqConfig) -> Self {
         RabbitMQDataSource {
-            url: url.into(),
-            queue_name: queue_name.into(),
-            consumer_name: consumer_name.into(),
+            config,
             prefetch_count: 10,
             reconnect_delay: Duration::from_secs(5),
             max_retries: 5,
@@ -48,13 +37,13 @@ impl RabbitMQDataSource {
         }
     }
     pub fn url(&self) -> &str {
-        &self.url
+        self.config.url()
     }
     pub fn queue_name(&self) -> &str {
-        &self.queue_name
+        self.config.queue_name()
     }
     pub fn consumer_name(&self) -> &str {
-        &self.consumer_name
+        self.config.consumer_name()
     }
     pub fn prefetch_count(&self) -> u16 {
         self.prefetch_count
