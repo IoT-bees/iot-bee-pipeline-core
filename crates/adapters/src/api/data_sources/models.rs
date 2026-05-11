@@ -55,11 +55,15 @@ impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
     type Error = IoTBeeError;
 
     fn try_from(output_model: PipelineDataSourceOutputModel) -> Result<Self, Self::Error> {
+        let config_json = serde_json::to_string(output_model.data_source_configuration())
+            .map_err(|e| domain::error::DomainValidationError::DataFormatError {
+                reason: format!("Failed to serialize data source configuration: {}", e),
+            })?;
         Ok(DataSourceResponse {
             id: output_model.id(),
             name: output_model.name().to_string(),
-            data_source_configuration: output_model.data_source_configuration().to_string(),
-            source_type: output_model.source_type().to_string(),
+            data_source_configuration: config_json,
+            source_type: String::from(output_model.source_type()),
             data_source_description: output_model.description().to_string(),
             created_at: output_model.created_at(),
             updated_at: output_model.updated_at(),

@@ -6,12 +6,12 @@ use domain::value_objects::data_source_values::MqttConfig;
 use tokio::sync::mpsc::Sender;
 
 pub struct MqttDataSource {
-    config: MqttConfig,
+    _config: MqttConfig,
 }
 
 impl MqttDataSource {
     pub fn new(config: MqttConfig) -> Self {
-        MqttDataSource { config }
+        MqttDataSource { _config: config }
     }
 }
 

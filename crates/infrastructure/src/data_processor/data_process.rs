@@ -42,6 +42,7 @@ impl DataProcessorActions for PipelineDataProcessorCore {
         data_to_process: &DataConsumerRawType,
     ) -> Result<DataConsumerRawType, IoTBeeError> {
         // 1. Parsear el payload crudo a un mapa numérico
+        println!("PipelineDataProcessorCore: parseando data...");
         let record = parse_record(data_to_process.value())?;
 
         // 2. Procesar con el schema ya compilado: aplica operaciones y validaciones

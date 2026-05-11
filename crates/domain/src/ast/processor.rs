@@ -53,8 +53,9 @@ impl PipelineDataProcessor {
                 if let Some(min) = rule.min {
                     if raw < min {
                         return Err(IoTBeeError::DomainValidationError(
-                            DomainValidationError::MissingField {
+                            DomainValidationError::InvalidFieldValue {
                                 field_name: field_name.clone(),
+                                reason: format!("value {} is below minimum {}", raw, min),
                             },
                         ));
                     }
@@ -62,8 +63,9 @@ impl PipelineDataProcessor {
                 if let Some(max) = rule.max {
                     if raw > max {
                         return Err(IoTBeeError::DomainValidationError(
-                            DomainValidationError::MissingField {
+                            DomainValidationError::InvalidFieldValue {
                                 field_name: field_name.clone(),
+                                reason: format!("value {} exceeds maximum {}", raw, max),
                             },
                         ));
                     }

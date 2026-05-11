@@ -25,7 +25,9 @@ impl Handler<ProcessDataMessage> for DataProcessorActor {
 
         Box::pin(
             async move {
+                
                 let data = msg.data();
+                LOGGER.info(&format!("Processing data... {}", data.value()));
 
                 let message_process_result = data_processor_actions.process_data(data).await?;
 

@@ -22,7 +22,6 @@ use infrastructure::data_processor::data_process::PipelineDataProcessorCore;
 use infrastructure::pipeline_component_factory::infra_pipeline_component_factory::InfrastructurePipelineComponentFactory;
 use domain::entities::data_source::PipelineDataSourceOutputModel;
 use iot_bee::config::Config;
-use serde_json;
 use chrono; 
 
 
@@ -78,15 +77,15 @@ async fn test_pipeline_lifecycle() {
 
         let infra_components = InfrastructurePipelineComponentFactory::new(); 
         
+        let rabbitmq_config = domain::value_objects::data_source_values::RabbitmqConfig::new(
+            rabbitmq_url.clone(),
+            queue_name.clone(),
+            "test_consumer",
+        ).expect("Error al crear RabbitmqConfig");
         let pipeline_data = PipelineDataSourceOutputModel::new(
             1,
             "DataSource de prueba",
-            serde_json::json!( {
-                "host": rabbitmq_url,
-                "queue_name": queue_name,
-                "consumer_name": "test_consumer"
-            }).to_string(),
-            "RABBITMQ",
+            domain::value_objects::data_source_values::PipelineDataSourceConfig::RabbitMq(rabbitmq_config),
             "Descripción del data source de prueba",
             chrono::Utc::now(),
             chrono::Utc::now(),

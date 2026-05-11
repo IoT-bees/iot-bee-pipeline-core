@@ -22,7 +22,13 @@ influxdb   = { workspace = true }
 actix-rt = { workspace = true }
 actix-web = { workspace = true }
 chrono = { workspace = true }
+wiremock = "0.6"
+tokio = { workspace = true }
 
 [[test]]
 name = "data_processor"
 path = "test/data_processor.rs"
+
+[[test]]
+name = "influxdb_persistence"
+path = "test/influxdb_persistence.rs"

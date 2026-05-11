@@ -48,7 +48,7 @@ pub struct KafkaConfig {
 #[derive(Deserialize, Serialize, ToSchema)]
 #[serde(tag = "sourceType", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum DataSourceConfig {
-    Rabbitmq(RabbitmqConfig),
+    RabbitMq(RabbitmqConfig),
     Mqtt(MqttConfig),
     Kafka(KafkaConfig),
 }
@@ -56,7 +56,7 @@ pub enum DataSourceConfig {
 impl Validate for DataSourceConfig {
     fn validate(&self) -> Result<(), ValidationErrors> {
         match self {
-            DataSourceConfig::Rabbitmq(cfg) => cfg.validate(),
+            DataSourceConfig::RabbitMq(cfg) => cfg.validate(),
             DataSourceConfig::Mqtt(cfg) => cfg.validate(),
             DataSourceConfig::Kafka(cfg) => cfg.validate(),
         }
@@ -66,19 +66,19 @@ impl Validate for DataSourceConfig {
 impl DataSourceConfig {
     pub fn source_type_name(&self) -> &'static str {
         match self {
-            DataSourceConfig::Rabbitmq(_) => "RABBITMQ",
+            DataSourceConfig::RabbitMq(_) => "RABBIT_MQ",
             DataSourceConfig::Mqtt(_) => "MQTT",
             DataSourceConfig::Kafka(_) => "KAFKA",
         }
     }
 
     pub fn available_source_types() -> Vec<&'static str> {
-        vec!["RABBITMQ", "MQTT", "KAFKA"]
+        vec!["RABBIT_MQ", "MQTT", "KAFKA"]
     }
 
     pub fn get_data_source_type(&self) -> DataSourceType {
         match self {
-            DataSourceConfig::Rabbitmq(_) => DataSourceType::RabbitMq,
+            DataSourceConfig::RabbitMq(_) => DataSourceType::RabbitMq,
             DataSourceConfig::Mqtt(_) => DataSourceType::Mqtt,
             DataSourceConfig::Kafka(_) => DataSourceType::Kafka,
         }
@@ -94,7 +94,7 @@ impl TryFrom<DataSourceConfig> for PipelineDataSourceConfig {
 
     fn try_from(config: DataSourceConfig) -> Result<Self, Self::Error> {
         match config {
-            DataSourceConfig::Rabbitmq(c) => Ok(PipelineDataSourceConfig::Rabbitmq(
+            DataSourceConfig::RabbitMq(c) => Ok(PipelineDataSourceConfig::RabbitMq(
                 DomainRabbitmqConfig::new(c.url, c.queue_name, c.consumer_name)?,
             )),
             DataSourceConfig::Mqtt(c) => Ok(PipelineDataSourceConfig::Mqtt(

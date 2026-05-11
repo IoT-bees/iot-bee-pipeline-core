@@ -36,13 +36,17 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         let pool = self.data_base_connection().pool();
         sqlx::query(
             r#"
-            INSERT INTO databases (name, type, json_schema, description, created_at, updated_at)
+            INSERT INTO databases (name, store_type, json_schema, description, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(data_store.name())
-        .bind(data_store.type_id())
-        .bind(data_store.configuration())
+        .bind(data_store.store_type_string())
+        .bind(serde_json::to_string(data_store.configuration()).map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::InvalidData {
+                reason: format!("Failed to serialize configuration: {}", e),
+            })
+        })?)
         .bind(data_store.data_store_description())
         .bind(Utc::now().to_rfc3339())
         .bind(Utc::now().to_rfc3339())
@@ -74,7 +78,7 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         LOGGER.info("Fetching data stores from database...");
         let rows_result = sqlx::query_as::<_, DataStoreRow>(
             r#"
-            SELECT id, name, type, json_schema, description, created_at, updated_at
+            SELECT id, name, store_type, json_schema, description, created_at, updated_at
             FROM databases
             "#,
         )
@@ -106,7 +110,7 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         let pool = self.data_base_connection().pool();
         let row = sqlx::query_as::<_, DataStoreRow>(
             r#"
-            SELECT id, name, type, json_schema, description, created_at, updated_at
+            SELECT id, name, store_type, json_schema, description, created_at, updated_at
             FROM databases
             WHERE id = ?
             "#,

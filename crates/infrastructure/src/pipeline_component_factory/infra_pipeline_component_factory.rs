@@ -6,8 +6,6 @@ use domain::outbound::data_external_store::DataExternalStore;
 use domain::outbound::data_processor_actions::DataProcessorActions;
 use domain::outbound::data_source::DataSource;
 use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
-use domain::value_objects::pipelines_values::{ExternalPersistenceType};
-use domain::value_objects::data_source_values::DataSourceType;
 
 use crate::data_external_persistence::external_persistence_factory::ExternalPersistenceFactory;
 use crate::data_processor::data_process::PipelineDataProcessorCore;
@@ -29,12 +27,16 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
         &self,
         config: &PipelineDataSourceOutputModel,
     ) -> Result<Arc<dyn DataSource + Send + Sync>, IoTBeeError> {
-        let source_type = DataSourceType::try_from(config.source_type())?;
+        let source_type = config.source_type();
+        let config_json = serde_json::to_string(config.data_source_configuration())
+            .map_err(|e| DomainValidationError::DataFormatError {
+                reason: format!("Failed to serialize data source config: {}", e),
+            })?;
         let data_source =
-            DataSourceFactory::create_data_source(source_type, config.data_source_configuration())
+            DataSourceFactory::create_data_source(source_type, config_json)
                 .map_err(|e| DomainValidationError::DataFormatError {
                     reason: format!(
-                        "Invalid RabbitMQ configuration for source id {}: {}",
+                        "Invalid configuration for source id {}: {}",
                         config.id(),
                         e
                     ),
@@ -54,19 +56,7 @@ impl PipelineComponentFactory for InfrastructurePipelineComponentFactory {
         &self,
         store: &PipelineDataStoreOutputModel,
     ) -> Result<Arc<dyn DataExternalStore + Send + Sync>, IoTBeeError> {
-        let data_store_type =
-            ExternalPersistenceType::try_from(store.store_type()).map_err(|e| {
-                DomainValidationError::DataFormatError {
-                    reason: format!(
-                        "Invalid external persistence type for store id {}: {}",
-                        store.id(),
-                        e
-                    ),
-                }
-            })?;
-
         let data_external_store = ExternalPersistenceFactory::create_external_persistence(
-            data_store_type,
             store.configuration(),
         )
         .map_err(|e| DomainValidationError::DataFormatError {

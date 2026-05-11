@@ -4,7 +4,7 @@ use crate::error::{DomainValidationError, IoTBeeError};
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "sourceType", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PipelineDataSourceConfig {
-    Rabbitmq(RabbitmqConfig),
+    RabbitMq(RabbitmqConfig),
     Mqtt(MqttConfig),
     Kafka(KafkaConfig),
 }
@@ -12,7 +12,7 @@ pub enum PipelineDataSourceConfig {
 impl PipelineDataSourceConfig {
     pub fn source_type(&self) -> DataSourceType {
         match self {
-            Self::Rabbitmq(_) => DataSourceType::RabbitMq,
+            Self::RabbitMq(_) => DataSourceType::RabbitMq,
             Self::Mqtt(_)     => DataSourceType::Mqtt,
             Self::Kafka(_)    => DataSourceType::Kafka,
         }
@@ -161,7 +161,7 @@ impl TryFrom<&str> for DataSourceType {
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
-            "RABBITMQ" => Ok(Self::RabbitMq),
+            "RABBIT_MQ"  => Ok(Self::RabbitMq),
             "MQTT"     => Ok(Self::Mqtt),
             "KAFKA"    => Ok(Self::Kafka),
             other => Err(DomainValidationError::InvalidFieldValue {
@@ -175,7 +175,7 @@ impl TryFrom<&str> for DataSourceType {
 impl From<DataSourceType> for String {
     fn from(t: DataSourceType) -> Self {
         match t {
-            DataSourceType::RabbitMq => "RABBITMQ".to_string(),
+            DataSourceType::RabbitMq => "RABBIT_MQ".to_string(),
             DataSourceType::Mqtt     => "MQTT".to_string(),
             DataSourceType::Kafka    => "KAFKA".to_string(),
         }
