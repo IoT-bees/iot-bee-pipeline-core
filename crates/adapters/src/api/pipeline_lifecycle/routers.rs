@@ -3,7 +3,7 @@ use crate::api::error::ErrorResponse;
 use crate::api::pipeline_lifecycle::models::PipelineStatusResponse;
 
 use actix_web::get;
-use actix_web::{HttpResponse, post, web};
+use actix_web::{HttpResponse, post, put, web};
 use application::pipeline_lifecycle_cases::cases::PipelineLifecycleCases;
 use domain::error::PipelineLifecycleError;
 
@@ -20,6 +20,7 @@ pub fn pipeline_lifecycle_scope(use_case: web::Data<UseCase>) -> actix_web::Scop
         .service(stop_pipeline)
         .service(get_pipeline_status)
         .service(get_all_pipeline_status)
+        .service(update_pipeline_replication_factor)
 }
 
 #[utoipa::path(
@@ -153,4 +154,39 @@ pub async fn get_all_pipeline_status(
         .collect::<Result<_, String>>()
         .map_err(|e| ApiError(PipelineLifecycleError::OperationFailed { reason: e }.into()))?;
     Ok(HttpResponse::Ok().json(response))
+}
+
+
+#[utoipa::path(
+    put,
+    path = "/pipeline-lifecycle/update-replication-factor/{pipeline_id}/{replication_factor}",
+    params(
+        ("pipeline_id" = u32, Path, description = "Numeric ID of the pipeline to update"),
+        ("replication_factor" = u32, Path, description = "New replication factor for the pipeline")
+    ),
+    responses(
+        (status = 200, description = "Pipeline replication factor updated successfully"),
+        (status = 400, description = "Invalid pipeline ID or replication factor", body = ErrorResponse),
+        (status = 404, description = "Pipeline not found", body = ErrorResponse)
+    ),
+    tag = "Pipeline Lifecycle"
+)]
+#[put("/update-replication-factor/{pipeline_id}/{replication_factor}")]
+pub async fn update_pipeline_replication_factor(
+    use_case: web::Data<UseCase>,
+    path : web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    LOGGER.debug("update_pipeline_replication_factor handler called");
+    let (pipeline_id, replication_factor) = path.into_inner();
+    LOGGER.info(&format!(
+        "el pipeline id recibido por el endpoint es {} y el replication factor es {}",
+        pipeline_id.clone(),
+        replication_factor.clone()
+    ));
+    use_case.update_pipeline_replication_factor(pipeline_id, replication_factor).await.map_err(|e| {
+        LOGGER.error(&format!("Failed to update pipeline replication factor: {e}"));
+        e
+    })?;
+    LOGGER.info("Pipeline replication factor updated successfully");
+    Ok(HttpResponse::Ok().finish())
 }

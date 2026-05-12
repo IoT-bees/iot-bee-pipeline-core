@@ -26,5 +26,9 @@ pub trait PipelineLifecycle {
         pipeline_id: &DataStoreId,
     ) -> Result<PipelineStatusReport, IoTBeeError>;
     async fn get_all_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError>;
-    // async fn get_status(&self) -> Result<Vec<(DataStoreId, PipelineStatus)>, IoTBeeError>;
+    async fn update_replication_factor(
+        &self,
+        pipeline_id: &DataStoreId,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError>;
 }

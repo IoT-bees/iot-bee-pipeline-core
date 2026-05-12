@@ -5,49 +5,19 @@ use super::pipeline_abstraction::PipelineAbstractionController;
 use domain::error::IoTBeeError;
 use domain::value_objects::lifecycle_values::PipelineStatusReport;
 // StartPipeline
-// Inicia todos el pipeline
+// Inicia una única réplica del pipeline.
 pub struct StartPipelineMessage;
 impl Message for StartPipelineMessage {
     type Result = Result<(), IoTBeeError>;
 }
 
-// ── AddReplica ────────────────────────────────────────────────────────────────
-// Añade una réplica al supervisor. Devuelve el número total de réplicas.
-
-pub struct AddReplicaMessage {
-    pub controller: PipelineAbstractionController,
-}
-
-impl AddReplicaMessage {
-    pub fn new(controller: PipelineAbstractionController) -> Self {
-        Self { controller }
-    }
-}
-
-impl Message for AddReplicaMessage {
-    type Result = Result<usize, IoTBeeError>;
-}
-
-// ── RemoveReplica ─────────────────────────────────────────────────────────────
-// Elimina la réplica con el id indicado. Error si no existe.
-
-pub struct RemoveReplicaMessage {
-    replica_id: u32,
-}
-
-impl RemoveReplicaMessage {
-    pub fn new(replica_id: u32) -> Self {
-        Self { replica_id }
-    }
-    pub fn replica_id(&self) -> u32 {
-        self.replica_id
-    }
-}
-
-impl Message for RemoveReplicaMessage {
+// StartAllPipelines
+// Inicia todas las réplicas del pipeline según el factor de replicación configurado.
+// Internamente envía StartPipelineMessage por cada réplica.
+pub struct StartAllPipelinesMessage;
+impl Message for StartAllPipelinesMessage {
     type Result = Result<(), IoTBeeError>;
 }
-
 // ── ReplicaCount ──────────────────────────────────────────────────────────────
 // Devuelve el número de réplicas activas.
 
@@ -57,8 +27,16 @@ impl Message for ReplicaCountMessage {
     type Result = Result<usize, IoTBeeError>;
 }
 
+// ── StopPipeline ─────────────────────────────────────────────────────────────
+// Detiene una única réplica del pipeline identificada por su id.
+pub struct StopPipelineMessage(pub u32);
+impl Message for StopPipelineMessage {
+    type Result = Result<(), IoTBeeError>;
+}
+
 // ── StopAllReplicas ───────────────────────────────────────────────────────────
-// Envía stop a todos los actores de todas las réplicas activas.
+// Detiene todos los actores de todas las réplicas activas.
+// Internamente envía StopPipelineMessage por cada réplica.
 
 pub struct StopAllReplicasMessage;
 
@@ -117,4 +95,24 @@ pub struct InternalReInsertReplicasMessage(pub Vec<(u32, Arc<PipelineAbstraction
 
 impl Message for InternalReInsertReplicasMessage {
     type Result = ();
+}
+
+// ── UpdateReplicationFactorMessage ───────────────────────────────────────────
+// Actualiza el factor de replicación del pipeline, creando o eliminando réplicas
+// según sea necesario. Se encarga de mantener el número correcto de réplicas activas
+// y de manejar los casos en que no se puedan crear o eliminar réplicas, devolviendo un error en esos casos.
+pub struct UpdateReplicationFactorMessage {
+    replication_factor: u32,
+}
+impl UpdateReplicationFactorMessage {
+    pub fn new(replication_factor: u32) -> Self {
+        Self { replication_factor }
+    }
+    pub fn replication_factor(&self) -> u32 {
+        self.replication_factor
+    }
+}
+
+impl Message for UpdateReplicationFactorMessage {
+    type Result = Result<(), IoTBeeError>;
 }

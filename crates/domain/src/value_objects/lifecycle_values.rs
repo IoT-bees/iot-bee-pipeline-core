@@ -48,18 +48,18 @@ impl PipelinepartsStatus {
         }
     }
     pub fn overall_status(&self) -> PipelineStatus {
-        match (self.processor, self.consumer, self.store) {
-            (
-                ActorOperationStatus::Healthy,
-                ActorOperationStatus::Healthy,
-                ActorOperationStatus::Healthy,
-            ) => PipelineStatus::Healthy,
-            (ActorOperationStatus::Idle, _, _)
-            | (_, ActorOperationStatus::Idle, _)
-            | (_, _, ActorOperationStatus::Idle) => PipelineStatus::Idle,
-            // (ActorOperationStatus::Failed, _, _) | (_, ActorOperationStatus::Failed, _) | (_, _, ActorOperationStatus::Failed) => PipelineStatus::Failed,
-            _ => PipelineStatus::Degraded,
+        let statuses = [self.processor, self.consumer, self.store];
+
+        // Si alguno está Degraded, el estado general es Degraded.
+        if statuses.iter().any(|s| *s == ActorOperationStatus::Degraded) {
+            return PipelineStatus::Degraded;
         }
+        // Si todos están Idle, el estado general es Idle.
+        if statuses.iter().all(|s| *s == ActorOperationStatus::Idle) {
+            return PipelineStatus::Idle;
+        }
+        // Cualquier combinación de Healthy + Idle (sin Degraded) es Healthy.
+        PipelineStatus::Healthy
     }
 }
 
@@ -98,27 +98,23 @@ impl PipelineStatusReport {
         &self.pipeline_name
     }
     pub fn overall_status(&self) -> PipelineStatus {
-        if self
-            .pipelines
-            .values()
-            .all(|p| p.overall_status() == PipelineStatus::Healthy)
-        {
-            PipelineStatus::Healthy
-        } else if self
-            .pipelines
-            .values()
-            .any(|p| p.overall_status() == PipelineStatus::Idle)
-        {
-            PipelineStatus::Idle
-        } else if self
-            .pipelines
-            .values()
-            .any(|p| p.overall_status() == PipelineStatus::Degraded)
-        {
-            PipelineStatus::Degraded
-        } else {
-            PipelineStatus::Degraded // Si no hay pipelines, consideramos el estado general como degradado (o podríamos definir otro estado para esto)
+        if self.pipelines.is_empty() {
+            return PipelineStatus::Idle;
         }
+
+        let replica_statuses: Vec<PipelineStatus> =
+            self.pipelines.values().map(|p| p.overall_status()).collect();
+
+        // Si alguna réplica está Degraded, el estado general es Degraded.
+        if replica_statuses.iter().any(|s| *s == PipelineStatus::Degraded) {
+            return PipelineStatus::Degraded;
+        }
+        // Si todas las réplicas están Idle, el estado general es Idle.
+        if replica_statuses.iter().all(|s| *s == PipelineStatus::Idle) {
+            return PipelineStatus::Idle;
+        }
+        // Cualquier combinación de Healthy + Idle (sin Degraded) es Healthy.
+        PipelineStatus::Healthy
     }
 
     pub fn overall_string_status(&self) -> String {

@@ -503,4 +503,37 @@ impl PipelineControllerRepository for PipelineDataRepository {
 
         Ok(())
     }
+
+    async fn update_pipeline_replication_factor(
+        &self,
+        pipeline_id: &DataStoreId,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            UPDATE pipelines
+            SET replicas = ?, updated_at = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(replication_factor)
+        .bind(Utc::now().to_rfc3339())
+        .bind(pipeline_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::Database {
+                reason: e.to_string(),
+            })
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(IoTBeeError::from(PipelinePersistenceError::UpdateFailed {
+                reason: format!("Pipeline id={} not found", pipeline_id.id()),
+            }));
+        }
+
+        Ok(())
+    }
 }

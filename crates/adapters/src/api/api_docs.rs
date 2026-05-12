@@ -78,11 +78,13 @@ use crate::api::validation_schemas::routers as validation_routers;
         pipeline_data_routers::update_pipeline_data_store,
         pipeline_data_routers::update_pipeline_validation_schema,
         pipeline_data_routers::update_pipeline_group,
+        pipeline_data_routers::update_pipeline_replication_factor,
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
         pipeline_lifecycle_routers::stop_pipeline,
         pipeline_lifecycle_routers::get_pipeline_status,
         pipeline_lifecycle_routers::get_all_pipeline_status,
+        pipeline_lifecycle_routers::update_pipeline_replication_factor,
 
     ),
     components(

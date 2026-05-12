@@ -1,11 +1,10 @@
 use actix::prelude::*;
 
 use super::messges::{
-    AddReplicaMessage, RemoveReplicaMessage, ReplicaCountMessage, RestartAllReplicasMessage,
-    StartPipelineMessage, StatusAllReplicasMessage, StatusAllReplicasMessageResult,
-    StopAllReplicasMessage,
+    ReplicaCountMessage, RestartAllReplicasMessage,
+    StartAllPipelinesMessage, StatusAllReplicasMessage, StatusAllReplicasMessageResult,
+    StopAllReplicasMessage, UpdateReplicationFactorMessage,
 };
-use super::pipeline_abstraction::PipelineAbstractionController;
 use super::pipeline_supervisor::PipelineSupervisor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
 
@@ -42,7 +41,7 @@ impl SupervisorPipelineBridge {
 
     pub async fn start_pipeline(&self) -> Result<(), IoTBeeError> {
         self.addr
-            .send(StartPipelineMessage)
+            .send(StartAllPipelinesMessage)
             .await
             .map_err(mailbox_err)?
     }
@@ -54,22 +53,6 @@ impl SupervisorPipelineBridge {
             .map_err(mailbox_err)?
     }
 
-    pub async fn add_replica(
-        &self,
-        controller: PipelineAbstractionController,
-    ) -> Result<usize, IoTBeeError> {
-        self.addr
-            .send(AddReplicaMessage::new(controller))
-            .await
-            .map_err(mailbox_err)?
-    }
-
-    pub async fn remove_replica(&self, replica_id: u32) -> Result<(), IoTBeeError> {
-        self.addr
-            .send(RemoveReplicaMessage::new(replica_id))
-            .await
-            .map_err(mailbox_err)?
-    }
 
     pub async fn replica_count(&self) -> Result<usize, IoTBeeError> {
         self.addr
@@ -88,6 +71,12 @@ impl SupervisorPipelineBridge {
     pub async fn status_all(&self) -> StatusAllReplicasMessageResult {
         self.addr
             .send(StatusAllReplicasMessage)
+            .await
+            .map_err(mailbox_err)?
+    }
+    pub async fn update_replication_factor(&self, replication_factor: u32) -> Result<(), IoTBeeError> {
+        self.addr
+            .send(UpdateReplicationFactorMessage::new(replication_factor))
             .await
             .map_err(mailbox_err)?
     }

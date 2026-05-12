@@ -34,7 +34,6 @@ static LOGGER: AppLogger = AppLogger::new(
 pub struct PipelineSupervisor {
     pipeline_id: u32,
     pub(super) replicas: HashMap<u32, Arc<PipelineAbstractionController>>,
-    pub(super) next_replica_id: u32,
     pipeline_configuration: PipelineConfiguration,
     data_source: DataSourceThreadSafe,
     data_processor: DataProcessorThreadSafe,
@@ -52,7 +51,6 @@ impl PipelineSupervisor {
         Self {
             pipeline_id,
             replicas: HashMap::new(),
-            next_replica_id: 1,
             pipeline_configuration,
             data_source,
             data_processor,
@@ -79,6 +77,20 @@ impl PipelineSupervisor {
 
     pub fn data_store(&self) -> DataExternalStoreThreadSafe {
         Arc::clone(&self.data_store)
+    }
+    pub fn replica_count(&self) -> u32 {
+        self.replicas.len() as u32
+    }
+
+    /// Devuelve el menor ID positivo que no esté en uso.
+    /// Garantiza que al insertar réplicas después de eliminaciones se rellenen
+    /// los huecos en orden, manteniendo la secuencia continua.
+    pub(super) fn next_available_id(&self) -> u32 {
+        let mut id: u32 = 1;
+        while self.replicas.contains_key(&id) {
+            id += 1;
+        }
+        id
     }
 }
 

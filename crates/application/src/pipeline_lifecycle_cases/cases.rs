@@ -22,6 +22,7 @@ pub trait PipelineLifecycleCases {
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError>;
     async fn get_all_pipeline_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError>;
+    async fn update_pipeline_replication_factor(&self, id: u32, replication_factor: u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -354,5 +355,12 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
             enriched.push(report.with_metadata(pid, name));
         }
         Ok(enriched)
+    }
+
+    async fn update_pipeline_replication_factor(&self, id: u32, replication_factor: u32) -> Result<(), IoTBeeError> {
+        let pipeline_id = DataStoreId::new(id)?;
+        self.pipeline_lifecycle
+            .update_replication_factor(&pipeline_id, &replication_factor)
+            .await
     }
 }

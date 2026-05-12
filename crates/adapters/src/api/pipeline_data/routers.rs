@@ -26,6 +26,7 @@ pub fn pipeline_data_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(update_pipeline_data_store)
         .service(update_pipeline_validation_schema)
         .service(update_pipeline_group)
+        .service(update_pipeline_replication_factor)
 }
 
 #[utoipa::path(
@@ -332,6 +333,43 @@ async fn update_pipeline_group(
         })?;
     LOGGER.info(&format!(
         "Group for pipeline id={pipeline_id} updated successfully"
+    ));
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(
+    put,
+    path = "/pipelines/replication_factor/{pipeline_id}/{replication_factor}",
+    params(
+        ("pipeline_id" = u32, Path, description = "ID del pipeline a actualizar"),
+        ("replication_factor" = u32, Path, description = "Nuevo factor de replicación para el pipeline")
+    ),
+    responses(
+        (status = 200, description = "Factor de replicación del pipeline actualizado exitosamente"),
+        (status = 400, description = "Datos inválidos", body = ErrorResponse),
+        (status = 404, description = "Pipeline no encontrado", body = ErrorResponse)
+    ),
+    tag = "Pipelines"
+)]
+#[put("/replication_factor/{pipeline_id}/{replication_factor}")]
+async fn update_pipeline_replication_factor(
+    use_case: web::Data<UseCase>,
+    path : web::Path<(u32, u32)>,
+) -> Result<HttpResponse, ApiError> {
+    let (pipeline_id, replication_factor) = path.into_inner();
+    LOGGER.debug(&format!(
+        "update_pipeline_replication_factor handler called for pipeline_id={pipeline_id}, replication_factor={replication_factor}"
+    ));
+    use_case.update_replication_factor(&pipeline_id, &replication_factor)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update replication factor for pipeline id={pipeline_id}: {e}"
+            ));
+            e
+        })?;
+    LOGGER.info(&format!(
+        "Replication factor for pipeline id={pipeline_id} updated successfully"
     ));
     Ok(HttpResponse::Ok().finish())
 }
