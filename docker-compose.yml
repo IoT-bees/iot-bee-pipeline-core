@@ -20,9 +20,10 @@ services:
     restart: unless-stopped
 
     # --- Seguridad ---
-    # El usuario iotbee ya está definido en el Dockerfile (USER iotbee),
-    # aquí lo forzamos explícitamente por nombre para evitar escalación.
-    user: "1001:1001"
+    # El usuario se gestiona en el entrypoint con gosu (patrón PostgreSQL/Redis):
+    # el proceso arranca como root, corrige permisos de /data, y luego
+    # cede la ejecución a iotbee. Así funciona con bind mounts y volúmenes sin
+    # requerir chown manual en el host.
 
     # Elimina todas las capacidades de Linux y solo añade las estrictamente necesarias.
     cap_drop:

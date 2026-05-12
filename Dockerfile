@@ -75,11 +75,13 @@ RUN set -e \
 FROM debian:bookworm-slim AS runtime
 
 # Runtime dependencies: SQLite shared library + TLS root certificates
+# gosu permite al entrypoint (root) ceder la ejecución al usuario no-root de forma segura
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libsqlite3-0 \
         libssl3 \
         ca-certificates \
+        gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user for least-privilege execution.
@@ -102,11 +104,11 @@ COPY --from=migrator /tmp/db/iot-bee.db /iot-bee.db.template
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# /data is the persistent data directory (mount a volume here in production)
-RUN mkdir -p /data && chown iotbee:iotbee /data
+# /data es el directorio persistente; el entrypoint (root) ajusta permisos en runtime
+# y luego cede la ejecución a iotbee, por lo que NO se usa USER aquí.
+RUN mkdir -p /data
 
 WORKDIR /app
-USER iotbee
 
 # Default environment — override at runtime via docker-compose or `docker run -e`
 ENV DATABASE_URL=sqlite:///data/pipeline.db \
