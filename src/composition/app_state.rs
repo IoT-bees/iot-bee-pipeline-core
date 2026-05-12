@@ -58,7 +58,11 @@ impl AppState {
 
     pub async fn build_db() -> Result<Arc<InternalDataBase>, Box<dyn std::error::Error>> {
         let config = Config::get();
-        Ok(Arc::new(InternalDataBase::new(&config.database_url).await?))
+        let db = Arc::new(InternalDataBase::new(&config.database_url).await?);
+        sqlx::migrate!("./migrations")
+            .run(db.pool())
+            .await?;
+        Ok(db)
     }
 
     pub fn connection_types_app_state(

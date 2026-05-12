@@ -1,7 +1,8 @@
 .PHONY: run fmt check \
         test test-unit \
         test-domain test-application test-infrastructure test-adapters \
-        test-integration
+        test-integration \
+        start-container
 
 # ── Configuración ──────────────────────────────────────────────────────────────
 RUST_LOG ?= info
@@ -42,6 +43,10 @@ test-integration:
 	cargo test -p adapters --test pipeline_integration
 	cargo test -p infrastructure --test influxdb_persistence
 	cargo test -p infrastructure --test data_store_repository
+
+# ── Docker ───────────────────────────────────────────────────────────────────
+start-container:
+	docker compose up -d
 
 # ── Todos los tests del workspace ─────────────────────────────────────────────
 test:

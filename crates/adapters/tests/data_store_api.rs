@@ -32,6 +32,18 @@ impl DataStoreUseCases for UseCaseVacio {
     ) -> Result<PipelineDataStoreOutputModel, IoTBeeError> {
         Err(PipelinePersistenceError::IdNotFound { id: *id }.into())
     }
+
+    async fn update_data_store_configuration(
+        &self,
+        _: &u32,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
+
+    async fn delete_data_store(&self, _: &u32) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
 }
 
 /// Simula una BD con un registro existente.
@@ -70,6 +82,18 @@ impl DataStoreUseCases for UseCaseConDatos {
         )
         .unwrap())
     }
+
+    async fn update_data_store_configuration(
+        &self,
+        _: &u32,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
+
+    async fn delete_data_store(&self, _: &u32) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
 }
 
 /// Simula un nombre duplicado al crear.
@@ -91,6 +115,18 @@ impl DataStoreUseCases for UseCaseNombreDuplicado {
         id: &u32,
     ) -> Result<PipelineDataStoreOutputModel, IoTBeeError> {
         Err(PipelinePersistenceError::IdNotFound { id: *id }.into())
+    }
+
+    async fn update_data_store_configuration(
+        &self,
+        _: &u32,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
+
+    async fn delete_data_store(&self, _: &u32) -> Result<(), IoTBeeError> {
+        Ok(())
     }
 }
 

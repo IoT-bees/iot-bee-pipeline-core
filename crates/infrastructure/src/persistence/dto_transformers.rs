@@ -14,31 +14,38 @@ use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::value_objects::data_source_values::PipelineDataSourceConfig;
 use domain::value_objects::data_store_values::PipelineDataStoreModel;
 
-use chrono::DateTime;
-
-use chrono::Utc;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use std::convert::TryFrom;
+
+/// Parsea fechas en formato RFC3339 (guardado por la app) o en formato
+/// "YYYY-MM-DD HH:MM:SS" (guardado por CURRENT_TIMESTAMP de SQLite en migraciones).
+fn parse_datetime(s: &str) -> Result<DateTime<Utc>, String> {
+    if let Ok(dt) = DateTime::parse_from_rfc3339(s) {
+        return Ok(dt.with_timezone(&Utc));
+    }
+    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .map(|ndt| ndt.and_utc())
+        .map_err(|e| format!("formato no reconocido '{}': {}", s, e))
+}
 
 impl TryFrom<ValidationSchemaRow> for PipelineNewValidateSchema {
     type Error = IoTBeeError;
 
     fn try_from(row: ValidationSchemaRow) -> Result<Self, Self::Error> {
-        let created_at = DateTime::parse_from_rfc3339(&row.created_at)
+        let created_at = parse_datetime(&row.created_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
-        let updated_at = DateTime::parse_from_rfc3339(&row.updated_at)
+        let updated_at = parse_datetime(&row.updated_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
         let result = PipelineNewValidateSchema::existing(
             row.json_name,
             row.json_schema,
-            created_at,
+            created_at,                    
             updated_at,
         )?;
 
@@ -50,17 +57,15 @@ impl TryFrom<ValidationSchemaRowWhitId> for PipelineValidationSchemaModel {
     type Error = IoTBeeError;
 
     fn try_from(row: ValidationSchemaRowWhitId) -> Result<Self, Self::Error> {
-        let created_at = DateTime::parse_from_rfc3339(&row.created_at)
+        let created_at = parse_datetime(&row.created_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
-        let updated_at = DateTime::parse_from_rfc3339(&row.updated_at)
+        let updated_at = parse_datetime(&row.updated_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
         Ok(PipelineValidationSchemaModel::new(
             row.id,
@@ -84,17 +89,15 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: DataSourceRow) -> Result<Self, Self::Error> {
-        let created_at = DateTime::parse_from_rfc3339(&row.created_at)
+        let created_at = parse_datetime(&row.created_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
-        let updated_at = DateTime::parse_from_rfc3339(&row.updated_at)
+        let updated_at = parse_datetime(&row.updated_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
         let config =
             serde_json::from_str::<PipelineDataSourceConfig>(&row.data_source_configuration)
@@ -117,17 +120,15 @@ impl TryFrom<PipelineGroupRow> for PipelineGroupOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: PipelineGroupRow) -> Result<Self, Self::Error> {
-        let created_at = DateTime::parse_from_rfc3339(&row.created_at)
+        let created_at = parse_datetime(&row.created_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
-        let updated_at = DateTime::parse_from_rfc3339(&row.updated_at)
+        let updated_at = parse_datetime(&row.updated_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
         Ok(PipelineGroupOutputModel::new(
             row.id,
@@ -143,17 +144,15 @@ impl TryFrom<DataStoreRow> for PipelineDataStoreOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: DataStoreRow) -> Result<Self, Self::Error> {
-        let created_at = DateTime::parse_from_rfc3339(&row.created_at)
+        let created_at = parse_datetime(&row.created_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
-        let updated_at = DateTime::parse_from_rfc3339(&row.updated_at)
+        let updated_at = parse_datetime(&row.updated_at)
             .map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
-            })?
-            .with_timezone(&Utc);
+            })?;
 
         let config =
             serde_json::from_str::<PipelineDataStoreModel>(&row.json_schema).map_err(|e| {

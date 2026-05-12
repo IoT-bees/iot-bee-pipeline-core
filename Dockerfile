@@ -40,6 +40,8 @@ RUN cargo build --release 2>/dev/null || true
 # Now copy the real source and rebuild only the changed crates
 COPY src ./src
 COPY crates ./crates
+# Las migraciones se embeben en el binario en tiempo de compilacion via sqlx::migrate!()
+COPY migrations ./migrations
 
 # Touch entry-points to tell cargo the sources changed
 RUN find src crates -name "*.rs" | xargs touch
@@ -47,30 +49,7 @@ RUN find src crates -name "*.rs" | xargs touch
 RUN cargo build --release --bin iot-bee
 
 # ==============================================================================
-# Stage 2 — Apply SQLite migrations to produce a ready-to-use database template
-# ==============================================================================
-FROM debian:bookworm-slim AS migrator
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends sqlite3 \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /migrations
-
-# Copy only the migration SQL files (root level, not the nested migrations/ dir)
-COPY migrations/*.sql ./
-
-# Run migrations in version-sorted order (001 → 0002 → ... → 0016)
-RUN set -e \
-    && mkdir -p /tmp/db \
-    && for f in $(ls *.sql | sort -V); do \
-           echo "Applying: $f"; \
-           sqlite3 /tmp/db/iot-bee.db < "$f"; \
-       done \
-    && echo "Migrations applied successfully."
-
-# ==============================================================================
-# Stage 3 — Minimal runtime image
+# Stage 2 — Minimal runtime image
 # ==============================================================================
 FROM debian:bookworm-slim AS runtime
 
@@ -94,9 +73,6 @@ RUN groupadd --gid 1001 iotbee \
 
 # Compiled binary
 COPY --from=builder /app/target/release/iot-bee /usr/local/bin/iot-bee
-
-# Migrated DB stored outside the data volume so the entrypoint can seed it
-COPY --from=migrator /tmp/db/iot-bee.db /iot-bee.db.template
 
 # Entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
