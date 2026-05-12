@@ -19,6 +19,7 @@ pub fn pipeline_lifecycle_scope(use_case: web::Data<UseCase>) -> actix_web::Scop
         .service(start_new_pipeline)
         .service(stop_pipeline)
         .service(get_pipeline_status)
+        .service(get_all_pipeline_status)
 }
 
 #[utoipa::path(
@@ -124,5 +125,32 @@ pub async fn get_pipeline_status(
     let response: PipelineStatusResponse = status.try_into().map_err(|e: String| {
         ApiError(PipelineLifecycleError::OperationFailed { reason: e }.into())
     })?;
+    Ok(HttpResponse::Ok().json(response))
+}
+
+#[utoipa::path(
+    get,
+    path = "/pipeline-lifecycle/status",
+    responses(
+        (status = 200, description = "All pipeline statuses retrieved successfully", body = [PipelineStatusResponse]),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    tag = "Pipeline Lifecycle"
+)]
+#[get("/status")]
+pub async fn get_all_pipeline_status(
+    use_case: web::Data<UseCase>,
+) -> Result<HttpResponse, ApiError> {
+    LOGGER.debug("get_all_pipeline_status handler called");
+    let statuses = use_case.get_all_pipeline_status().await.map_err(|e| {
+        LOGGER.error(&format!("Failed to get all pipeline statuses: {e}"));
+        e
+    })?;
+    LOGGER.info("All pipeline statuses retrieved successfully");
+    let response: Vec<PipelineStatusResponse> = statuses
+        .into_iter()
+        .map(|s| s.try_into())
+        .collect::<Result<_, String>>()
+        .map_err(|e| ApiError(PipelineLifecycleError::OperationFailed { reason: e }.into()))?;
     Ok(HttpResponse::Ok().json(response))
 }

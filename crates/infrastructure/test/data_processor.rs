@@ -9,6 +9,7 @@ use domain::ast::compiler::{Instruction, Program};
 use domain::ast::vm::{Vm, VmError};
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::outbound::data_processor_actions::DataProcessorActions;
+use serde_json::Value;
 // use domain::ast::processor::PipelineDataProcessorCore;
 use infrastructure::data_processor::data_process::PipelineDataProcessorCore;
 
@@ -18,8 +19,11 @@ fn vars(pairs: &[(&str, f64)]) -> HashMap<String, f64> {
     pairs.iter().map(|(k, v)| (k.to_string(), *v)).collect()
 }
 
-fn record(pairs: &[(&str, f64)]) -> HashMap<String, f64> {
-    vars(pairs)
+fn record(pairs: &[(&str, f64)]) -> HashMap<String, Value> {
+    pairs
+        .iter()
+        .map(|(k, v)| (k.to_string(), Value::from(*v)))
+        .collect()
 }
 
 /// Compila una expresión y la ejecuta en una VM nueva.
@@ -491,7 +495,7 @@ fn new_tipo_desconocido_en_campo_falla() {
 fn process_aplica_operacion_mul() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let out = p.process(&record(&[("temperatura", 20.0)])).unwrap();
-    assert_eq!(*out.get("temperatura").unwrap(), 40.0); // 20 * 2
+    assert_eq!(out.get("temperatura").unwrap().as_f64().unwrap(), 40.0); // 20 * 2
 }
 
 #[test]
@@ -499,18 +503,24 @@ fn process_operacion_anidada_celsius_a_fahrenheit() {
     // 0°C → 32°F  (0 * 1.8 + 32 = 32)
     let p = PipelineDataProcessorCore::new(SCHEMA_CELSIUS_A_FAHRENHEIT).unwrap();
     let out = p.process(&record(&[("temperatura", 0.0)])).unwrap();
-    assert!(approx(*out.get("temperatura").unwrap(), 32.0));
+    assert!(approx(
+        out.get("temperatura").unwrap().as_f64().unwrap(),
+        32.0
+    ));
 
     // 100°C → 212°F
     let out2 = p.process(&record(&[("temperatura", 100.0)])).unwrap();
-    assert!(approx(*out2.get("temperatura").unwrap(), 212.0));
+    assert!(approx(
+        out2.get("temperatura").unwrap().as_f64().unwrap(),
+        212.0
+    ));
 }
 
 #[test]
 fn process_passthrough_sin_operacion() {
     let p = PipelineDataProcessorCore::new(SCHEMA_PASSTHROUGH).unwrap();
     let out = p.process(&record(&[("humedad", 65.0)])).unwrap();
-    assert_eq!(*out.get("humedad").unwrap(), 65.0);
+    assert_eq!(out.get("humedad").unwrap().as_f64().unwrap(), 65.0);
 }
 
 #[test]
@@ -523,14 +533,14 @@ fn process_campo_requerido_ausente_es_error() {
 fn process_campo_opcional_ausente_usa_default() {
     let p = PipelineDataProcessorCore::new(SCHEMA_DEFAULT).unwrap();
     let out = p.process(&record(&[])).unwrap();
-    assert_eq!(*out.get("presion").unwrap(), 1013.25);
+    assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 1013.25);
 }
 
 #[test]
 fn process_campo_opcional_presente_usa_valor_dado() {
     let p = PipelineDataProcessorCore::new(SCHEMA_DEFAULT).unwrap();
     let out = p.process(&record(&[("presion", 900.0)])).unwrap();
-    assert_eq!(*out.get("presion").unwrap(), 900.0);
+    assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 900.0);
 }
 
 #[test]
@@ -587,31 +597,37 @@ fn process_multiples_campos_procesados_independientemente() {
     }"#;
     let p = PipelineDataProcessorCore::new(schema).unwrap();
     let out = p.process(&record(&[("a", 5.0), ("b", 3.0)])).unwrap();
-    assert_eq!(*out.get("a").unwrap(), 15.0);
-    assert_eq!(*out.get("b").unwrap(), 3.0);
+    assert_eq!(out.get("a").unwrap().as_f64().unwrap(), 15.0);
+    assert_eq!(out.get("b").unwrap().as_f64().unwrap(), 3.0);
 }
 
 #[test]
 fn process_reutilizable_multiples_llamadas() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     assert_eq!(
-        *p.process(&record(&[("temperatura", 0.0)]))
+        p.process(&record(&[("temperatura", 0.0)]))
             .unwrap()
             .get("temperatura")
+            .unwrap()
+            .as_f64()
             .unwrap(),
         0.0
     );
     assert_eq!(
-        *p.process(&record(&[("temperatura", 10.0)]))
+        p.process(&record(&[("temperatura", 10.0)]))
             .unwrap()
             .get("temperatura")
+            .unwrap()
+            .as_f64()
             .unwrap(),
         20.0
     );
     assert_eq!(
-        *p.process(&record(&[("temperatura", 25.0)]))
+        p.process(&record(&[("temperatura", 25.0)]))
             .unwrap()
             .get("temperatura")
+            .unwrap()
+            .as_f64()
             .unwrap(),
         50.0
     );
@@ -833,9 +849,12 @@ fn process_multivariable_cada_campo_se_procesa_independientemente() {
         ]))
         .unwrap();
 
-    assert!(approx(*out.get("temperatura").unwrap(), 32.0));
-    assert_eq!(*out.get("humedad").unwrap(), 130.0);
-    assert_eq!(*out.get("presion").unwrap(), 950.0);
+    assert!(approx(
+        out.get("temperatura").unwrap().as_f64().unwrap(),
+        32.0
+    ));
+    assert_eq!(out.get("humedad").unwrap().as_f64().unwrap(), 130.0);
+    assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 950.0);
 }
 
 #[test]
@@ -846,7 +865,7 @@ fn process_multivariable_campo_opcional_ausente_usa_default() {
         .process(&record(&[("temperatura", 20.0), ("humedad", 50.0)]))
         .unwrap();
 
-    assert_eq!(*out.get("presion").unwrap(), 1013.25);
+    assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 1013.25);
 }
 
 #[test]

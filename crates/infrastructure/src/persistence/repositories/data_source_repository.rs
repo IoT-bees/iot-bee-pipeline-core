@@ -2,12 +2,11 @@
 use domain::entities::data_source::{
     PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
 };
-use domain::error::IoTBeeError;
+use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::outbound::pipeline_persistence::PipelineDataSourceRepository;
 //crate imports
 use crate::persistence::connection::InternalDataBase;
 use crate::persistence::models::DataSourceRow;
-use domain::error::PipelinePersistenceError;
 use domain::value_objects::pipelines_values::{DataStoreId, FieldName};
 
 use async_trait::async_trait;
@@ -46,8 +45,12 @@ impl PipelineDataSourceRepository for DataSourceRepository {
                 "#,
             )
             .bind(data_source.name())
-            .bind(data_source.source_type())
-            .bind(data_source.data_source_configuration())
+            .bind(data_source.source_type_string())
+            .bind(serde_json::to_string(data_source.data_source_configuration()).map_err(|e| {
+                IoTBeeError::from(PipelinePersistenceError::SaveFailed {
+                    reason: format!("Failed to serialize data source configuration: {}", e),
+                })
+            })?)
             .bind(data_source.description())
             .bind(Utc::now().to_rfc3339())
             .bind(Utc::now().to_rfc3339())

@@ -142,6 +142,7 @@ impl ResponseError for ApiError {
             }
             IoTBeeError::DataSourceError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DomainValidationError(_) => StatusCode::BAD_REQUEST,
+            IoTBeeError::DataExternalStoreError(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -167,6 +168,10 @@ impl ResponseError for ApiError {
             IoTBeeError::DomainValidationError(e) => HttpResponse::build(StatusCode::BAD_REQUEST)
                 .json(ErrorResponse {
                     error: format!("Data validation error: {}", e),
+                }),
+            IoTBeeError::DataExternalStoreError(e) => HttpResponse::build(StatusCode::BAD_REQUEST)
+                .json(ErrorResponse {
+                    error: format!("External store error: {}", e),
                 }),
         }
     }

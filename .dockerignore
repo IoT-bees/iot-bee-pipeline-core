@@ -1,0 +1,29 @@
+# Exclude build artifacts (largest directories — keeps the build context small)
+target/
+
+# SQLite database files (state shouldn't bleed into the image)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Git metadata
+.git/
+.gitignore
+
+# Docs (not needed at runtime)
+docs/
+*.md
+
+# IDE / editor configs
+.vscode/
+.idea/
+*.code-workspace
+
+# Environment files (secrets must never end up in images)
+.env
+.env.*
+
+# OS junk
+.DS_Store
+Thumbs.db

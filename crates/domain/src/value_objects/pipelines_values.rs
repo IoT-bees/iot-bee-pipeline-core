@@ -128,15 +128,3 @@ impl ReplicationFactor {
         self.0
     }
 }
-#[derive(Debug)]
-pub struct PipelineDataStoreModel(String);
-impl PipelineDataStoreModel {
-    pub fn new(data_store: impl Into<String>) -> Result<Self, IoTBeeError> {
-        //validar aca las caracteristicas que debe tener el data store, por ejemplo que sea un json valido, o que tenga ciertas propiedades, etc.
-        // devolver el error de validacion de datos.
-        Ok(Self(data_store.into()))
-    }
-    pub fn value(&self) -> &str {
-        &self.0
-    }
-}

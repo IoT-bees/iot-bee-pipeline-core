@@ -7,6 +7,7 @@ use chrono::Utc;
 use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
 use domain::error::{IoTBeeError, PipelinePersistenceError};
 use domain::outbound::pipeline_persistence::PipelineDataStoreRepository;
+use domain::value_objects::data_store_values::{LocalLogConfig, PipelineDataStoreModel};
 use domain::value_objects::pipelines_values::DataStoreId;
 use std::sync::Arc;
 
@@ -53,12 +54,11 @@ impl PipelineDataStoreRepository for FakeRepoConDatos {
     async fn get_pipeline_data_store(
         &self,
     ) -> Result<Vec<PipelineDataStoreOutputModel>, IoTBeeError> {
+        let config = PipelineDataStoreModel::LocalLog(LocalLogConfig::new("test-log").unwrap());
         let modelo = PipelineDataStoreOutputModel::new(
             1,
             "store-ejemplo",
-            1,
-            "INFLUXDB",
-            r#"{"host":"localhost","port":5432}"#,
+            config,
             "Store de ejemplo para tests",
             Utc::now(),
             Utc::now(),
@@ -71,12 +71,11 @@ impl PipelineDataStoreRepository for FakeRepoConDatos {
         &self,
         _: &DataStoreId,
     ) -> Result<Option<PipelineDataStoreOutputModel>, IoTBeeError> {
+        let config = PipelineDataStoreModel::LocalLog(LocalLogConfig::new("test-log").unwrap());
         let modelo = PipelineDataStoreOutputModel::new(
             1,
             "store-ejemplo",
-            1,
-            "INFLUXDB",
-            r#"{"host":"localhost","port":5432}"#,
+            config,
             "Store de ejemplo para tests",
             Utc::now(),
             Utc::now(),
@@ -126,14 +125,8 @@ impl PipelineDataStoreRepository for FakeRepoFallido {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 fn input_valido() -> PipelineDataStoreInputModel {
-    PipelineDataStoreInputModel::new(
-        "mi-store",
-        1,
-        // "INFLUXDB",
-        r#"{"host":"localhost"}"#,
-        "Descripción del store de prueba",
-    )
-    .unwrap()
+    let config = PipelineDataStoreModel::LocalLog(LocalLogConfig::new("test-log").unwrap());
+    PipelineDataStoreInputModel::new("mi-store", config, "Descripción del store de prueba").unwrap()
 }
 
 // ─── Tests: get_data_store_by_id ─────────────────────────────────────────────

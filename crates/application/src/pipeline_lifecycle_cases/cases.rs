@@ -21,6 +21,7 @@ pub trait PipelineLifecycleCases {
     async fn start_new_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError>;
+    async fn get_all_pipeline_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -325,6 +326,33 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
 
     async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError> {
         let pipeline_id = DataStoreId::new(id)?;
-        self.pipeline_lifecycle.get_status_by_id(&pipeline_id).await
+        let report = self
+            .pipeline_lifecycle
+            .get_status_by_id(&pipeline_id)
+            .await?;
+        let pipeline = self
+            .pipeline_controller
+            .get_pipeline_by_id(&pipeline_id)
+            .await?
+            .ok_or_else(|| PipelineLifecycleError::NotFound {
+                pipeline_id: id.to_string(),
+            })?;
+        Ok(report.with_metadata(id, pipeline.name()))
+    }
+    async fn get_all_pipeline_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError> {
+        let reports = self.pipeline_lifecycle.get_all_status().await?;
+        let mut enriched = Vec::with_capacity(reports.len());
+        for report in reports {
+            let pid = report.pipeline_id();
+            let pipeline = self
+                .pipeline_controller
+                .get_pipeline_by_id(&DataStoreId::new(pid)?)
+                .await
+                .ok()
+                .flatten();
+            let name = pipeline.map(|p| p.name().to_string()).unwrap_or_default();
+            enriched.push(report.with_metadata(pid, name));
+        }
+        Ok(enriched)
     }
 }

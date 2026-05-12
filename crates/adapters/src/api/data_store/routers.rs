@@ -6,7 +6,7 @@ use application::data_store_cases::cases::DataStoreUseCases;
 use domain::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
 use logging::AppLogger;
 
-use actix_web::{HttpResponse, get, post, web};
+use actix_web::{HttpResponse, delete, get, post, put, web};
 
 type UseCase = dyn DataStoreUseCases + Send + Sync;
 
@@ -18,6 +18,8 @@ pub fn data_store_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_data_store)
         .service(get_data_store)
         .service(list_data_stores)
+        .service(update_configuration)
+        .service(delete_data_store)
 }
 
 #[utoipa::path(
@@ -81,4 +83,54 @@ pub async fn list_data_stores(use_case: web::Data<UseCase>) -> Result<HttpRespon
         .collect::<Result<Vec<DataStoreResponse>, domain::error::IoTBeeError>>()?;
 
     Ok(HttpResponse::Ok().json(response))
+}
+
+#[utoipa::path(
+    put,
+    path = "/data-stores/{id}",
+    params(
+        ("id" = u32, Path, description = "Data store ID")
+    ),
+    request_body = CreateDataStoreRequest,
+    responses(
+        (status = 200, description = "Data store configuration updated successfully"),
+        (status = 400, description = "Invalid data", body = ErrorResponse),
+        (status = 404, description = "Data store not found", body = ErrorResponse)
+    ),
+    tag = "Data Stores"
+)]
+#[put("/{id}")]
+pub async fn update_configuration(
+    use_case: web::Data<UseCase>,
+    id: web::Path<DataStoreId>,
+    body: web::Json<CreateDataStoreRequest>,
+) -> Result<HttpResponse, ApiError> {
+    let data_id: u32 = id.into_inner();
+    let data_store_input = PipelineDataStoreInputModel::try_from(body.into_inner())?;
+    use_case
+        .update_data_store_configuration(&data_id, &data_store_input)
+        .await?;
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[utoipa::path(
+    delete,
+    path = "/data-stores/{id}",
+    params(
+        ("id" = u32, Path, description = "Data store ID")
+    ),
+    responses(
+        (status = 204, description = "Data store deleted successfully"),
+        (status = 404, description = "Data store not found", body = ErrorResponse)
+    ),
+    tag = "Data Stores"
+)]
+#[delete("/{id}")]
+pub async fn delete_data_store(
+    use_case: web::Data<UseCase>,
+    id: web::Path<DataStoreId>,
+) -> Result<HttpResponse, ApiError> {
+    let data_id: u32 = id.into_inner();
+    use_case.delete_data_store(&data_id).await?;
+    Ok(HttpResponse::NoContent().finish())
 }

@@ -1,25 +1,26 @@
 use crate::error::{IoTBeeError, PipelinePersistenceError};
+use crate::value_objects::data_source_values::{DataSourceType, PipelineDataSourceConfig};
 use crate::value_objects::pipelines_values::{DataStoreId, DescriptionField, FieldName};
+
 use chrono::{DateTime, Utc};
+
 /// Modelo de entrada para registrar un nuevo data source.
 pub struct PipelineDataSourceInputModel {
     name: FieldName,
-    data_source_configuration: String,
+    data_source_configuration: PipelineDataSourceConfig,
     data_source_description: DescriptionField,
-    source_type: String,
 }
+
 impl PipelineDataSourceInputModel {
     pub fn new(
         name: impl Into<String>,
-        data_source_configuration: impl Into<String>,
-        source_type: impl Into<String>,
+        data_source_configuration: PipelineDataSourceConfig,
         data_source_description: impl Into<String>,
     ) -> Result<Self, IoTBeeError> {
         Ok(Self {
             name: FieldName::new(name)?,
-            data_source_configuration: data_source_configuration.into(),
+            data_source_configuration,
             data_source_description: DescriptionField::new(data_source_description)?,
-            source_type: source_type.into(),
         })
     }
 
@@ -29,11 +30,14 @@ impl PipelineDataSourceInputModel {
     pub fn description(&self) -> &str {
         self.data_source_description.description()
     }
-    pub fn data_source_configuration(&self) -> &str {
+    pub fn data_source_configuration(&self) -> &PipelineDataSourceConfig {
         &self.data_source_configuration
     }
-    pub fn source_type(&self) -> &str {
-        &self.source_type
+    pub fn source_type(&self) -> DataSourceType {
+        self.data_source_configuration.source_type()
+    }
+    pub fn source_type_string(&self) -> String {
+        self.data_source_configuration.source_type().into()
     }
 }
 
@@ -41,9 +45,8 @@ impl PipelineDataSourceInputModel {
 pub struct PipelineDataSourceOutputModel {
     id: DataStoreId,
     name: FieldName,
-    data_source_configuration: String,
+    data_source_configuration: PipelineDataSourceConfig,
     data_source_description: DescriptionField,
-    source_type: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -52,8 +55,7 @@ impl PipelineDataSourceOutputModel {
     pub fn new(
         id: u32,
         name: impl Into<String>,
-        data_source_configuration: impl Into<String>,
-        source_type: impl Into<String>,
+        data_source_configuration: PipelineDataSourceConfig,
         data_source_description: impl Into<String>,
         created_at: DateTime<Utc>,
         updated_at: DateTime<Utc>,
@@ -61,9 +63,8 @@ impl PipelineDataSourceOutputModel {
         Ok(Self {
             id: DataStoreId::new(id)?,
             name: FieldName::new(name)?,
-            data_source_configuration: data_source_configuration.into(),
+            data_source_configuration,
             data_source_description: DescriptionField::new(data_source_description)?,
-            source_type: source_type.into(),
             created_at,
             updated_at,
         })
@@ -78,11 +79,11 @@ impl PipelineDataSourceOutputModel {
     pub fn description(&self) -> &str {
         self.data_source_description.description()
     }
-    pub fn data_source_configuration(&self) -> &str {
+    pub fn data_source_configuration(&self) -> &PipelineDataSourceConfig {
         &self.data_source_configuration
     }
-    pub fn source_type(&self) -> &str {
-        &self.source_type
+    pub fn source_type(&self) -> DataSourceType {
+        self.data_source_configuration.source_type()
     }
     pub fn created_at(&self) -> DateTime<Utc> {
         self.created_at

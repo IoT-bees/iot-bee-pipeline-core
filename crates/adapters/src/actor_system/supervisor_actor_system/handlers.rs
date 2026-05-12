@@ -9,6 +9,7 @@ use super::messages::{
     CreatePipelineMessage,
     DeletePipelineMessage,
     StatusPipelineMessage,
+    StatusPipelineMessageAll,
     // ListPipelinesMessage, RestartPipelineMessage,
     // StatusPipelineMessage, StopPipelineMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
@@ -16,7 +17,9 @@ use super::messages::{
 use super::system_supervisor::SystemActorSupervisor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
 use domain::value_objects::lifecycle_values::PipelineStatusReport;
-
+use logging::AppLogger;
+static LOGGER: AppLogger =
+    AppLogger::new("iot_bee::adapters::actor_system::supervisor_actor_system::handlers");
 // fn not_found(pipeline_id: u32) -> IoTBeeError {
 //     PipelineLifecycleError::NotFound {
 //         pipeline_id: pipeline_id.to_string(),
@@ -123,9 +126,43 @@ impl Handler<StatusPipelineMessage> for SystemActorSupervisor {
         };
 
         Box::pin(
-            async move { bridge.status_all().await }
-                .into_actor(self)
-                .map(move |result: Result<PipelineStatusReport, IoTBeeError>, _actor, _ctx| result),
+            async move {
+                bridge
+                    .status_all()
+                    .await
+                    .map(|r| r.with_pipeline_id(pipeline_id))
+            }
+            .into_actor(self)
+            .map(move |result: Result<PipelineStatusReport, IoTBeeError>, _actor, _ctx| result),
+        )
+    }
+}
+
+impl Handler<StatusPipelineMessageAll> for SystemActorSupervisor {
+    type Result = ResponseActFuture<Self, Result<Vec<PipelineStatusReport>, IoTBeeError>>;
+
+    fn handle(&mut self, _msg: StatusPipelineMessageAll, _ctx: &mut Context<Self>) -> Self::Result {
+        let pipelines_bridge = self.get_all_bridges();
+
+        Box::pin(
+            async move {
+                let mut reports = Vec::new();
+                for (pipeline_id, bridge) in pipelines_bridge {
+                    let status = bridge.status_all().await;
+                    match status {
+                        Ok(s) => reports.push(s.with_pipeline_id(pipeline_id)),
+                        Err(e) => {
+                            LOGGER.error(&format!("Error obteniendo status de pipeline -> {e}"));
+                            continue;
+                        }
+                    };
+                }
+                Ok(reports)
+            }
+            .into_actor(self)
+            .map(
+                move |result: Result<Vec<PipelineStatusReport>, IoTBeeError>, _actor, _ctx| result,
+            ),
         )
     }
 }

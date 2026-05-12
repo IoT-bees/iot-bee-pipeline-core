@@ -131,6 +131,15 @@ pub trait PipelineDataStoreRepository {
         &self,
         data_store_id: &DataStoreId,
     ) -> Result<Option<PipelineDataStoreOutputModel>, IoTBeeError>;
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        data_store_id: &DataStoreId,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_data_store(
+        &self,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
 }
 
 #[async_trait]

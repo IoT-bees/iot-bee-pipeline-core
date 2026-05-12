@@ -161,6 +161,16 @@ impl Message for StatusPipelineMessage {
     type Result = Result<PipelineStatusReport, IoTBeeError>;
 }
 
+pub struct StatusPipelineMessageAll;
+impl StatusPipelineMessageAll {
+    pub fn new() -> Self {
+        Self
+    }
+}
+impl Message for StatusPipelineMessageAll {
+    type Result = Result<Vec<PipelineStatusReport>, IoTBeeError>;
+}
+
 // StartAllPipelinesInLocalStorageMessage
 
 pub struct StartAllPipelinesInLocalStorageMessage;

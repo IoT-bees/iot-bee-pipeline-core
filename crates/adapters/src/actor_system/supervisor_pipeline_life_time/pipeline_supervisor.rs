@@ -62,6 +62,9 @@ impl PipelineSupervisor {
     pub fn pipeline_id(&self) -> u32 {
         self.pipeline_id
     }
+    pub fn pipeline_name(&self) -> &str {
+        self.pipeline_configuration.pipeline_name()
+    }
     pub fn pipeline_configuration(&self) -> &PipelineConfiguration {
         &self.pipeline_configuration
     }

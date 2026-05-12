@@ -39,8 +39,17 @@ impl ApiComposer {
         let pipeline_data = app_state.pipeline_data_app_state();
         let pipeline_lifecycle = app_state.pipeline_lifecycle_app_state();
 
-        LOGGER.info("IoT Bee starting on http://127.0.0.1:8080");
-        LOGGER.info("Swagger UI at http://127.0.0.1:8080/swagger-ui/");
+        let port = app_state.config.api_port.unwrap_or(8080);
+        let host = app_state
+            .config
+            .api_host
+            .clone()
+            .unwrap_or_else(|| "127.0.0.1".to_string());
+        LOGGER.info(&format!("IoT Bee starting on http://{}:{}", host, port));
+        LOGGER.info(&format!(
+            "Swagger UI at http://{}:{}/swagger-ui/",
+            host, port
+        ));
 
         HttpServer::new(move || {
             App::new()
@@ -56,7 +65,7 @@ impl ApiComposer {
                 .service(pipeline_data_scope(pipeline_data.clone()))
                 .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone()))
         })
-        .bind("127.0.0.1:8080")?
+        .bind(format!("{}:{}", host, port))?
         .run()
         .await
     }

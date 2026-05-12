@@ -20,6 +20,12 @@ pub trait DataStoreUseCases {
         &self,
         data_store_id: &u32,
     ) -> Result<PipelineDataStoreOutputModel, IoTBeeError>;
+    async fn update_data_store_configuration(
+        &self,
+        data_store_id: &u32,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_data_store(&self, data_store_id: &u32) -> Result<(), IoTBeeError>;
 }
 
 pub struct DataStoreUseCasesImpl<T: PipelineDataStoreRepository + Send + Sync> {
@@ -65,5 +71,45 @@ where
             }
             .into())
         }
+    }
+    async fn update_data_store_configuration(
+        &self,
+        data_store_id: &u32,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        let data_store_id = DataStoreId::new(*data_store_id)?;
+        let existing_data_store = self
+            .repository
+            .get_pipeline_data_store_by_id(&data_store_id)
+            .await?;
+
+        if existing_data_store.is_none() {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        self.repository
+            .update_pipeline_data_store_configuration(&data_store_id, new_config)
+            .await
+    }
+    async fn delete_data_store(&self, data_store_id: &u32) -> Result<(), IoTBeeError> {
+        let data_store_id = DataStoreId::new(*data_store_id)?;
+        let existing_data_store = self
+            .repository
+            .get_pipeline_data_store_by_id(&data_store_id)
+            .await?;
+
+        if existing_data_store.is_none() {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        self.repository
+            .delete_pipeline_data_store(&data_store_id)
+            .await
     }
 }

@@ -8,6 +8,7 @@ use super::messages::{
     CreatePipelineMessage,
     DeletePipelineMessage,
     StatusPipelineMessage,
+    StatusPipelineMessageAll,
     // ListPipelinesMessage,
     //SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
@@ -90,6 +91,13 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
     ) -> Result<PipelineStatusReport, IoTBeeError> {
         self.supervisor_addr
             .send(StatusPipelineMessage::new(pipeline_id.id()))
+            .await
+            .map_err(mailbox_err)?
+    }
+
+    async fn get_all_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError> {
+        self.supervisor_addr
+            .send(StatusPipelineMessageAll::new())
             .await
             .map_err(mailbox_err)?
     }

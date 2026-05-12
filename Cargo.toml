@@ -74,3 +74,9 @@ actix-rt       = { workspace = true }
 async-trait     = { workspace = true }
 actix           = { workspace = true }
 
+[dev-dependencies]
+serde_json  = { workspace = true }
+chrono      = { workspace = true }
+dotenvy     = { workspace = true }
+tokio       = { workspace = true }
+

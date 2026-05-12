@@ -36,13 +36,17 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         let pool = self.data_base_connection().pool();
         sqlx::query(
             r#"
-            INSERT INTO databases (name, type, json_schema, description, created_at, updated_at)
+            INSERT INTO databases (name, store_type, json_schema, description, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(data_store.name())
-        .bind(data_store.type_id())
-        .bind(data_store.configuration())
+        .bind(data_store.store_type_string())
+        .bind(serde_json::to_string(data_store.configuration()).map_err(|e| {
+            IoTBeeError::from(PipelinePersistenceError::InvalidData {
+                reason: format!("Failed to serialize configuration: {}", e),
+            })
+        })?)
         .bind(data_store.data_store_description())
         .bind(Utc::now().to_rfc3339())
         .bind(Utc::now().to_rfc3339())
@@ -74,7 +78,7 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         LOGGER.info("Fetching data stores from database...");
         let rows_result = sqlx::query_as::<_, DataStoreRow>(
             r#"
-            SELECT id, name, type, json_schema, description, created_at, updated_at
+            SELECT id, name, store_type, json_schema, description, created_at, updated_at
             FROM databases
             "#,
         )
@@ -106,7 +110,7 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         let pool = self.data_base_connection().pool();
         let row = sqlx::query_as::<_, DataStoreRow>(
             r#"
-            SELECT id, name, type, json_schema, description, created_at, updated_at
+            SELECT id, name, store_type, json_schema, description, created_at, updated_at
             FROM databases
             WHERE id = ?
             "#,
@@ -126,5 +130,78 @@ impl PipelineDataStoreRepository for DataStoreRepository {
         } else {
             Ok(None)
         }
+    }
+
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        data_store_id: &DataStoreId,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            UPDATE databases
+            SET store_type = ?, json_schema = ?, updated_at = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(new_config.store_type_string())
+        .bind(
+            serde_json::to_string(new_config.configuration()).map_err(|e| {
+                IoTBeeError::from(PipelinePersistenceError::InvalidData {
+                    reason: format!("Failed to serialize configuration: {}", e),
+                })
+            })?,
+        )
+        .bind(Utc::now().to_rfc3339())
+        .bind(data_store_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| match e {
+            SqlxError::Database(db_error) if db_error.is_foreign_key_violation() => {
+                PipelinePersistenceError::InvalidData {
+                    reason: db_error.to_string(),
+                }
+            }
+            _ => PipelinePersistenceError::UpdateFailed {
+                reason: e.to_string(),
+            },
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        Ok(())
+    }
+    async fn delete_pipeline_data_store(
+        &self,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            DELETE FROM databases
+            WHERE id = ?
+            "#,
+        )
+        .bind(data_store_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::DeleteFailed {
+            reason: e.to_string(),
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        Ok(())
     }
 }

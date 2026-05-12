@@ -3,7 +3,8 @@ use chrono::{DateTime, Utc};
 use domain::entities::data_source::{
     PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
 };
-use domain::error::{DomainValidationError, IoTBeeError};
+use domain::error::IoTBeeError;
+use domain::value_objects::data_source_values::PipelineDataSourceConfig;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
@@ -27,22 +28,8 @@ impl TryFrom<CreateDataSourceRequest> for PipelineDataSourceInputModel {
     type Error = IoTBeeError;
 
     fn try_from(request: CreateDataSourceRequest) -> Result<Self, Self::Error> {
-        let source_type = request
-            .data_source_configuration
-            .source_type_name()
-            .to_string();
-        let config_json =
-            serde_json::to_string(&request.data_source_configuration).map_err(|e| {
-                DomainValidationError::DataFormatError {
-                    reason: format!("Failed to serialize data source configuration: {}", e),
-                }
-            })?;
-        Ok(PipelineDataSourceInputModel::new(
-            request.name,
-            config_json,
-            source_type,
-            request.data_source_description,
-        )?)
+        let config = PipelineDataSourceConfig::try_from(request.data_source_configuration)?;
+        PipelineDataSourceInputModel::new(request.name, config, request.data_source_description)
     }
 }
 
@@ -68,11 +55,17 @@ impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
     type Error = IoTBeeError;
 
     fn try_from(output_model: PipelineDataSourceOutputModel) -> Result<Self, Self::Error> {
+        let config_json =
+            serde_json::to_string(output_model.data_source_configuration()).map_err(|e| {
+                domain::error::DomainValidationError::DataFormatError {
+                    reason: format!("Failed to serialize data source configuration: {}", e),
+                }
+            })?;
         Ok(DataSourceResponse {
             id: output_model.id(),
             name: output_model.name().to_string(),
-            data_source_configuration: output_model.data_source_configuration().to_string(),
-            source_type: output_model.source_type().to_string(),
+            data_source_configuration: config_json,
+            source_type: String::from(output_model.source_type()),
             data_source_description: output_model.description().to_string(),
             created_at: output_model.created_at(),
             updated_at: output_model.updated_at(),
@@ -95,10 +88,11 @@ impl TryFrom<UpdateDataSourceRequest> for PipelineDataSourceUpdateModel {
 
     fn try_from(request: UpdateDataSourceRequest) -> Result<Self, Self::Error> {
         let (config_json, source_type) = match request.data_source_configuration {
-            Some(config) => {
-                let source_type = config.source_type_name().to_string();
+            Some(dto) => {
+                let config = PipelineDataSourceConfig::try_from(dto)?;
+                let source_type: String = config.source_type().into();
                 let json = serde_json::to_string(&config).map_err(|e| {
-                    DomainValidationError::DataFormatError {
+                    domain::error::DomainValidationError::DataFormatError {
                         reason: format!("Failed to serialize data source configuration: {}", e),
                     }
                 })?;

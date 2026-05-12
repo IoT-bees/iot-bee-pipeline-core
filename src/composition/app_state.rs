@@ -44,11 +44,16 @@ use crate::config::Config;
 
 pub struct AppState {
     internal_data_base: Arc<InternalDataBase>,
+    pub config: &'static Config,
 }
 
 impl AppState {
     pub fn new(internal_data_base: Arc<InternalDataBase>) -> Self {
-        Self { internal_data_base }
+        let config = Config::get();
+        Self {
+            internal_data_base,
+            config,
+        }
     }
 
     pub async fn build_db() -> Result<Arc<InternalDataBase>, Box<dyn std::error::Error>> {

@@ -39,6 +39,12 @@ impl SystemActorSupervisor {
     pub(super) fn get_bridge(&self, pipeline_id: u32) -> Option<SupervisorPipelineBridge> {
         self.supervisors.get(&pipeline_id).cloned()
     }
+    pub(super) fn get_all_bridges(&self) -> Vec<(u32, SupervisorPipelineBridge)> {
+        self.supervisors
+            .iter()
+            .map(|(id, b)| (*id, b.clone()))
+            .collect()
+    }
 
     /// Registra un bridge nuevo para el pipeline dado.
     pub(super) fn insert_pipeline(&mut self, pipeline_id: u32, bridge: SupervisorPipelineBridge) {

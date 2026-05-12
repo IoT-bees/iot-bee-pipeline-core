@@ -3,12 +3,40 @@
 version: '3.8'
 
 services:
-  sqlite:
-    image: alpine:latest
-    container_name: sqlite-container
+  iot-bee:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-bee
+    environment:
+      DATABASE_URL: sqlite:///data/pipeline.db
+      API_HOST: "0.0.0.0"
+      API_PORT: "8080"
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
     volumes:
       - ./data:/data
-      - ./migrations:/migrations
-    command: tail -f /dev/null
-    stdin_open: true
-    tty: true
+    restart: unless-stopped
+
+    # --- Seguridad ---
+    # El usuario iotbee ya está definido en el Dockerfile (USER iotbee),
+    # aquí lo forzamos explícitamente por nombre para evitar escalación.
+    user: "1001:1001"
+
+    # Elimina todas las capacidades de Linux y solo añade las estrictamente necesarias.
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE   # permite bind en puertos < 1024 si alguna vez se necesita
+
+    # Impide que el proceso escale privilegios (setuid/setgid).
+    security_opt:
+      - no-new-privileges:true
+
+    # Sistema de archivos raíz de solo lectura; /data sigue siendo escribible por el volumen.
+    read_only: true
+
+    # Directorio temporal con escritura (requerido por algunos runtimes de Rust/TLS).
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
