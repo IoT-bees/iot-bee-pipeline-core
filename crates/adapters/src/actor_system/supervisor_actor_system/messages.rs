@@ -177,3 +177,24 @@ pub struct StartAllPipelinesInLocalStorageMessage;
 impl Message for StartAllPipelinesInLocalStorageMessage {
     type Result = Result<(), IoTBeeError>;
 }
+
+
+
+
+pub struct UpdateReplicationFactorMessage {
+    pub pipeline_id: u32,
+    pub replication_factor: u32,
+}
+
+impl UpdateReplicationFactorMessage {
+    pub fn new(pipeline_id: u32, replication_factor: u32) -> Self {
+        Self {
+            pipeline_id,
+            replication_factor,
+        }
+    }
+}
+
+impl Message for UpdateReplicationFactorMessage {
+    type Result = Result<(), IoTBeeError>;
+}

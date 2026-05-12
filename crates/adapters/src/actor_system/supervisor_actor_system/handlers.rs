@@ -10,6 +10,7 @@ use super::messages::{
     DeletePipelineMessage,
     StatusPipelineMessage,
     StatusPipelineMessageAll,
+    UpdateReplicationFactorMessage,
     // ListPipelinesMessage, RestartPipelineMessage,
     // StatusPipelineMessage, StopPipelineMessage, SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
@@ -163,6 +164,38 @@ impl Handler<StatusPipelineMessageAll> for SystemActorSupervisor {
             .map(
                 move |result: Result<Vec<PipelineStatusReport>, IoTBeeError>, _actor, _ctx| result,
             ),
+        )
+    }
+}
+
+
+impl Handler<UpdateReplicationFactorMessage> for SystemActorSupervisor {
+    type Result = ResponseActFuture<Self, Result<(), IoTBeeError>>;
+
+    fn handle(&mut self, msg: UpdateReplicationFactorMessage, _ctx: &mut Context<Self>) -> Self::Result {
+        let pipeline_id = msg.pipeline_id;
+        let replication_factor = msg.replication_factor;
+
+        let bridge = match self.get_bridge(pipeline_id) {
+            Some(b) => b,
+            None => {
+                return Box::pin(
+                    async move {
+                        Err(PipelineLifecycleError::NotFound {
+                            pipeline_id: pipeline_id.to_string(),
+                        }
+                        .into())
+                    }
+                    .into_actor(self)
+                    .map(move |result, _actor, _ctx| result),
+                );
+            }
+        };
+
+        Box::pin(
+            async move { bridge.update_replication_factor(replication_factor).await }
+                .into_actor(self)
+                .map(move |result, _actor, _ctx| result),
         )
     }
 }

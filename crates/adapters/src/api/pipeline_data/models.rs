@@ -95,6 +95,8 @@ pub struct PipelineDataResponse {
     pub data_source: DataSourceInfo,
     #[serde(rename = "dataValidationSchema")]
     pub data_validation_schema: DataValidationSchemaInfo,
+    #[serde(rename = "replicationFactor")]
+    pub replication_factor: u32,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
     #[serde(rename = "updatedAt")]
@@ -125,6 +127,7 @@ impl TryFrom<PipelineDataOutputModel> for PipelineDataResponse {
                 id: output_model.validation_schema_id(),
                 name: output_model.validation_schema_name().to_string(),
             },
+            replication_factor: output_model.pipeline_replication(),
             created_at: output_model.created_at(),
             updated_at: output_model.updated_at(),
         };

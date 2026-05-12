@@ -1,9 +1,10 @@
 use actix::prelude::*;
 
 use super::messges::{
-    AddReplicaMessage, InternalInsertReplicasMessage, InternalReInsertReplicasMessage,
-    RemoveReplicaMessage, ReplicaCountMessage, RestartAllReplicasMessage, StartPipelineMessage,
+    InternalInsertReplicasMessage, InternalReInsertReplicasMessage,
+    ReplicaCountMessage, RestartAllReplicasMessage, StartAllPipelinesMessage, StartPipelineMessage,
     StatusAllReplicasMessage, StatusAllReplicasMessageResult, StopAllReplicasMessage,
+    StopPipelineMessage, UpdateReplicationFactorMessage,
 };
 use super::pipeline_abstraction::PipelineAbstractionController;
 use super::pipeline_supervisor::PipelineSupervisor;
@@ -22,15 +23,63 @@ use std::sync::Arc;
 use logging::AppLogger;
 static LOGGER: AppLogger = AppLogger::new("supervisor_pipeline_life_time::handlers");
 
-// ── StartPipeline ─────────────────────────────────────────────
+// ── StartPipeline (una sola réplica) ──────────────────────────────────────────
 impl Handler<StartPipelineMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
     fn handle(&mut self, _msg: StartPipelineMessage, ctx: &mut Context<Self>) -> Self::Result {
-        let replica_count = self.pipeline_configuration().pipeline_replication();
         let data_store = self.data_store();
         let data_source = self.data_source();
         let data_processor = self.data_processor();
+        let self_addr = ctx.address();
+
+        Box::pin(async move {
+            let task = actix::spawn(async move {
+                //TODO: implementar a futuro un result en los start para validar que el actor que inicia está completamente sano.
+                let store = StoreActorBridge::start_new_store_actor_with_impl(data_store);
+                let processor = ProcessorActorBridge::start_new_processor_actor_with_impl(
+                    store.clone(),
+                    data_processor,
+                );
+                let consumer = ConsumerActorBridge::start_new_consumer_actor_with_impl(
+                    data_source,
+                    Arc::clone(&processor),
+                );
+                Ok::<_, IoTBeeError>(PipelineAbstractionController::new(
+                    consumer, processor, store,
+                ))
+            });
+
+            match task.await {
+                Ok(Ok(pipeline)) => self_addr
+                    .send(InternalInsertReplicasMessage(vec![pipeline]))
+                    .await
+                    .map_err(|e| {
+                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                            reason: e.to_string(),
+                        })
+                    })?,
+                Ok(Err(e)) => Err(e),
+                Err(e) => Err(PipelineLifecycleError::OperationFailed {
+                    reason: e.to_string(),
+                }
+                .into()),
+            }
+        })
+    }
+}
+
+// ── StartAllPipelines ─────────────────────────────────────────────────────────
+// Envía StartPipelineMessage tantas veces como indique el factor de replicación.
+impl Handler<StartAllPipelinesMessage> for PipelineSupervisor {
+    type Result = ResponseFuture<Result<(), IoTBeeError>>;
+
+    fn handle(
+        &mut self,
+        _msg: StartAllPipelinesMessage,
+        ctx: &mut Context<Self>,
+    ) -> Self::Result {
+        let replica_count = self.pipeline_configuration().pipeline_replication();
         let self_addr = ctx.address();
 
         LOGGER.info(&format!(
@@ -38,62 +87,17 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
             replica_count
         ));
         Box::pin(async move {
-            let mut tasks = Vec::new();
-
             for _ in 0..replica_count {
-                let data_store = data_store.clone();
-                let data_source = data_source.clone();
-                let data_processor = data_processor.clone();
-                let task = actix::spawn(async move {
-                    //TODO: implementar a futuro un result en los start para validar que el actor que inicia está completamente sano.
-                    let store = StoreActorBridge::start_new_store_actor_with_impl(data_store);
-                    let processor = ProcessorActorBridge::start_new_processor_actor_with_impl(
-                        store.clone(),
-                        data_processor,
-                    );
-                    let consumer = ConsumerActorBridge::start_new_consumer_actor_with_impl(
-                        data_source,
-                        Arc::clone(&processor),
-                    );
-                    Ok::<_, IoTBeeError>(PipelineAbstractionController::new(
-                        consumer, processor, store,
-                    ))
-                });
-                tasks.push(task);
-            }
-
-            let mut pipelines = Vec::new();
-            let mut errors: Vec<IoTBeeError> = Vec::new();
-
-            for task in tasks {
-                match task.await {
-                    Ok(Ok(pipeline)) => pipelines.push(pipeline),
-                    Ok(Err(e)) => errors.push(e),
-                    Err(e) => errors.push(
-                        PipelineLifecycleError::OperationFailed {
+                self_addr
+                    .send(StartPipelineMessage)
+                    .await
+                    .map_err(|e| {
+                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
                             reason: e.to_string(),
-                        }
-                        .into(),
-                    ),
-                }
+                        })
+                    })??;
             }
-
-            if !errors.is_empty() {
-                for pipeline in pipelines {
-                    pipeline.stop().await.ok();
-                }
-                return Err(errors.remove(0));
-            }
-
-            // Insertar réplicas en el actor vía mensaje síncrono a self
-            self_addr
-                .send(InternalInsertReplicasMessage(pipelines))
-                .await
-                .map_err(|e| {
-                    IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
-                        reason: e.to_string(),
-                    })
-                })?
+            Ok(())
         })
     }
 }
@@ -112,8 +116,7 @@ impl Handler<InternalInsertReplicasMessage> for PipelineSupervisor {
         _ctx: &mut Context<Self>,
     ) -> Self::Result {
         for c in msg.0 {
-            let id = self.next_replica_id;
-            self.next_replica_id += 1;
+            let id = self.next_available_id();
             self.replicas.insert(id, Arc::new(c));
         }
         LOGGER.info(&format!(
@@ -124,54 +127,82 @@ impl Handler<InternalInsertReplicasMessage> for PipelineSupervisor {
     }
 }
 
+// ── StopPipeline (una sola réplica) ──────────────────────────────────────────
+//
+// Extrae la réplica del mapa de forma síncrona y la para de forma asíncrona.
+// Si la parada falla, re-inserta la réplica vía InternalReInsertReplicasMessage.
+
+impl Handler<StopPipelineMessage> for PipelineSupervisor {
+    type Result = ResponseFuture<Result<(), IoTBeeError>>;
+
+    fn handle(&mut self, msg: StopPipelineMessage, ctx: &mut Context<Self>) -> Self::Result {
+        let id = msg.0;
+        let replica = self.replicas.remove(&id);
+        let self_addr = ctx.address();
+
+        Box::pin(async move {
+            match replica {
+                None => Err(PipelineLifecycleError::OperationFailed {
+                    reason: format!("Réplica con id {} no encontrada", id),
+                }
+                .into()),
+                Some(r) => match r.stop().await {
+                    Ok(()) => Ok(()),
+                    Err(e) => {
+                        self_addr
+                            .send(InternalReInsertReplicasMessage(vec![(id, r)]))
+                            .await
+                            .ok();
+                        Err(e)
+                    }
+                },
+            }
+        })
+    }
+}
+
 // ── StopAllReplicas ── asíncrono ──────────────────────────────────────────────
 //
-// Patrón actor-owned:
-//   1. Sync: drain de self.replicas → mapa vacío al instante, sin locks.
-//   2. Async: se para cada réplica de forma independiente.
-//   3. Las que fallen se re-insertan vía InternalReInsertReplicasMessage,
-//      de modo que un reintento sólo ve las réplicas que aún no pudieron pararse.
+// Recoge todos los ids activos y delega en StopPipelineMessage uno a uno.
+// Si alguna falla, StopPipelineMessage se encarga de re-insertarla.
 
 impl Handler<StopAllReplicasMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
     fn handle(&mut self, _msg: StopAllReplicasMessage, ctx: &mut Context<Self>) -> Self::Result {
-        let entries: Vec<(u32, Arc<PipelineAbstractionController>)> =
-            self.replicas.drain().collect();
+        let ids: Vec<u32> = self.replicas.keys().cloned().collect();
         let self_addr = ctx.address();
 
         Box::pin(async move {
-            let mut failed: Vec<(u32, Arc<PipelineAbstractionController>)> = Vec::new();
             let mut errors: Vec<String> = Vec::new();
 
-            for (id, replica) in entries {
-                match replica.stop().await {
-                    Ok(()) => {}
-                    Err(e) => {
-                        failed.push((id, replica));
-                        errors.push(e.to_string());
-                    }
+            for id in ids {
+                if let Err(e) = self_addr
+                    .send(StopPipelineMessage(id))
+                    .await
+                    .map_err(|e| {
+                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                            reason: e.to_string(),
+                        })
+                    })
+                    .and_then(|r| r)
+                {
+                    errors.push(e.to_string());
                 }
             }
 
-            if failed.is_empty() {
-                return Ok(());
+            if errors.is_empty() {
+                Ok(())
+            } else {
+                Err(PipelineLifecycleError::OperationFailed {
+                    reason: format!(
+                        "{} réplica(s) no pudieron detenerse: {:?}",
+                        errors.len(),
+                        errors
+                    ),
+                }
+                .into())
             }
-
-            // Re-insertar las que fallaron para que el próximo intento las vea
-            self_addr
-                .send(InternalReInsertReplicasMessage(failed))
-                .await
-                .ok();
-
-            Err(PipelineLifecycleError::OperationFailed {
-                reason: format!(
-                    "{} réplica(s) no pudieron detenerse: {:?}",
-                    errors.len(),
-                    errors
-                ),
-            }
-            .into())
         })
     }
 }
@@ -195,58 +226,6 @@ impl Handler<InternalReInsertReplicasMessage> for PipelineSupervisor {
     }
 }
 
-// ── RemoveReplica ── asíncrono ───────────────────────────────────────────
-//
-// Sync: extrae la réplica de self.replicas (ya no está en el mapa).
-// Async: la detiene. Si falla, la devuelve vía InternalReInsertReplicas.
-
-impl Handler<RemoveReplicaMessage> for PipelineSupervisor {
-    type Result = ResponseFuture<Result<(), IoTBeeError>>;
-
-    fn handle(&mut self, msg: RemoveReplicaMessage, ctx: &mut Context<Self>) -> Self::Result {
-        let id = msg.replica_id();
-        let replica = match self.replicas.remove(&id) {
-            Some(r) => r,
-            None => {
-                return Box::pin(async move {
-                    Err(PipelineLifecycleError::OperationFailed {
-                        reason: format!("No hay réplica con id={}", id),
-                    }
-                    .into())
-                });
-            }
-        };
-        let self_addr = ctx.address();
-
-        Box::pin(async move {
-            match replica.stop().await {
-                Ok(()) => Ok(()),
-                Err(e) => {
-                    self_addr
-                        .send(InternalReInsertReplicasMessage(vec![(id, replica)]))
-                        .await
-                        .ok();
-                    Err(e)
-                }
-            }
-        })
-    }
-}
-
-// ── AddReplica ── síncrono ────────────────────────────────────────────────────
-//
-// Inserta un controller directamente en self.replicas. Sin async, sin locks.
-
-impl Handler<AddReplicaMessage> for PipelineSupervisor {
-    type Result = Result<usize, IoTBeeError>;
-
-    fn handle(&mut self, msg: AddReplicaMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        let id = self.next_replica_id;
-        self.next_replica_id += 1;
-        self.replicas.insert(id, Arc::new(msg.controller));
-        Ok(self.replicas.len())
-    }
-}
 
 // ── ReplicaCount ── síncrono ──────────────────────────────────────────────────
 
@@ -291,6 +270,87 @@ impl Handler<StatusAllReplicasMessage> for PipelineSupervisor {
                 status_map.insert(id, status);
             }
             Ok(PipelineStatusReport::new(status_map))
+        })
+    }
+}
+
+use std::cmp::Ordering;
+
+impl Handler<UpdateReplicationFactorMessage> for PipelineSupervisor {
+    type Result = ResponseFuture<Result<(), IoTBeeError>>;
+
+    fn handle(
+        &mut self,
+        msg: UpdateReplicationFactorMessage,
+        ctx: &mut Context<Self>,
+    ) -> Self::Result {
+        let new_factor = msg.replication_factor() as usize;
+        let current_count = self.replicas.len();
+        let self_addr = ctx.address();
+
+        // Recogemos los ids a eliminar de forma síncrona antes de entrar al bloque async.
+        // Se toman los ids más altos primero para mantener la consistencia en la numeración.
+        let ids_to_remove: Vec<u32> = if new_factor < current_count {
+            let to_remove = current_count - new_factor;
+            let mut keys: Vec<u32> = self.replicas.keys().cloned().collect();
+            keys.sort_unstable_by(|a, b| b.cmp(a));
+            keys.into_iter().take(to_remove).collect()
+        } else {
+            Vec::new()
+        };
+
+        Box::pin(async move {
+            if new_factor == 0 {
+                return self_addr
+                    .send(StopAllReplicasMessage)
+                    .await
+                    .map_err(|e| {
+                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                            reason: e.to_string(),
+                        })
+                    })?;
+            }
+
+            match new_factor.cmp(&current_count) {
+                Ordering::Greater => {
+                    let to_add = new_factor - current_count;
+                    LOGGER.info(&format!("Escalando pipeline: agregando {} réplica(s).", to_add));
+                    for _ in 0..to_add {
+                        self_addr
+                            .send(StartPipelineMessage)
+                            .await
+                            .map_err(|e| {
+                                IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                                    reason: e.to_string(),
+                                })
+                            })??;
+                    }
+                }
+                Ordering::Less => {
+                    let to_remove = ids_to_remove.len();
+                    LOGGER.info(&format!(
+                        "Escalando pipeline: eliminando {} réplica(s).",
+                        to_remove
+                    ));
+                    for id in ids_to_remove {
+                        self_addr
+                            .send(StopPipelineMessage(id))
+                            .await
+                            .map_err(|e| {
+                                IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                                    reason: e.to_string(),
+                                })
+                            })??;
+                    }
+                }
+                Ordering::Equal => {
+                    LOGGER.info(&format!(
+                        "El número de réplicas ya es {}. No se realizarán cambios.",
+                        current_count
+                    ));
+                }
+            }
+            Ok(())
         })
     }
 }

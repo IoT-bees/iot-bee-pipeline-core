@@ -9,6 +9,7 @@ use super::messages::{
     DeletePipelineMessage,
     StatusPipelineMessage,
     StatusPipelineMessageAll,
+    UpdateReplicationFactorMessage,
     // ListPipelinesMessage,
     //SystemAddReplicaMessage,
     // SystemRemoveReplicaMessage,
@@ -101,6 +102,18 @@ impl PipelineLifecycle for PipelineActorSupervisorSystemBridge {
             .await
             .map_err(mailbox_err)?
     }
+    
+    async fn update_replication_factor(
+        &self,
+        pipeline_id: &DataStoreId,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError> {
+        self.supervisor_addr
+            .send(UpdateReplicationFactorMessage::new(pipeline_id.id(), *replication_factor))
+            .await
+            .map_err(mailbox_err)?
+    }
+
 }
 
 fn mailbox_err(e: MailboxError) -> IoTBeeError {

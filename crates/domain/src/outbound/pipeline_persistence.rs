@@ -160,9 +160,6 @@ pub trait PipelineControllerRepository {
         pipeline_id: &DataStoreId,
         is_active: bool,
     ) -> Result<(), IoTBeeError>;
-    //TODO:controlar el ciclo de vida del pipeline cuando se realiza un update
-    // async fn update_pipeline();
-    //TODO:controlar el ciclo de vida del pipeline cuando se realiza un delete
     async fn delete_pipeline_by_id(&self, pipeline_id: &DataStoreId) -> Result<(), IoTBeeError>;
     async fn get_pipeline_by_group_id(
         &self,
@@ -188,4 +185,11 @@ pub trait PipelineControllerRepository {
         pipeline_id: &DataStoreId,
         group_id: &DataStoreId,
     ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_replication_factor(
+        &self,
+        pipeline_id: &DataStoreId,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError>;
+     
+
 }

@@ -37,6 +37,11 @@ pub trait PipelineDataUseCases {
         validation_schema_id: &u32,
     ) -> Result<(), IoTBeeError>;
     async fn update_group(&self, pipeline_id: &u32, group_id: &u32) -> Result<(), IoTBeeError>;
+    async fn update_replication_factor(
+        &self,
+        pipeline_id: &u32,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
@@ -291,6 +296,35 @@ where
             "Pipeline id={} updated with group id={} successfully",
             pipeline_id.id(),
             group_id.id()
+        ));
+        Ok(())
+    }
+
+    async fn update_replication_factor(
+        &self,
+        pipeline_id: &u32,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError> {
+        LOGGER.debug(&format!(
+            "update_replication_factor use case called for pipeline_id={} and replication_factor={}",
+            pipeline_id, replication_factor
+        ));
+        let pipeline_id = DataStoreId::new(*pipeline_id)?;
+        self.repository
+            .update_pipeline_replication_factor(&pipeline_id, replication_factor)
+            .await
+            .map_err(|e| {
+                LOGGER.error(&format!(
+                    "Failed to update pipeline id={} with replication factor={}: {e}",
+                    pipeline_id.id(),
+                    replication_factor
+                ));
+                e
+            })?;
+        LOGGER.info(&format!(
+            "Pipeline id={} updated with replication factor={} successfully",
+            pipeline_id.id(),
+            replication_factor
         ));
         Ok(())
     }

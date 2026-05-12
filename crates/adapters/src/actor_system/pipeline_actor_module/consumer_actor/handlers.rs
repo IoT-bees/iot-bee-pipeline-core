@@ -18,9 +18,11 @@ use logging::AppLogger;
 static LOGGER: AppLogger = AppLogger::new(
     "iot_bee::adapters::actor_system::pipeline_actor_module::consumer_actor::handlers",
 );
+use std::time::Duration;
 use tokio::time::sleep;
 
 const CHANNEL_CAPACITY: usize = 100;
+const ACTOR_RECONNECT_DELAY: Duration = Duration::from_secs(30);
 
 impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
     type Result = ResponseActFuture<Self, ConsumerActorState>;
@@ -28,15 +30,27 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
     fn handle(&mut self, msg: ConsumerActorActionMessage, ctx: &mut Context<Self>) -> Self::Result {
         match msg.action() {
             ConsumerActorAction::StartConsuming => {
+                // Si ya está consumiendo, no hacemos nada.
                 if self.state() == ConsumerActorState::Consuming {
                     LOGGER
                         .warn("StartConsuming received but actor is already consuming. Ignoring.");
                     self.set_operation_state(ActorOperationStatus::Healthy);
                     return Box::pin(async { ConsumerActorState::Consuming }.into_actor(self));
                 }
+                // Si está deteniendo/detenido, ignorar cualquier retry programado.
+                if matches!(self.state(), ConsumerActorState::Stopping | ConsumerActorState::Stopped) {
+                    LOGGER.info("StartConsuming retry received but actor is stopping/stopped. Ignoring.");
+                    let state = self.state();
+                    return Box::pin(async move { state }.into_actor(self));
+                }
 
                 let (tx, rx) = mpsc::channel::<DataConsumerRawType>(CHANNEL_CAPACITY);
                 self.set_sender(Some(tx.clone()));
+
+                
+                if self.state() == ConsumerActorState::Reconnecting {
+                    self.set_operation_state(ActorOperationStatus::Degraded);
+                }
 
                 let data_source = self.data_source();
                 let actor_addr = ctx.address();
@@ -57,7 +71,7 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
 
                 Box::pin(
                     wrap_future::<_, Self>(async move { data_source.start_to_consume(tx).await })
-                        .map(|result, actor, _ctx| {
+                        .map(|result, actor, ctx| {
                             match result {
                                 Ok(_) => {
                                     actor.set_state(ConsumerActorState::Consuming);
@@ -65,10 +79,23 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                                     LOGGER.info("Consumer started successfully");
                                 }
                                 Err(e) => {
-                                    actor.set_state(ConsumerActorState::Idle);
+                                    // Abortar el task de forwarding para evitar un ChannelDied espurio.
+                                    if let Some(handle) = actor.task_handle.take() {
+                                        handle.abort();
+                                    }
                                     actor.set_sender(None);
+                                    actor.set_state(ConsumerActorState::Reconnecting);
                                     actor.set_operation_state(ActorOperationStatus::Degraded);
-                                    LOGGER.error(&format!("Failed to start consuming: {}", e));
+                                    LOGGER.error(&format!(
+                                        "No se pudo iniciar el consumo (reintentos agotados): {}. \
+                                         Reintentando en {}s...",
+                                        e,
+                                        ACTOR_RECONNECT_DELAY.as_secs()
+                                    ));
+                                    ctx.notify_later(
+                                        ConsumerActorActionMessage::start_consuming(),
+                                        ACTOR_RECONNECT_DELAY,
+                                    );
                                 }
                             }
                             actor.state()
