@@ -37,6 +37,18 @@ impl PipelineDataStoreRepository for FakeRepoVacio {
     ) -> Result<Option<PipelineDataStoreOutputModel>, IoTBeeError> {
         Ok(None)
     }
+
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        _: &DataStoreId,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
+
+    async fn delete_pipeline_data_store(&self, _: &DataStoreId) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
 }
 
 /// Repositorio con un registro de ejemplo.
@@ -83,6 +95,18 @@ impl PipelineDataStoreRepository for FakeRepoConDatos {
         .unwrap();
         Ok(Some(modelo))
     }
+
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        _: &DataStoreId,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
+
+    async fn delete_pipeline_data_store(&self, _: &DataStoreId) -> Result<(), IoTBeeError> {
+        Ok(())
+    }
 }
 
 /// Repositorio que siempre falla: simula error de base de datos.
@@ -115,6 +139,24 @@ impl PipelineDataStoreRepository for FakeRepoFallido {
         &self,
         _: &DataStoreId,
     ) -> Result<Option<PipelineDataStoreOutputModel>, IoTBeeError> {
+        Err(PipelinePersistenceError::Database {
+            reason: self.razon.clone(),
+        }
+        .into())
+    }
+
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        _: &DataStoreId,
+        _: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        Err(PipelinePersistenceError::Database {
+            reason: self.razon.clone(),
+        }
+        .into())
+    }
+
+    async fn delete_pipeline_data_store(&self, _: &DataStoreId) -> Result<(), IoTBeeError> {
         Err(PipelinePersistenceError::Database {
             reason: self.razon.clone(),
         }
