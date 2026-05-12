@@ -14,3 +14,19 @@ impl From<&'static str> for ConnectionTypeResponse {
         }
     }
 }
+
+#[derive(Serialize, ToSchema)]
+pub struct StoreTypesResponse {
+    #[serde(rename = "connectionTypes")]
+    pub connection_types: Vec<ConnectionTypeResponse>,
+}
+
+impl From<Vec<&'static str>> for StoreTypesResponse {
+    fn from(source_types: Vec<&'static str>) -> Self {
+        let connection_types = source_types
+            .into_iter()
+            .map(ConnectionTypeResponse::from)
+            .collect();
+        StoreTypesResponse { connection_types }
+    }
+}

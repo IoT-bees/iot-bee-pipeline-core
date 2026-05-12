@@ -50,6 +50,12 @@ impl Validate for DataStoreConfig {
     }
 }
 
+impl DataStoreConfig {
+    pub fn available_types() -> Vec<&'static str> {
+        vec!["INFLUX_DB", "LOCAL_LOG"]
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Conversión al tipo del dominio
 // ---------------------------------------------------------------------------

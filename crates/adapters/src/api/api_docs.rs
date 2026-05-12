@@ -49,6 +49,7 @@ use crate::api::validation_schemas::routers as validation_routers;
         validation_routers::delete_validation_schema,
         //connection types
         connection_routers::get_connection_types,
+        connection_routers::get_data_store_types,
         //data sources
         data_sources_routers::create_data_source,
         data_sources_routers::get_data_source,
@@ -65,6 +66,8 @@ use crate::api::validation_schemas::routers as validation_routers;
         data_store_routers::create_data_store,
         data_store_routers::get_data_store,
         data_store_routers::list_data_stores,
+        data_store_routers::update_configuration,
+        data_store_routers::delete_data_store,
         //pipeline data
         pipeline_data_routers::create_pipeline_data,
         pipeline_data_routers::get_pipeline_data,
@@ -78,7 +81,9 @@ use crate::api::validation_schemas::routers as validation_routers;
         // pipeline lifecycle
         pipeline_lifecycle_routers::start_new_pipeline,
         pipeline_lifecycle_routers::stop_pipeline,
-        pipeline_lifecycle_routers::get_pipeline_status
+        pipeline_lifecycle_routers::get_pipeline_status,
+        pipeline_lifecycle_routers::get_all_pipeline_status,
+
     ),
     components(
         schemas(

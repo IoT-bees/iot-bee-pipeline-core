@@ -66,11 +66,36 @@ impl PipelinepartsStatus {
 //crear aca un structu que me defina todo el pipeline donde cada pipelinepartStatus es un Pipeline y este structu define un conjuntonde pipelines
 use std::collections::HashMap;
 pub struct PipelineStatusReport {
+    pipeline_id: u32,
+    pipeline_name: String,
     pipelines: HashMap<u32, PipelinepartsStatus>,
 }
 impl PipelineStatusReport {
     pub fn new(pipelines: HashMap<u32, PipelinepartsStatus>) -> Self {
-        Self { pipelines }
+        Self {
+            pipeline_id: 0,
+            pipeline_name: String::new(),
+            pipelines,
+        }
+    }
+
+    pub fn with_metadata(mut self, pipeline_id: u32, pipeline_name: impl Into<String>) -> Self {
+        self.pipeline_id = pipeline_id;
+        self.pipeline_name = pipeline_name.into();
+        self
+    }
+
+    pub fn with_pipeline_id(mut self, pipeline_id: u32) -> Self {
+        self.pipeline_id = pipeline_id;
+        self
+    }
+
+    pub fn pipeline_id(&self) -> u32 {
+        self.pipeline_id
+    }
+
+    pub fn pipeline_name(&self) -> &str {
+        &self.pipeline_name
     }
     pub fn overall_status(&self) -> PipelineStatus {
         if self

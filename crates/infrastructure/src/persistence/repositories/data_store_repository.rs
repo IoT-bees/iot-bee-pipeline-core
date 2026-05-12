@@ -131,4 +131,77 @@ impl PipelineDataStoreRepository for DataStoreRepository {
             Ok(None)
         }
     }
+
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        data_store_id: &DataStoreId,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            UPDATE databases
+            SET store_type = ?, json_schema = ?, updated_at = ?
+            WHERE id = ?
+            "#,
+        )
+        .bind(new_config.store_type_string())
+        .bind(
+            serde_json::to_string(new_config.configuration()).map_err(|e| {
+                IoTBeeError::from(PipelinePersistenceError::InvalidData {
+                    reason: format!("Failed to serialize configuration: {}", e),
+                })
+            })?,
+        )
+        .bind(Utc::now().to_rfc3339())
+        .bind(data_store_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| match e {
+            SqlxError::Database(db_error) if db_error.is_foreign_key_violation() => {
+                PipelinePersistenceError::InvalidData {
+                    reason: db_error.to_string(),
+                }
+            }
+            _ => PipelinePersistenceError::UpdateFailed {
+                reason: e.to_string(),
+            },
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        Ok(())
+    }
+    async fn delete_pipeline_data_store(
+        &self,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let result = sqlx::query(
+            r#"
+            DELETE FROM databases
+            WHERE id = ?
+            "#,
+        )
+        .bind(data_store_id.id())
+        .execute(pool)
+        .await
+        .map_err(|e| PipelinePersistenceError::DeleteFailed {
+            reason: e.to_string(),
+        })?;
+
+        if result.rows_affected() == 0 {
+            return Err(PipelinePersistenceError::IdNotFound {
+                id: data_store_id.id(),
+            }
+            .into());
+        }
+
+        Ok(())
+    }
 }
