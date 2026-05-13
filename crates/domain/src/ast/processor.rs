@@ -4,6 +4,7 @@ use super::vm::Vm;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use super::schemas::{ProcessingOutcome, RejectionReason, RejectionKind};
 
 use crate::error::{DomainValidationError, IoTBeeError};
 
@@ -28,7 +29,7 @@ impl PipelineDataProcessor {
     pub fn process(
         &self,
         record: &HashMap<String, Value>,
-    ) -> Result<HashMap<String, Value>, IoTBeeError> {
+    ) -> Result<ProcessingOutcome, IoTBeeError> {
         let mut vm = self.vm.lock().unwrap();
         let mut output: HashMap<String, Value> = HashMap::new();
 
@@ -46,12 +47,11 @@ impl PipelineDataProcessor {
                         output.insert(field_name.clone(), Value::String(s.clone()));
                     }
                     Some(v) if !v.is_null() => {
-                        return Err(IoTBeeError::DomainValidationError(
-                            DomainValidationError::InvalidFieldValue {
-                                field_name: field_name.clone(),
-                                reason: "expected a string value".to_string(),
-                            },
-                        ));
+                        return Ok(ProcessingOutcome::Rejected(RejectionReason {
+                            field_name: field_name.clone(),
+                            reason: RejectionKind::InvalidType { expected: "string" },
+                            original_data: String::new(), // Se llenará en la capa de infraestructura
+                        }));
                     }
                     _ => {
                         // ausente o null
@@ -61,11 +61,11 @@ impl PipelineDataProcessor {
                                 output.insert(field_name.clone(), d.clone());
                             }
                             None if compiled.required => {
-                                return Err(IoTBeeError::DomainValidationError(
-                                    DomainValidationError::MissingField {
-                                        field_name: field_name.clone(),
-                                    },
-                                ));
+                                return Ok(ProcessingOutcome::Rejected(RejectionReason {
+                                    field_name: field_name.clone(),
+                                    reason: RejectionKind::MissingRequiredField,
+                                    original_data: String::new(), // Se llenará en la capa de infraestructura
+                                }));
                             }
                             None => {} // opcional sin default: omitir
                         }
@@ -88,11 +88,11 @@ impl PipelineDataProcessor {
                         match effective_default {
                             Some(d) => d,
                             None if compiled.required => {
-                                return Err(IoTBeeError::DomainValidationError(
-                                    DomainValidationError::MissingField {
-                                        field_name: field_name.clone(),
-                                    },
-                                ));
+                                return Ok(ProcessingOutcome::Rejected(RejectionReason {
+                                    field_name: field_name.clone(),
+                                    reason: RejectionKind::MissingRequiredField,
+                                    original_data: String::new(), // Se llenará en la capa de infraestructura
+                                }));
                             }
                             None => continue, // campo opcional ausente: omitir
                         }
@@ -103,22 +103,20 @@ impl PipelineDataProcessor {
                 if let Some(rule) = &compiled.validation {
                     if let Some(min) = rule.min {
                         if raw < min {
-                            return Err(IoTBeeError::DomainValidationError(
-                                DomainValidationError::InvalidFieldValue {
-                                    field_name: field_name.clone(),
-                                    reason: format!("value {} is below minimum {}", raw, min),
-                                },
-                            ));
+                            return Ok(ProcessingOutcome::Rejected(RejectionReason {
+                                field_name: field_name.clone(),
+                                reason: RejectionKind::BelowMinimum { value: raw, min },
+                                original_data: String::new(), // Se llenará en la capa de infraestructura
+                            }));
                         }
                     }
                     if let Some(max) = rule.max {
                         if raw > max {
-                            return Err(IoTBeeError::DomainValidationError(
-                                DomainValidationError::InvalidFieldValue {
-                                    field_name: field_name.clone(),
-                                    reason: format!("value {} exceeds maximum {}", raw, max),
-                                },
-                            ));
+                            return Ok(ProcessingOutcome::Rejected(RejectionReason {
+                                field_name: field_name.clone(),
+                                reason: RejectionKind::ExceedsMaximum { value: raw, max },
+                                original_data: String::new(), // Se llenará en la capa de infraestructura
+                            }));
                         }
                     }
                 }
@@ -147,6 +145,6 @@ impl PipelineDataProcessor {
             }
         }
 
-        Ok(output)
+        Ok(ProcessingOutcome::Processed(output))
     }
 }

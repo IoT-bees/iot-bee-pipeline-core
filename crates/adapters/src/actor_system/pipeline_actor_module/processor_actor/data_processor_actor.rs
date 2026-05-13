@@ -61,6 +61,7 @@ impl Actor for DataProcessorActor {
 
     fn started(&mut self, _ctx: &mut Self::Context) {
         LOGGER.info("DataProcessorActor started.");
+        self.set_operation_state(ActorOperationStatus::Idle);
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
