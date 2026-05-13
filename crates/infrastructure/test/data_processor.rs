@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 use domain::ast::ast::{Expr, Op};
 use domain::ast::compiler::{Instruction, Program};
+use domain::ast::schemas::ProcessingOutcome;
 use domain::ast::vm::{Vm, VmError};
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::outbound::data_processor_actions::DataProcessorActions;
@@ -24,6 +25,46 @@ fn record(pairs: &[(&str, f64)]) -> HashMap<String, Value> {
         .iter()
         .map(|(k, v)| (k.to_string(), Value::from(*v)))
         .collect()
+}
+
+/// Desempaqueta un ProcessingOutcome::Processed en el HashMap interno.
+/// Hace panic si el outcome es Rejected o es un error.
+fn unwrap_processed(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>) -> HashMap<String, Value> {
+    match outcome {
+        Ok(ProcessingOutcome::Processed(output)) => output,
+        Ok(ProcessingOutcome::Rejected(reason)) => {
+            panic!("Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}", 
+                   reason.field_name, reason.reason);
+        }
+        Err(e) => panic!("Se esperaba Processed pero se obtuvo error: {}", e),
+    }
+}
+
+/// Verifica que un ProcessingOutcome sea Rejected.
+/// Hace panic si es Processed o un error.
+fn assert_rejected(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>) {
+    match outcome {
+        Ok(ProcessingOutcome::Rejected(_)) => {}
+        Ok(ProcessingOutcome::Processed(_)) => {
+            panic!("Se esperaba Rejected pero se obtuvo Processed");
+        }
+        Err(e) => panic!("Se esperaba Rejected pero se obtuvo error: {}", e),
+    }
+}
+
+/// Desempaqueta un ProcessingOutcome::Processed y lo convierte a JSON string.
+/// Hace panic si el outcome es Rejected o es un error.
+fn unwrap_processed_to_json(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>) -> String {
+    match outcome {
+        Ok(ProcessingOutcome::Processed(output)) => {
+            serde_json::to_string(&output).expect("Failed to serialize output")
+        }
+        Ok(ProcessingOutcome::Rejected(reason)) => {
+            panic!("Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}", 
+                   reason.field_name, reason.reason);
+        }
+        Err(e) => panic!("Se esperaba Processed pero se obtuvo error: {}", e),
+    }
 }
 
 /// Compila una expresión y la ejecuta en una VM nueva.
@@ -494,7 +535,7 @@ fn new_tipo_desconocido_en_campo_falla() {
 #[test]
 fn process_aplica_operacion_mul() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    let out = p.process(&record(&[("temperatura", 20.0)])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[("temperatura", 20.0)])));
     assert_eq!(out.get("temperatura").unwrap().as_f64().unwrap(), 40.0); // 20 * 2
 }
 
@@ -502,14 +543,14 @@ fn process_aplica_operacion_mul() {
 fn process_operacion_anidada_celsius_a_fahrenheit() {
     // 0°C → 32°F  (0 * 1.8 + 32 = 32)
     let p = PipelineDataProcessorCore::new(SCHEMA_CELSIUS_A_FAHRENHEIT).unwrap();
-    let out = p.process(&record(&[("temperatura", 0.0)])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[("temperatura", 0.0)])));
     assert!(approx(
         out.get("temperatura").unwrap().as_f64().unwrap(),
         32.0
     ));
 
     // 100°C → 212°F
-    let out2 = p.process(&record(&[("temperatura", 100.0)])).unwrap();
+    let out2 = unwrap_processed(p.process(&record(&[("temperatura", 100.0)])));
     assert!(approx(
         out2.get("temperatura").unwrap().as_f64().unwrap(),
         212.0
@@ -519,40 +560,40 @@ fn process_operacion_anidada_celsius_a_fahrenheit() {
 #[test]
 fn process_passthrough_sin_operacion() {
     let p = PipelineDataProcessorCore::new(SCHEMA_PASSTHROUGH).unwrap();
-    let out = p.process(&record(&[("humedad", 65.0)])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[("humedad", 65.0)])));
     assert_eq!(out.get("humedad").unwrap().as_f64().unwrap(), 65.0);
 }
 
 #[test]
 fn process_campo_requerido_ausente_es_error() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    assert!(p.process(&record(&[])).is_err());
+    assert_rejected(p.process(&record(&[])));
 }
 
 #[test]
 fn process_campo_opcional_ausente_usa_default() {
     let p = PipelineDataProcessorCore::new(SCHEMA_DEFAULT).unwrap();
-    let out = p.process(&record(&[])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[])));
     assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 1013.25);
 }
 
 #[test]
 fn process_campo_opcional_presente_usa_valor_dado() {
     let p = PipelineDataProcessorCore::new(SCHEMA_DEFAULT).unwrap();
-    let out = p.process(&record(&[("presion", 900.0)])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[("presion", 900.0)])));
     assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 900.0);
 }
 
 #[test]
 fn process_validacion_min_rechaza_valor_bajo() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    assert!(p.process(&record(&[("temperatura", -100.0)])).is_err());
+    assert_rejected(p.process(&record(&[("temperatura", -100.0)])));
 }
 
 #[test]
 fn process_validacion_max_rechaza_valor_alto() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    assert!(p.process(&record(&[("temperatura", 200.0)])).is_err());
+    assert_rejected(p.process(&record(&[("temperatura", 200.0)])));
 }
 
 #[test]
@@ -566,9 +607,8 @@ fn process_validacion_en_limite_exacto_es_valido() {
 fn process_campos_extra_en_registro_son_ignorados() {
     // El schema solo define "temperatura"; "presion" no existe en el schema.
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    let out = p
-        .process(&record(&[("temperatura", 10.0), ("presion", 9999.0)]))
-        .unwrap();
+    let out = unwrap_processed(p
+        .process(&record(&[("temperatura", 10.0), ("presion", 9999.0)])));
     assert!(out.contains_key("temperatura"));
     assert!(!out.contains_key("presion"));
 }
@@ -576,9 +616,8 @@ fn process_campos_extra_en_registro_son_ignorados() {
 #[test]
 fn process_schema_vacio_siempre_produce_salida_vacia() {
     let p = PipelineDataProcessorCore::new("{}").unwrap();
-    let out = p
-        .process(&record(&[("cualquier", 42.0), ("otro", 1.0)]))
-        .unwrap();
+    let out = unwrap_processed(p
+        .process(&record(&[("cualquier", 42.0), ("otro", 1.0)])));
     assert!(out.is_empty());
 }
 
@@ -596,7 +635,7 @@ fn process_multiples_campos_procesados_independientemente() {
         "b": { "type": "float", "required": true }
     }"#;
     let p = PipelineDataProcessorCore::new(schema).unwrap();
-    let out = p.process(&record(&[("a", 5.0), ("b", 3.0)])).unwrap();
+    let out = unwrap_processed(p.process(&record(&[("a", 5.0), ("b", 3.0)])));
     assert_eq!(out.get("a").unwrap().as_f64().unwrap(), 15.0);
     assert_eq!(out.get("b").unwrap().as_f64().unwrap(), 3.0);
 }
@@ -605,8 +644,7 @@ fn process_multiples_campos_procesados_independientemente() {
 fn process_reutilizable_multiples_llamadas() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     assert_eq!(
-        p.process(&record(&[("temperatura", 0.0)]))
-            .unwrap()
+        unwrap_processed(p.process(&record(&[("temperatura", 0.0)])))
             .get("temperatura")
             .unwrap()
             .as_f64()
@@ -614,8 +652,7 @@ fn process_reutilizable_multiples_llamadas() {
         0.0
     );
     assert_eq!(
-        p.process(&record(&[("temperatura", 10.0)]))
-            .unwrap()
+        unwrap_processed(p.process(&record(&[("temperatura", 10.0)])))
             .get("temperatura")
             .unwrap()
             .as_f64()
@@ -623,8 +660,7 @@ fn process_reutilizable_multiples_llamadas() {
         20.0
     );
     assert_eq!(
-        p.process(&record(&[("temperatura", 25.0)]))
-            .unwrap()
+        unwrap_processed(p.process(&record(&[("temperatura", 25.0)])))
             .get("temperatura")
             .unwrap()
             .as_f64()
@@ -661,7 +697,8 @@ async fn process_data_json_valido_aplica_operacion() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let dato = DataConsumerRawType::new(r#"{"temperatura": 20.0}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
     assert_eq!(*json.get("temperatura").unwrap(), 40.0);
 }
 
@@ -670,7 +707,8 @@ async fn process_data_resultado_es_data_consumer_raw_type_valido() {
     let p = PipelineDataProcessorCore::new(SCHEMA_PASSTHROUGH).unwrap();
     let dato = DataConsumerRawType::new(r#"{"humedad": 70.0}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    assert!(serde_json::from_str::<serde_json::Value>(resultado.value()).is_ok());
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    assert!(serde_json::from_str::<serde_json::Value>(&json_str).is_ok());
 }
 
 #[actix_rt::test]
@@ -684,14 +722,14 @@ async fn process_data_json_invalido_falla() {
 async fn process_data_json_vacio_falla_si_hay_campos_requeridos() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let dato = DataConsumerRawType::new("{}").unwrap();
-    assert!(p.process_data(&dato).await.is_err());
+    assert_rejected(p.process_data(&dato).await);
 }
 
 #[actix_rt::test]
 async fn process_data_campo_requerido_faltante_falla() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let dato = DataConsumerRawType::new(r#"{"humedad": 50.0}"#).unwrap();
-    assert!(p.process_data(&dato).await.is_err());
+    assert_rejected(p.process_data(&dato).await);
 }
 
 #[actix_rt::test]
@@ -705,7 +743,7 @@ async fn process_data_valor_string_en_campo_numerico_falla() {
 async fn process_data_valor_null_falla() {
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let dato = DataConsumerRawType::new(r#"{"temperatura": null}"#).unwrap();
-    assert!(p.process_data(&dato).await.is_err());
+    assert_rejected(p.process_data(&dato).await);
 }
 
 #[actix_rt::test]
@@ -728,7 +766,8 @@ async fn process_data_bool_true_se_convierte_a_uno() {
     let p = PipelineDataProcessorCore::new(schema).unwrap();
     let dato = DataConsumerRawType::new(r#"{"activo": true}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
     assert_eq!(*json.get("activo").unwrap(), 1.0);
 }
 
@@ -738,7 +777,8 @@ async fn process_data_bool_false_se_convierte_a_cero() {
     let p = PipelineDataProcessorCore::new(schema).unwrap();
     let dato = DataConsumerRawType::new(r#"{"activo": false}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
     assert_eq!(*json.get("activo").unwrap(), 0.0);
 }
 
@@ -747,7 +787,8 @@ async fn process_data_campos_extra_ignorados_resultado_solo_tiene_campos_schema(
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
     let dato = DataConsumerRawType::new(r#"{"temperatura": 10.0, "campo_extra": 999.0}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
     assert!(json.contains_key("temperatura"));
     assert!(!json.contains_key("campo_extra"));
 }
@@ -757,7 +798,8 @@ async fn process_data_schema_vacio_cualquier_json_produce_objeto_vacio() {
     let p = PipelineDataProcessorCore::new("{}").unwrap();
     let dato = DataConsumerRawType::new(r#"{"temperatura": 20.0}"#).unwrap();
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
     assert!(json.is_empty());
 }
 
@@ -774,7 +816,8 @@ async fn process_data_conversion_celsius_fahrenheit_end_to_end() {
     for (celsius, fahrenheit_esperado) in casos {
         let dato = DataConsumerRawType::new(format!(r#"{{"temperatura": {celsius}}}"#)).unwrap();
         let resultado = p.process_data(&dato).await.unwrap();
-        let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+        let json_str = unwrap_processed_to_json(Ok(resultado));
+        let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
         assert!(
             approx(*json.get("temperatura").unwrap(), fahrenheit_esperado),
             "{}°C debería ser {}°F, obtenido: {}",
@@ -825,13 +868,12 @@ const SCHEMA_MULTI: &str = r#"{
 #[test]
 fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p
+    let out = unwrap_processed(p
         .process(&record(&[
             ("temperatura", 25.0),
             ("humedad", 60.0),
             ("presion", 1000.0),
-        ]))
-        .unwrap();
+        ])));
 
     assert!(out.contains_key("temperatura"));
     assert!(out.contains_key("humedad"));
@@ -841,13 +883,12 @@ fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
 #[test]
 fn process_multivariable_cada_campo_se_procesa_independientemente() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p
+    let out = unwrap_processed(p
         .process(&record(&[
             ("temperatura", 0.0), // 0 * 1.8 + 32 = 32
             ("humedad", 65.0),    // con operación ×2 → 130
             ("presion", 950.0),   // sin operación → 950
-        ]))
-        .unwrap();
+        ])));
 
     assert!(approx(
         out.get("temperatura").unwrap().as_f64().unwrap(),
@@ -861,9 +902,8 @@ fn process_multivariable_cada_campo_se_procesa_independientemente() {
 fn process_multivariable_campo_opcional_ausente_usa_default() {
     // "presion" no viene en el registro → debe usar 1013.25
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = p
-        .process(&record(&[("temperatura", 20.0), ("humedad", 50.0)]))
-        .unwrap();
+    let out = unwrap_processed(p
+        .process(&record(&[("temperatura", 20.0), ("humedad", 50.0)])));
 
     assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 1013.25);
 }
@@ -873,14 +913,12 @@ fn process_multivariable_falla_si_falta_cualquier_campo_requerido() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
 
     // falta temperatura
-    assert!(
+    assert_rejected(
         p.process(&record(&[("humedad", 50.0), ("presion", 1000.0)]))
-            .is_err()
     );
     // falta humedad
-    assert!(
+    assert_rejected(
         p.process(&record(&[("temperatura", 20.0), ("presion", 1000.0)]))
-            .is_err()
     );
 }
 
@@ -917,7 +955,8 @@ async fn process_data_multivariable_json_completo() {
             .unwrap();
 
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
 
     // 100°C → 212°F
     assert!(approx(*json.get("temperatura").unwrap(), 212.0));
@@ -932,7 +971,8 @@ async fn process_data_multivariable_con_default() {
     let dato = DataConsumerRawType::new(r#"{"temperatura": 37.0, "humedad": 55.0}"#).unwrap();
 
     let resultado = p.process_data(&dato).await.unwrap();
-    let json: HashMap<String, f64> = serde_json::from_str(resultado.value()).unwrap();
+    let json_str = unwrap_processed_to_json(Ok(resultado));
+    let json: HashMap<String, f64> = serde_json::from_str(&json_str).unwrap();
 
     assert!(approx(*json.get("temperatura").unwrap(), 98.6));
     assert_eq!(*json.get("humedad").unwrap(), 110.0); // 55 × 2

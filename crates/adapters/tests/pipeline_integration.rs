@@ -27,6 +27,7 @@ use adapters::actor_system::pipeline_actor_module::{
 ///   - Que el orden relativo de llegada se mantiene.
 // use actix::prelude::*;
 use async_trait::async_trait;
+use domain::ast::schemas::ProcessingOutcome;
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::IoTBeeError;
 use domain::outbound::{
@@ -61,8 +62,16 @@ impl DataProcessorActions for FakeDataProcessor {
     async fn process_data(
         &self,
         data: &DataConsumerRawType,
-    ) -> Result<DataConsumerRawType, IoTBeeError> {
-        Ok(data.clone())
+    ) -> Result<ProcessingOutcome, IoTBeeError> {
+        // Parsear el JSON para simular procesamiento exitoso
+        let record: std::collections::HashMap<String, serde_json::Value> =
+            serde_json::from_str(data.value()).map_err(|e| {
+                domain::error::DomainValidationError::DataFormatError {
+                    reason: format!("JSON inválido: {}", e),
+                }
+            })?;
+        
+        Ok(ProcessingOutcome::Processed(record))
     }
 }
 

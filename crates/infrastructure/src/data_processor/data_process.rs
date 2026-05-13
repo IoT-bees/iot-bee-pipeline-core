@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use domain::ast::processor::PipelineDataProcessor;
-use domain::ast::schemas::FieldSchema;
+use domain::ast::schemas::{FieldSchema, ProcessingOutcome};
 use domain::entities::data_consumer_types::DataConsumerRawType;
 use domain::error::{DomainValidationError, IoTBeeError};
 use domain::outbound::data_processor_actions::DataProcessorActions;
@@ -28,7 +28,7 @@ impl PipelineDataProcessorCore {
     pub fn process(
         &self,
         record: &HashMap<String, Value>,
-    ) -> Result<HashMap<String, Value>, IoTBeeError> {
+    ) -> Result<ProcessingOutcome, IoTBeeError> {
         self.inner.process(record)
     }
 }
@@ -40,20 +40,19 @@ impl DataProcessorActions for PipelineDataProcessorCore {
     async fn process_data(
         &self,
         data_to_process: &DataConsumerRawType,
-    ) -> Result<DataConsumerRawType, IoTBeeError> {
+    ) -> Result<ProcessingOutcome, IoTBeeError> {
         // 1. Parsear el payload crudo a un mapa de valores
         let record = parse_record(data_to_process.value())?;
 
         // 2. Procesar con el schema ya compilado: aplica operaciones y validaciones
-        let output = self.process(&record)?;
+        let mut outcome = self.process(&record)?;
 
-        // 3. Serializar el resultado de vuelta a JSON y envolverlo en DataConsumerRawType
-        let json =
-            serde_json::to_string(&output).map_err(|e| DomainValidationError::DataFormatError {
-                reason: format!("Error al serializar resultado: {}", e),
-            })?;
+        // 3. Si es un rechazo, agregar el dato original (responsabilidad de infra)
+        if let ProcessingOutcome::Rejected(ref mut rejection) = outcome {
+            rejection.original_data = data_to_process.value().to_string();
+        }
 
-        DataConsumerRawType::new(json)
+        Ok(outcome)
     }
 }
 

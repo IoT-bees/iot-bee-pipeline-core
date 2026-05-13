@@ -78,6 +78,16 @@ pub enum DomainValidationError {
     MissingField { field_name: String },
     #[error("Data format error: {reason}")]
     DataFormatError { reason: String },
+    // #[error("AST error: {reason}")]
+    // ASTError { reason: String },
+}
+
+#[derive(Error, Debug)]
+pub enum AstractError {
+    #[error("Abstract error: {reason}")]
+    General { reason: String },
+    #[error("Validation schema error {e}")]
+    ValidationSchemaError { e: String },
 }
 
 // define a proper domain error for all my sistem
