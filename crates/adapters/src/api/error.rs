@@ -1,6 +1,7 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use domain::error::{
+    AuthError,
     IoTBeeError,
     PipelineLifecycleError,
     PipelinePersistenceError, // ya
@@ -143,6 +144,15 @@ impl ResponseError for ApiError {
             IoTBeeError::DataSourceError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DomainValidationError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DataExternalStoreError(_) => StatusCode::BAD_REQUEST,
+            IoTBeeError::AuthError(inner) => match inner {
+                AuthError::InvalidCredentials
+                | AuthError::InvalidToken
+                | AuthError::ExpiredToken => StatusCode::UNAUTHORIZED,
+                AuthError::EmailAlreadyTaken { .. } => StatusCode::CONFLICT,
+                AuthError::RegistrationDisabled => StatusCode::FORBIDDEN,
+                AuthError::WeakPassword { .. } => StatusCode::BAD_REQUEST,
+                AuthError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            },
         }
     }
 
@@ -173,6 +183,9 @@ impl ResponseError for ApiError {
                 .json(ErrorResponse {
                     error: format!("External store error: {}", e),
                 }),
+            IoTBeeError::AuthError(e) => HttpResponse::build(self.status_code()).json(ErrorResponse {
+                error: e.to_string(),
+            }),
         }
     }
 }

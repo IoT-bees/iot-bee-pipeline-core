@@ -90,6 +90,24 @@ pub enum AstractError {
     ValidationSchemaError { e: String },
 }
 
+#[derive(Error, Debug, Clone)]
+pub enum AuthError {
+    #[error("invalid credentials")]
+    InvalidCredentials,
+    #[error("email '{email}' is already taken")]
+    EmailAlreadyTaken { email: String },
+    #[error("registration is disabled")]
+    RegistrationDisabled,
+    #[error("invalid token")]
+    InvalidToken,
+    #[error("expired token")]
+    ExpiredToken,
+    #[error("password is too weak: {reason}")]
+    WeakPassword { reason: String },
+    #[error("internal auth error: {reason}")]
+    Internal { reason: String },
+}
+
 // define a proper domain error for all my sistem
 #[derive(Error, Debug)]
 pub enum IoTBeeError {
@@ -105,4 +123,6 @@ pub enum IoTBeeError {
     DomainValidationError(#[from] DomainValidationError),
     #[error("Data external store error: {0}")]
     DataExternalStoreError(#[from] DataExternalStoreError),
+    #[error("Auth error: {0}")]
+    AuthError(#[from] AuthError),
 }

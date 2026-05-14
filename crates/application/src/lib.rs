@@ -1,3 +1,4 @@
+pub mod auth_cases;
 pub mod connection_types_cases;
 pub mod data_sources_cases;
 pub mod data_store_cases;
