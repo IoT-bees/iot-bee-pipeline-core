@@ -40,3 +40,9 @@ data/
 
 # Generated files
 docs/generated/
+
+# Superpowers (brainstorm/visual companion sessions)
+.superpowers/
+
+# Claude Code local
+.claude/
