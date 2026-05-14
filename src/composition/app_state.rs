@@ -35,6 +35,13 @@ use infrastructure::pipeline_component_factory::infra_pipeline_component_factory
 
 use adapters::actor_system::supervisor_actor_system::actor_wrapper::PipelineActorSupervisorSystemBridge;
 
+// para los casos de uso de auth
+use application::auth_cases::cases::AuthUseCasesImpl;
+use domain::auth::inbound::auth_uses::AuthUseCases;
+use infrastructure::persistence::repositories::users_repository::SqliteUserRepository;
+use infrastructure::security::argon2_hasher::Argon2Hasher;
+use infrastructure::security::jwt_issuer::JwtIssuer;
+
 use actix_web::web;
 
 use infrastructure::persistence::connection::InternalDataBase;
@@ -141,6 +148,18 @@ impl AppState {
         );
         let use_case: Arc<dyn PipelineLifecycleCases + Send + Sync> = Arc::new(use_case);
         web::Data::from(use_case)
+    }
+
+    pub fn auth_app_state(&self) -> web::Data<dyn AuthUseCases + Send + Sync> {
+        let repo = Arc::new(SqliteUserRepository::new(self.internal_data_base.clone()));
+        let hasher = Arc::new(Argon2Hasher::new());
+        let issuer = Arc::new(JwtIssuer::new(
+            self.config.jwt_secret.clone(),
+            self.config.jwt_expires_in_hours,
+        ));
+        let uc: Arc<dyn AuthUseCases + Send + Sync> =
+            Arc::new(AuthUseCasesImpl::new(repo, hasher, issuer));
+        web::Data::from(uc)
     }
 
     pub async fn start_all_pipelines(&self) {

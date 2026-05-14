@@ -1,4 +1,5 @@
 pub mod api_docs;
+pub mod auth;
 pub mod connection_types;
 pub mod data_sources;
 pub mod data_store;

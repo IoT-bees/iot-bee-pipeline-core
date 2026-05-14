@@ -22,6 +22,11 @@ use adapters::api::data_store::routers::data_store_scope;
 use adapters::api::pipeline_data::routers::pipeline_data_scope;
 //pipeline lifecycle
 use adapters::api::pipeline_lifecycle::routers::pipeline_lifecycle_scope;
+//auth
+use actix_cors::Cors;
+use adapters::api::auth::middleware::JwtAuth;
+use adapters::api::auth::routers::auth_scope;
+use actix_web::web;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::composition::api_composition::api_composer");
 use actix_web::{App, HttpServer};
@@ -38,6 +43,8 @@ impl ApiComposer {
         let data_stores = app_state.data_stores_app_state();
         let pipeline_data = app_state.pipeline_data_app_state();
         let pipeline_lifecycle = app_state.pipeline_lifecycle_app_state();
+        let auth = app_state.auth_app_state();
+        let cors_origins = app_state.config.cors_origins.clone();
 
         let port = app_state.config.api_port.unwrap_or(8080);
         let host = app_state
@@ -52,18 +59,32 @@ impl ApiComposer {
         ));
 
         HttpServer::new(move || {
+            let mut cors = Cors::default()
+                .allow_any_method()
+                .allow_any_header()
+                .max_age(3600);
+            for origin in cors_origins.iter() {
+                cors = cors.allowed_origin(origin);
+            }
             App::new()
+                .wrap(cors)
                 .service(
                     SwaggerUi::new("/swagger-ui/{_:.*}")
                         .url("/api-docs/openapi.json", ApiDoc::openapi()),
                 )
-                .service(connection_types_scope())
-                .service(validation_schemas_scope(validation_schemas.clone()))
-                .service(data_sources_scope(data_sources.clone()))
-                .service(pipeline_groups_scope(pipeline_groups.clone()))
-                .service(data_store_scope(data_stores.clone()))
-                .service(pipeline_data_scope(pipeline_data.clone()))
-                .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone()))
+                .service(auth_scope(auth.clone()))
+                .service(
+                    web::scope("")
+                        .app_data(auth.clone())
+                        .wrap(JwtAuth)
+                        .service(connection_types_scope())
+                        .service(validation_schemas_scope(validation_schemas.clone()))
+                        .service(data_sources_scope(data_sources.clone()))
+                        .service(pipeline_groups_scope(pipeline_groups.clone()))
+                        .service(data_store_scope(data_stores.clone()))
+                        .service(pipeline_data_scope(pipeline_data.clone()))
+                        .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone())),
+                )
         })
         .bind(format!("{}:{}", host, port))?
         .run()
