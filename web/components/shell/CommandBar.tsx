@@ -5,35 +5,37 @@ import { useRouter } from "next/navigation";
 import { useCommandBar } from "@/lib/store/useCommandBar";
 
 export function CommandBar() {
-  const { open, setOpen, query, setQuery } = useCommandBar();
+  const { open, setOpen, toggle, query, setQuery } = useCommandBar();
   const router = useRouter();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setOpen(!open);
+        toggle();
       }
       if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, setOpen]);
+  }, [toggle, setOpen]);
 
   if (!open) {
     return (
       <>
         <button
           onClick={() => setOpen(true)}
-          className="hidden sm:block w-full bg-[var(--color-bg-panel)] border-b border-[#1f1f1f] px-4 py-2 text-left text-[11px] font-mono text-[var(--color-fg-3)] hover:text-[var(--color-fg-1)]"
+          className="hidden sm:block w-full bg-[var(--color-bg-panel)] border-b border-[#1f1f1f] px-5 py-2.5 text-left text-[13px] font-mono text-[var(--color-fg-3)] hover:text-[var(--color-fg-1)]"
         >
           <span className="text-[var(--color-accent)] mr-2">$</span>
           run, navigate, search…
-          <span className="float-right border border-[#333] px-1.5 text-[9px]">⌘K</span>
+          <span className="float-right border border-[#333] px-2 text-[11px] py-[2px]">
+            ⌘K
+          </span>
         </button>
         <button
           onClick={() => setOpen(true)}
-          className="sm:hidden fixed bottom-4 right-4 z-30 bg-[var(--color-accent)] text-[var(--color-bg-base)] w-12 h-12 rounded-full font-bold text-[18px]"
+          className="sm:hidden fixed bottom-4 right-4 z-30 bg-[var(--color-accent)] text-[var(--color-bg-base)] w-12 h-12 rounded-full font-bold text-[20px]"
         >
           ⌘
         </button>
@@ -43,20 +45,20 @@ export function CommandBar() {
 
   return (
     <div className="fixed inset-0 z-40 bg-black/70 flex items-start justify-center pt-24">
-      <Command className="bg-[var(--color-bg-panel)] border border-[var(--color-accent)] w-[600px] max-w-[90vw] rounded-[3px] overflow-hidden">
+      <Command className="bg-[var(--color-bg-panel)] border border-[var(--color-accent)] w-[640px] max-w-[90vw] rounded-[3px] overflow-hidden">
         <Command.Input
           value={query}
           onValueChange={setQuery}
           placeholder="type a command…"
-          className="w-full bg-transparent text-[var(--color-fg-1)] px-4 py-3 text-[13px] font-mono outline-none"
+          className="w-full bg-transparent text-[var(--color-fg-1)] px-5 py-4 text-[15px] font-mono outline-none"
         />
-        <Command.List className="max-h-[320px] overflow-y-auto p-2">
-          <Command.Empty className="p-3 text-[var(--color-fg-3)] text-[12px]">
+        <Command.List className="max-h-[360px] overflow-y-auto p-2">
+          <Command.Empty className="p-3 text-[var(--color-fg-3)] text-[13px]">
             {"// "}no matches
           </Command.Empty>
           <Command.Group
             heading="navigate"
-            className="text-[10px] text-[var(--color-fg-3)] tracking-[2px] px-2 py-1"
+            className="text-[12px] text-[var(--color-fg-3)] tracking-[2px] px-2 py-1"
           >
             {[
               { label: "go overview", href: "/app" },
@@ -76,7 +78,7 @@ export function CommandBar() {
                   setOpen(false);
                   router.push(item.href);
                 }}
-                className="px-2 py-2 text-[12px] font-mono cursor-pointer data-[selected=true]:bg-[var(--color-bg-elev)]"
+                className="px-3 py-2.5 text-[14px] font-mono cursor-pointer data-[selected=true]:bg-[var(--color-bg-elev)] rounded-[2px]"
               >
                 {item.label}
               </Command.Item>

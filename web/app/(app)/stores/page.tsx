@@ -2,13 +2,17 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { Panel } from "@/components/ui/Panel";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
 import { useDeleteStore, useStores } from "@/lib/hooks/useStores";
+import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
+import { fmtId } from "@/lib/fmt";
 
 export default function StoresPage() {
   const { data, isLoading } = useStores();
   const del = useDeleteStore();
+  const confirmDelete = useConfirmDelete(del.mutateAsync);
   const list = data ?? [];
   return (
     <div>
@@ -33,27 +37,28 @@ export default function StoresPage() {
                 <TH>#</TH>
                 <TH>NAME</TH>
                 <TH>TYPE</TH>
+                <TH>DESCRIPTION</TH>
                 <TH className="text-right">ACTIONS</TH>
               </THead>
               <tbody>
                 {list.map((s) => (
                   <TR key={s.id}>
-                    <TD>{String(s.id).padStart(2, "0")}</TD>
+                    <TD>{fmtId(s.id)}</TD>
                     <TD>{s.name}</TD>
-                    <TD>{s.persistenceType}</TD>
+                    <TD>{s.storeType}</TD>
+                    <TD>{s.dataStoreDescription}</TD>
                     <TD className="text-right">
                       <div className="flex gap-1.5 justify-end">
                         <Link href={`/stores/${s.id}/edit`}>
-                          <span className="inline-block text-[10px] border border-[#333] text-[var(--color-fg-1)] px-2 py-1 rounded-[2px]">
-                            edit
-                          </span>
+                          <Button variant="ghost" size="sm">edit</Button>
                         </Link>
-                        <button
-                          onClick={() => confirm(`delete ${s.name}?`) && del.mutate(s.id)}
-                          className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => confirmDelete.ask(s.id, s.name)}
                         >
                           delete
-                        </button>
+                        </Button>
                       </div>
                     </TD>
                   </TR>
@@ -66,29 +71,41 @@ export default function StoresPage() {
               <Panel key={s.id}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <div className="t-label">{"// "}#{String(s.id).padStart(2, "0")}</div>
+                    <div className="t-label">{"// "}#{fmtId(s.id)}</div>
                     <div className="font-bold">{s.name}</div>
-                    <div className="t-mono">{s.persistenceType}</div>
+                    <div className="t-mono">{s.storeType}</div>
+                    <div className="text-[12px] text-[var(--color-fg-3)] mt-1">
+                      {s.dataStoreDescription}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Link href={`/stores/${s.id}/edit`}>
-                    <span className="inline-block text-[10px] border border-[#333] text-[var(--color-fg-1)] px-2 py-1 rounded-[2px]">
-                      edit
-                    </span>
+                    <Button variant="ghost" size="sm">edit</Button>
                   </Link>
-                  <button
-                    onClick={() => confirm(`delete ${s.name}?`) && del.mutate(s.id)}
-                    className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => confirmDelete.ask(s.id, s.name)}
                   >
                     delete
-                  </button>
+                  </Button>
                 </div>
               </Panel>
             ))}
           </div>
         </>
       )}
+
+      <DeleteResourceDialog
+        pending={confirmDelete.pending}
+        resourceLabel="data store"
+        impact="Pipelines that write to this store will fail until you assign them a new destination."
+        busy={del.isPending}
+        error={confirmDelete.error}
+        onConfirm={confirmDelete.confirm}
+        onClose={confirmDelete.cancel}
+      />
     </div>
   );
 }

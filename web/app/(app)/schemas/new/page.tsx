@@ -9,12 +9,12 @@ export default function NewSchemaPage() {
   return (
     <div>
       <h1 className="t-title mb-1">new validation schema</h1>
-      <p className="t-mono mb-6">{"// "}define fields and transforms.</p>
+      <p className="t-mono mb-6">{"// "}define fields, types, validations, and (optional) AST transforms.</p>
       <SchemaBuilder
         submitLabel="+ CREATE SCHEMA"
         submitting={create.isPending}
-        onSubmit={async (values) => {
-          await create.mutateAsync(values);
+        onSubmit={async (payload) => {
+          await create.mutateAsync(payload);
           router.push("/schemas");
         }}
       />

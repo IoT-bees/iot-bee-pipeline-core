@@ -2,13 +2,20 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "ghost" | "danger";
+type Size = "sm" | "md";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
+  size?: Size;
 }
 
 const base =
-  "font-mono text-[12px] tracking-[1px] px-4 py-[9px] rounded-[2px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+  "font-mono tracking-[1px] rounded-[2px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center";
+
+const sizes: Record<Size, string> = {
+  sm: "text-[12px] px-3 py-[6px]",
+  md: "text-[13px] px-5 py-[10px]",
+};
 
 const variants: Record<Variant, string> = {
   primary:
@@ -20,14 +27,15 @@ const variants: Record<Variant, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "ghost", className, ...rest },
+  { variant = "ghost", size = "md", className, ...rest },
   ref,
 ) {
   return (
     <button
       ref={ref}
       data-variant={variant}
-      className={cn(base, variants[variant], className)}
+      data-size={size}
+      className={cn(base, sizes[size], variants[variant], className)}
       {...rest}
     />
   );

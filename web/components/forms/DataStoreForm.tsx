@@ -1,15 +1,17 @@
 "use client";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { storeSchema, type StoreInput } from "@/lib/schemas/store";
+import type { CreateDataStoreRequest, StoreConfigUnion } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
 
 interface Props {
   defaultValues?: Partial<StoreInput>;
-  onSubmit: SubmitHandler<StoreInput>;
+  onSubmit: (payload: CreateDataStoreRequest) => Promise<void> | void;
   submitting?: boolean;
   submitLabel: string;
 }
@@ -22,57 +24,102 @@ export function DataStoreForm({
 }: Props) {
   const form = useForm<StoreInput>({
     resolver: zodResolver(storeSchema),
-    defaultValues: defaultValues as StoreInput,
+    defaultValues:
+      defaultValues ??
+      ({
+        name: "",
+        description: "",
+        config: { persistenceType: "LOCAL_LOG", log_name: "" },
+      } as StoreInput),
   });
-  const t = form.watch("persistenceType") ?? "INFLUX_DB";
+  const t = form.watch("config.persistenceType");
+
+  async function handleSubmit(values: StoreInput): Promise<void> {
+    const c = values.config;
+    let configuration: StoreConfigUnion;
+    if (c.persistenceType === "INFLUX_DB") {
+      const tags = (c.tag_fields ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      configuration = {
+        persistenceType: "INFLUX_DB",
+        url: c.url,
+        data_base: c.data_base,
+        measurement: c.measurement,
+        token: c.token,
+        tag_fields: tags,
+      };
+    } else {
+      configuration = { persistenceType: "LOCAL_LOG", log_name: c.log_name };
+    }
+    await onSubmit({
+      name: values.name,
+      dataStoreConfiguration: configuration,
+      dataStoreDescription: values.description,
+    });
+  }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-[640px]">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="max-w-[640px]">
       <FormField label="NAME" error={form.formState.errors.name?.message}>
-        <Input {...form.register("name")} />
+        <Input {...form.register("name")} placeholder="e.g. influx-prod" />
+      </FormField>
+      <FormField
+        label="DESCRIPTION"
+        error={form.formState.errors.description?.message}
+      >
+        <Input
+          {...form.register("description")}
+          placeholder="what this store holds"
+        />
       </FormField>
       <FormField label="STORE TYPE">
-        <select
-          className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-[9px] text-[12px] font-mono rounded-[2px] w-full"
-          {...form.register("persistenceType")}
-        >
-          <option value="INFLUX_DB">INFLUX_DB</option>
+        <Select {...form.register("config.persistenceType")}>
           <option value="LOCAL_LOG">LOCAL_LOG</option>
-        </select>
+          <option value="INFLUX_DB">INFLUX_DB</option>
+        </Select>
       </FormField>
+
       {t === "INFLUX_DB" && (
         <>
-          <FormField label="HOST">
+          <FormField label="URL">
             <Input
-              {...form.register("host" as const)}
-              placeholder="http://localhost:8086"
+              {...form.register("config.url" as const)}
+              placeholder="http://influxdb:8086"
             />
           </FormField>
           <FormField label="DATABASE">
-            <Input {...form.register("database" as const)} />
+            <Input {...form.register("config.data_base" as const)} />
           </FormField>
           <FormField label="MEASUREMENT">
-            <Input {...form.register("measurement" as const)} />
+            <Input {...form.register("config.measurement" as const)} />
           </FormField>
-          <FormField label="TAG FIELDS (comma-separated)">
+          <FormField label="TOKEN">
+            <Input {...form.register("config.token" as const)} type="password" />
+          </FormField>
+          <FormField
+            label="TAG FIELDS (comma-separated)"
+            hint="string fields written as InfluxDB tags"
+          >
             <Input
-              placeholder="location,device_id"
-              {...form.register("tag_fields" as const, {
-                setValueAs: (v) =>
-                  typeof v === "string"
-                    ? v.split(",").map((s) => s.trim()).filter(Boolean)
-                    : v,
-              })}
+              {...form.register("config.tag_fields" as const)}
+              placeholder="location, device_id"
             />
           </FormField>
         </>
       )}
+
       {t === "LOCAL_LOG" && (
         <FormField label="LOG NAME">
-          <Input {...form.register("log_name" as const)} />
+          <Input
+            {...form.register("config.log_name" as const)}
+            placeholder="e.g. debug"
+          />
         </FormField>
       )}
-      <div className="flex gap-3 items-center mt-4">
+
+      <div className="flex gap-3 items-center mt-6">
         <Button type="submit" variant="primary" disabled={submitting}>
           {submitLabel}
         </Button>

@@ -1,55 +1,82 @@
 "use client";
 import { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { pipelineSchema, type PipelineInput } from "@/lib/schemas/pipeline";
+import type { CreatePipelineRequest } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
 import { Panel } from "@/components/ui/Panel";
 
-const STEPS = ["NAME", "SOURCE", "SCHEMA", "STORE", "REPLICATION"] as const;
+const STEPS = [
+  "DETAILS",
+  "SOURCE",
+  "SCHEMA",
+  "STORE",
+  "GROUP",
+  "REPLICATION",
+] as const;
+
+interface Props {
+  sources: { id: number; name: string; sourceType: string }[];
+  schemas: { id: number; name: string }[];
+  stores: { id: number; name: string; storeType: string }[];
+  groups: { id: number; name: string }[];
+  onSubmit: (payload: CreatePipelineRequest) => Promise<void> | void;
+  submitting?: boolean;
+}
 
 export function PipelineWizard({
   sources,
   schemas,
   stores,
+  groups,
   onSubmit,
   submitting,
-}: {
-  sources: { id: number; name: string; sourceType: string }[];
-  schemas: { id: number; name: string }[];
-  stores: { id: number; name: string; persistenceType: string }[];
-  onSubmit: SubmitHandler<PipelineInput>;
-  submitting?: boolean;
-}) {
+}: Props) {
   const [step, setStep] = useState(0);
   const form = useForm<PipelineInput>({
     resolver: zodResolver(pipelineSchema),
-    defaultValues: { replication: 1 },
+    defaultValues: { name: "", description: "", pipelineReplication: 1 },
   });
+  const errs = form.formState.errors;
 
   async function next() {
     const fields: (keyof PipelineInput)[][] = [
-      ["name"],
-      ["data_source_id"],
-      ["validation_schema_id"],
-      ["data_store_id"],
-      ["replication"],
+      ["name", "description"],
+      ["dataSourceId"],
+      ["validationSchemaId"],
+      ["dataStoreId"],
+      ["pipelineGroupId"],
+      ["pipelineReplication"],
     ];
     const ok = await form.trigger(fields[step]);
     if (ok) setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
+  async function handleSubmit(values: PipelineInput): Promise<void> {
+    await onSubmit({
+      name: values.name,
+      dataStoreId: values.dataStoreId,
+      pipelineGroupId: values.pipelineGroupId,
+      dataSourceId: values.dataSourceId,
+      validationSchemaId: values.validationSchemaId,
+      dataStoreDescription: values.description,
+      pipelineReplication: values.pipelineReplication,
+    });
+  }
+
   return (
     <form
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(handleSubmit)}
       className="grid lg:grid-cols-[200px_1fr] gap-6"
     >
       <aside>
         <div className="t-label mb-2">{"// "}steps</div>
-        <ol className="flex flex-col gap-1 text-[11px]">
+        <ol className="flex flex-col gap-1 text-[12px]">
           {STEPS.map((s, i) => (
             <li
               key={s}
@@ -61,7 +88,7 @@ export function PipelineWizard({
                   : "text-[var(--color-fg-4)]"
               }
             >
-              {String(i + 1).padStart(2, "0")}/05 · {s.toLowerCase()}
+              {String(i + 1).padStart(2, "0")}/0{STEPS.length} · {s.toLowerCase()}
             </li>
           ))}
         </ol>
@@ -69,89 +96,97 @@ export function PipelineWizard({
       <div>
         {step === 0 && (
           <Panel>
-            <FormField
-              label="PIPELINE NAME"
-              error={form.formState.errors.name?.message}
-            >
-              <Input {...form.register("name")} placeholder="temp-rabbit" />
+            <FormField label="PIPELINE NAME" error={errs.name?.message}>
+              <Input {...form.register("name")} placeholder="e.g. temp-floor-1" />
+            </FormField>
+            <FormField label="DESCRIPTION" error={errs.description?.message}>
+              <Input
+                {...form.register("description")}
+                placeholder="what this pipeline ingests / persists"
+              />
             </FormField>
           </Panel>
         )}
         {step === 1 && (
           <Panel>
-            <div className="t-label mb-2">{"// "}DATA SOURCE</div>
-            <select
-              className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-[9px] text-[12px] font-mono rounded-[2px] w-full"
-              {...form.register("data_source_id", { valueAsNumber: true })}
-            >
-              <option value="">— pick one —</option>
-              {sources.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.sourceType})
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.data_source_id && (
-              <div className="text-[10px] text-[var(--color-danger)] mt-1">
-                × {form.formState.errors.data_source_id.message}
-              </div>
-            )}
+            <FormField label="DATA SOURCE" error={errs.dataSourceId?.message}>
+              <Select
+                {...form.register("dataSourceId", { valueAsNumber: true })}
+              >
+                <option value="">— pick one —</option>
+                {sources.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.sourceType})
+                  </option>
+                ))}
+              </Select>
+            </FormField>
           </Panel>
         )}
         {step === 2 && (
           <Panel>
-            <div className="t-label mb-2">{"// "}VALIDATION SCHEMA</div>
-            <select
-              className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-[9px] text-[12px] font-mono rounded-[2px] w-full"
-              {...form.register("validation_schema_id", { valueAsNumber: true })}
+            <FormField
+              label="VALIDATION SCHEMA"
+              error={errs.validationSchemaId?.message}
             >
-              <option value="">— pick one —</option>
-              {schemas.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.validation_schema_id && (
-              <div className="text-[10px] text-[var(--color-danger)] mt-1">
-                × {form.formState.errors.validation_schema_id.message}
-              </div>
-            )}
+              <Select
+                {...form.register("validationSchemaId", { valueAsNumber: true })}
+              >
+                <option value="">— pick one —</option>
+                {schemas.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
           </Panel>
         )}
         {step === 3 && (
           <Panel>
-            <div className="t-label mb-2">{"// "}DATA STORE</div>
-            <select
-              className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-[9px] text-[12px] font-mono rounded-[2px] w-full"
-              {...form.register("data_store_id", { valueAsNumber: true })}
-            >
-              <option value="">— pick one —</option>
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.persistenceType})
-                </option>
-              ))}
-            </select>
-            {form.formState.errors.data_store_id && (
-              <div className="text-[10px] text-[var(--color-danger)] mt-1">
-                × {form.formState.errors.data_store_id.message}
-              </div>
-            )}
+            <FormField label="DATA STORE" error={errs.dataStoreId?.message}>
+              <Select {...form.register("dataStoreId", { valueAsNumber: true })}>
+                <option value="">— pick one —</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.storeType})
+                  </option>
+                ))}
+              </Select>
+            </FormField>
           </Panel>
         )}
         {step === 4 && (
           <Panel>
             <FormField
+              label="PIPELINE GROUP"
+              error={errs.pipelineGroupId?.message}
+            >
+              <Select
+                {...form.register("pipelineGroupId", { valueAsNumber: true })}
+              >
+                <option value="">— pick one —</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          </Panel>
+        )}
+        {step === 5 && (
+          <Panel>
+            <FormField
               label="REPLICATION (workers)"
-              hint="how many concurrent replicas to run"
-              error={form.formState.errors.replication?.message}
+              hint="how many concurrent replicas to run (1-64)"
+              error={errs.pipelineReplication?.message}
             >
               <Input
                 type="number"
                 min={1}
                 max={64}
-                {...form.register("replication", { valueAsNumber: true })}
+                {...form.register("pipelineReplication", { valueAsNumber: true })}
               />
             </FormField>
           </Panel>
@@ -159,7 +194,11 @@ export function PipelineWizard({
 
         <div className="flex gap-3 items-center mt-4">
           {step > 0 && (
-            <Button type="button" variant="ghost" onClick={() => setStep((s) => s - 1)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setStep((s) => s - 1)}
+            >
               ← back
             </Button>
           )}

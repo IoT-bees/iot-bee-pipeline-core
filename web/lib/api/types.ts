@@ -1,6 +1,3 @@
-// Hand-written types that mirror the backend's OpenAPI shapes.
-// Run `pnpm gen:api` to generate types.generated.ts from a running backend.
-
 export interface UserResponse {
   id: number;
   email: string;
@@ -27,109 +24,151 @@ export interface ConnectionType {
 }
 
 export type SourceType = "RABBIT_MQ" | "MQTT" | "KAFKA";
-export interface RabbitMqConfig {
-  host: string;
-  queue: string;
+
+export interface RabbitmqConfig {
+  url: string;
+  queue_name: string;
+  consumer_name: string;
 }
 export interface MqttConfig {
-  host: string;
+  broker_url: string;
   topic: string;
+  client_id: string;
 }
 export interface KafkaConfig {
-  brokers: string;
+  brokers: string[];
   topic: string;
   group_id: string;
+}
+
+export type SourceConfigUnion =
+  | ({ sourceType: "RABBIT_MQ" } & RabbitmqConfig)
+  | ({ sourceType: "MQTT" } & MqttConfig)
+  | ({ sourceType: "KAFKA" } & KafkaConfig);
+
+export interface CreateDataSourceRequest {
+  name: string;
+  dataSourceConfiguration: SourceConfigUnion;
+  dataSourceDescription: string;
 }
 
 export interface DataSource {
   id: number;
   name: string;
   sourceType: SourceType;
-  config: RabbitMqConfig | MqttConfig | KafkaConfig;
-}
-
-export interface CreateDataSourceRequest {
-  name: string;
-  sourceType: SourceType;
-  config: RabbitMqConfig | MqttConfig | KafkaConfig;
+  dataSourceDescription: string;
+  config: RabbitmqConfig | MqttConfig | KafkaConfig;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type StoreType = "INFLUX_DB" | "LOCAL_LOG";
 
+export interface InfluxDbConfig {
+  url: string;
+  data_base: string;
+  measurement: string;
+  token: string;
+  tag_fields: string[];
+}
+export interface LocalLogConfig {
+  log_name: string;
+}
+
+export type StoreConfigUnion =
+  | ({ persistenceType: "INFLUX_DB" } & InfluxDbConfig)
+  | ({ persistenceType: "LOCAL_LOG" } & LocalLogConfig);
+
+export interface CreateDataStoreRequest {
+  name: string;
+  dataStoreConfiguration: StoreConfigUnion;
+  dataStoreDescription: string;
+}
+
 export interface DataStore {
   id: number;
   name: string;
-  persistenceType: StoreType;
-  host?: string;
-  database?: string;
-  measurement?: string;
-  tag_fields?: string[];
-  log_name?: string;
+  storeType: StoreType;
+  dataStoreDescription: string;
+  config: InfluxDbConfig | LocalLogConfig;
+  createdAt?: string;
+  updatedAt?: string;
 }
-
-export type CreateDataStoreRequest = Omit<DataStore, "id">;
 
 export interface PipelineGroup {
   id: number;
   name: string;
+  description: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreatePipelineGroupRequest {
   name: string;
+  description: string;
 }
 
-export type FieldType = "float" | "int" | "bool" | "string";
-export type Operator = "Add" | "Subtract" | "Multiply" | "Divide";
+export type FieldType = "float" | "int" | "bool";
 
-export interface SchemaOperation {
-  operator: Operator;
-  operand: number;
-}
-
-export interface SchemaField {
-  name: string;
-  field_type: FieldType;
-  required: boolean;
-  default?: number | boolean | string;
+export interface ValidationRule {
   min?: number;
   max?: number;
-  operations?: SchemaOperation[];
 }
+
+export interface FieldSchema {
+  type: FieldType;
+  required: boolean;
+  default?: number | boolean | string | null;
+  validation?: ValidationRule | null;
+  operation?: Record<string, unknown> | null;
+}
+
+export type SchemaMap = Record<string, FieldSchema>;
 
 export interface ValidationSchema {
   id: number;
   name: string;
-  schema: { fields: SchemaField[] };
+  schema: SchemaMap;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateValidationSchemaRequest {
   name: string;
-  schema: { fields: SchemaField[] };
+  schema: SchemaMap;
+}
+
+interface NestedRef {
+  id: number;
+  name: string;
 }
 
 export interface Pipeline {
   id: number;
   name: string;
-  replication: number;
-  data_source_id: number | null;
-  data_store_id: number | null;
-  validation_schema_id: number | null;
-  group_id: number | null;
-  status?: string;
+  isActive: boolean;
+  dataStore: NestedRef & { storeType?: string };
+  pipelineGroup: NestedRef;
+  dataSource: NestedRef & { sourceType?: string };
+  dataValidationSchema: NestedRef;
+  replicationFactor: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreatePipelineRequest {
   name: string;
-  replication: number;
-  data_source_id?: number;
-  data_store_id?: number;
-  validation_schema_id?: number;
-  group_id?: number;
+  dataStoreId: number;
+  pipelineGroupId: number;
+  dataSourceId: number;
+  validationSchemaId: number;
+  dataStoreDescription: string;
+  pipelineReplication: number;
 }
 
 export interface PipelineStatus {
   pipeline_id: number;
   pipeline_name: string;
-  status: "Running" | "Stopped" | "Error";
-  replicas?: number;
+  pipeline_general_status: string;
+  replica_statuses: Record<string, string>;
 }

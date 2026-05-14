@@ -1,45 +1,109 @@
 "use client";
-import { Controller, useFieldArray, useForm, type SubmitHandler } from "react-hook-form";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { builderSchema, type BuilderInput } from "@/lib/schemas/validationSchema";
+import type { SchemaMap } from "@/lib/api/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
 import { Panel } from "@/components/ui/Panel";
 
+const PLACEHOLDER = `{
+  "temperature": {
+    "type": "float",
+    "required": true,
+    "default": null,
+    "validation": { "min": -40, "max": 85 },
+    "operation": null
+  },
+  "humidity": {
+    "type": "float",
+    "required": true,
+    "default": null,
+    "validation": { "min": 0, "max": 100 },
+    "operation": null
+  },
+  "active": {
+    "type": "bool",
+    "required": false,
+    "default": true,
+    "validation": null,
+    "operation": null
+  }
+}`;
+
+interface SubmitPayload {
+  name: string;
+  schema: SchemaMap;
+}
+
 interface Props {
-  defaultValues?: BuilderInput;
+  defaultName?: string;
+  defaultSchema?: SchemaMap;
   submitLabel: string;
   submitting?: boolean;
-  onSubmit: SubmitHandler<BuilderInput>;
+  onSubmit: (payload: SubmitPayload) => Promise<void> | void;
+}
+
+type ParseResult =
+  | { ok: true; value: SchemaMap }
+  | { ok: false; error: string };
+
+function tryParse(text: string): ParseResult {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {
+        ok: false,
+        error: "schema must be a JSON object whose keys are field names",
+      };
+    }
+    return { ok: true, value: parsed as SchemaMap };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "invalid JSON" };
+  }
 }
 
 export function SchemaBuilder({
-  defaultValues,
+  defaultName,
+  defaultSchema,
   submitLabel,
   submitting,
   onSubmit,
 }: Props) {
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const initialJson =
+    defaultSchema && Object.keys(defaultSchema).length > 0
+      ? JSON.stringify(defaultSchema, null, 2)
+      : PLACEHOLDER;
+
   const form = useForm<BuilderInput>({
     resolver: zodResolver(builderSchema),
-    defaultValues:
-      defaultValues ??
-      ({
-        name: "",
-        schema: {
-          fields: [
-            { name: "", field_type: "float", required: true, operations: [] },
-          ],
-        },
-      } as BuilderInput),
+    defaultValues: { name: defaultName ?? "", schemaJson: initialJson },
   });
-  const fields = useFieldArray({ control: form.control, name: "schema.fields" });
-  const values = form.watch();
+
+  const liveJson = form.watch("schemaJson");
+  const livePreview = useMemo(() => {
+    const r = tryParse(liveJson ?? "");
+    return r.ok ? r.value : null;
+  }, [liveJson]);
+
+  async function handleSubmit(values: BuilderInput) {
+    const r = tryParse(values.schemaJson);
+    if (!r.ok) {
+      setParseError(r.error);
+      return;
+    }
+    setParseError(null);
+    await onSubmit({ name: values.name, schema: r.value });
+  }
 
   return (
     <form
-      onSubmit={form.handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(handleSubmit)}
       className="grid lg:grid-cols-[1fr_360px] gap-6"
     >
       <div>
@@ -47,154 +111,29 @@ export function SchemaBuilder({
           <Input {...form.register("name")} />
         </FormField>
 
-        <h2 className="t-section mt-6 mb-3">{"// "}fields</h2>
-        <div className="flex flex-col gap-3">
-          {fields.fields.map((f, idx) => (
-            <Panel key={f.id}>
-              <div className="flex justify-between items-center mb-3">
-                <div className="t-label">
-                  {"// "}field {String(idx + 1).padStart(2, "0")}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => fields.remove(idx)}
-                  className="text-[10px] text-[var(--color-danger)]"
-                >
-                  remove
-                </button>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <FormField label="NAME">
-                  <Input {...form.register(`schema.fields.${idx}.name` as const)} />
-                </FormField>
-                <FormField label="TYPE">
-                  <select
-                    className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-[9px] text-[12px] font-mono rounded-[2px] w-full"
-                    {...form.register(`schema.fields.${idx}.field_type` as const)}
-                  >
-                    <option value="float">float</option>
-                    <option value="int">int</option>
-                    <option value="bool">bool</option>
-                    <option value="string">string</option>
-                  </select>
-                </FormField>
-              </div>
-              <div className="grid md:grid-cols-3 gap-3 mt-3">
-                <label className="flex items-center gap-2 text-[11px] mt-5">
-                  <input
-                    type="checkbox"
-                    {...form.register(`schema.fields.${idx}.required` as const)}
-                  />{" "}
-                  required
-                </label>
-                <FormField label="MIN">
-                  <Input
-                    type="number"
-                    step="any"
-                    {...form.register(`schema.fields.${idx}.min` as const, {
-                      valueAsNumber: true,
-                    })}
-                  />
-                </FormField>
-                <FormField label="MAX">
-                  <Input
-                    type="number"
-                    step="any"
-                    {...form.register(`schema.fields.${idx}.max` as const, {
-                      valueAsNumber: true,
-                    })}
-                  />
-                </FormField>
-              </div>
+        <FormField
+          label="SCHEMA JSON (map of field-name → rule)"
+          hint="each key is a field; supports type, required, default, validation:{min,max}, operation (AST or null)."
+          error={form.formState.errors.schemaJson?.message ?? parseError ?? undefined}
+        >
+          <textarea
+            {...form.register("schemaJson")}
+            spellCheck={false}
+            rows={22}
+            className="block w-full bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-3 py-3 text-[13px] font-mono rounded-[2px] outline-none focus:border-[var(--color-accent)] leading-snug whitespace-pre"
+          />
+        </FormField>
 
-              <Controller
-                control={form.control}
-                name={`schema.fields.${idx}.operations` as const}
-                render={({ field }) => {
-                  const ops = field.value ?? [];
-                  return (
-                    <div className="mt-3">
-                      <div className="t-label mb-2">{"// "}operations</div>
-                      <div className="flex flex-col gap-2">
-                        {ops.map((op, oi) => (
-                          <div key={oi} className="flex gap-2 items-center">
-                            <select
-                              value={op.operator}
-                              onChange={(e) => {
-                                const v = [...ops];
-                                v[oi] = {
-                                  ...op,
-                                  operator: e.target.value as
-                                    | "Add"
-                                    | "Subtract"
-                                    | "Multiply"
-                                    | "Divide",
-                                };
-                                field.onChange(v);
-                              }}
-                              className="bg-[var(--color-bg-panel)] border border-[#2a2a2a] text-[var(--color-fg-1)] px-2 py-1 text-[11px] font-mono"
-                            >
-                              <option>Add</option>
-                              <option>Subtract</option>
-                              <option>Multiply</option>
-                              <option>Divide</option>
-                            </select>
-                            <Input
-                              value={op.operand}
-                              type="number"
-                              step="any"
-                              onChange={(e) => {
-                                const v = [...ops];
-                                v[oi] = { ...op, operand: Number(e.target.value) };
-                                field.onChange(v);
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                field.onChange(ops.filter((_, i) => i !== oi))
-                              }
-                              className="text-[10px] text-[var(--color-danger)] px-2"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            field.onChange([...ops, { operator: "Add", operand: 0 }])
-                          }
-                          className="text-[10px] text-[var(--color-accent)] self-start"
-                        >
-                          + add operation
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-            </Panel>
-          ))}
-        </div>
-
-        <div className="flex gap-3 items-center mt-4">
+        <div className="flex gap-3 items-center mt-2">
+          <Button type="submit" variant="primary" disabled={submitting}>
+            {submitLabel}
+          </Button>
           <Button
             type="button"
             variant="ghost"
-            onClick={() =>
-              fields.append({
-                name: "",
-                field_type: "float",
-                required: true,
-                operations: [],
-              })
-            }
+            onClick={() => form.setValue("schemaJson", PLACEHOLDER)}
           >
-            + ADD FIELD
-          </Button>
-          <Button type="submit" variant="primary" disabled={submitting}>
-            {submitLabel}
+            load example
           </Button>
         </div>
       </div>
@@ -202,9 +141,29 @@ export function SchemaBuilder({
       <aside>
         <h2 className="t-section mb-3">{"// "}preview</h2>
         <Panel>
-          <pre className="text-[10px] font-mono leading-snug overflow-x-auto">
-            {JSON.stringify({ name: values.name, schema: values.schema }, null, 2)}
-          </pre>
+          {livePreview ? (
+            <>
+              <div className="t-label mb-2">
+                {"// "}{Object.keys(livePreview).length} field
+                {Object.keys(livePreview).length === 1 ? "" : "s"}
+              </div>
+              <ul className="text-[12px] font-mono text-[var(--color-fg-2)] flex flex-col gap-1">
+                {Object.entries(livePreview).map(([name, rule]) => (
+                  <li key={name} className="border-l-2 border-[var(--color-accent-dim)] pl-2">
+                    <span className="text-[var(--color-fg-0)]">{name}</span>{" "}
+                    <span className="text-[var(--color-fg-3)]">
+                      :: {(rule as { type?: string }).type ?? "?"}
+                      {(rule as { required?: boolean }).required ? " · required" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div className="text-[12px] text-[var(--color-danger)] font-mono">
+              × invalid JSON
+            </div>
+          )}
         </Panel>
       </aside>
     </form>

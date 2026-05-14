@@ -2,13 +2,17 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { Panel } from "@/components/ui/Panel";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
 import { useDeleteSchema, useSchemas } from "@/lib/hooks/useSchemas";
+import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
+import { fmtId } from "@/lib/fmt";
 
 export default function SchemasPage() {
   const { data, isLoading } = useSchemas();
   const del = useDeleteSchema();
+  const confirmDelete = useConfirmDelete(del.mutateAsync);
   const list = data ?? [];
   return (
     <div>
@@ -38,22 +42,21 @@ export default function SchemasPage() {
               <tbody>
                 {list.map((s) => (
                   <TR key={s.id}>
-                    <TD>{String(s.id).padStart(2, "0")}</TD>
+                    <TD>{fmtId(s.id)}</TD>
                     <TD>{s.name}</TD>
-                    <TD>{s.schema.fields.length}</TD>
+                    <TD>{Object.keys(s.schema ?? {}).length}</TD>
                     <TD className="text-right">
                       <div className="flex gap-1.5 justify-end">
                         <Link href={`/schemas/${s.id}`}>
-                          <span className="inline-block text-[10px] border border-[#333] text-[var(--color-fg-1)] px-2 py-1 rounded-[2px]">
-                            edit
-                          </span>
+                          <Button variant="ghost" size="sm">edit</Button>
                         </Link>
-                        <button
-                          onClick={() => confirm(`delete ${s.name}?`) && del.mutate(s.id)}
-                          className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => confirmDelete.ask(s.id, s.name)}
                         >
                           delete
-                        </button>
+                        </Button>
                       </div>
                     </TD>
                   </TR>
@@ -66,29 +69,38 @@ export default function SchemasPage() {
               <Panel key={s.id}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <div className="t-label">{"// "}#{String(s.id).padStart(2, "0")}</div>
+                    <div className="t-label">{"// "}#{fmtId(s.id)}</div>
                     <div className="font-bold">{s.name}</div>
-                    <div className="t-mono">{s.schema.fields.length} fields</div>
+                    <div className="t-mono">{Object.keys(s.schema ?? {}).length} fields</div>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Link href={`/schemas/${s.id}`}>
-                    <span className="inline-block text-[10px] border border-[#333] text-[var(--color-fg-1)] px-2 py-1 rounded-[2px]">
-                      edit
-                    </span>
+                    <Button variant="ghost" size="sm">edit</Button>
                   </Link>
-                  <button
-                    onClick={() => confirm(`delete ${s.name}?`) && del.mutate(s.id)}
-                    className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => confirmDelete.ask(s.id, s.name)}
                   >
                     delete
-                  </button>
+                  </Button>
                 </div>
               </Panel>
             ))}
           </div>
         </>
       )}
+
+      <DeleteResourceDialog
+        pending={confirmDelete.pending}
+        resourceLabel="validation schema"
+        impact="Pipelines that use this schema will fail validation on every message until you assign them a new schema."
+        busy={del.isPending}
+        error={confirmDelete.error}
+        onConfirm={confirmDelete.confirm}
+        onClose={confirmDelete.cancel}
+      />
     </div>
   );
 }

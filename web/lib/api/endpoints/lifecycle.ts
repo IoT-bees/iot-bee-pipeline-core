@@ -6,7 +6,7 @@ export const lifecycleApi = {
   status: (id: number) =>
     api<PipelineStatus>(`/pipeline-lifecycle/status/${id}`),
   start: (id: number) =>
-    api<PipelineStatus>(`/pipeline-lifecycle/start/${id}`, { method: "POST" }),
+    api<null>(`/pipeline-lifecycle/start/${id}`, { method: "POST" }),
   stop: (id: number) =>
-    api<PipelineStatus>(`/pipeline-lifecycle/stop/${id}`, { method: "POST" }),
+    api<null>(`/pipeline-lifecycle/stop/${id}`, { method: "POST" }),
 };

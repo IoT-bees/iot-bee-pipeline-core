@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <QueryProvider>
-      <AppShell userName={me.user.name}>{children}</AppShell>
+      <AppShell user={me.user}>{children}</AppShell>
     </QueryProvider>
   );
 }

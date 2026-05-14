@@ -14,7 +14,9 @@ const PROTECTED_PREFIXES = [
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  const isProtected = PROTECTED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
   if (!isProtected) return NextResponse.next();
   const token = req.cookies.get(COOKIE)?.value;
   if (!token) {
@@ -27,5 +29,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next|api|favicon\\.ico|icon\\.svg|apple-icon\\.svg|manifest\\.json|robots\\.txt|sitemap\\.xml).*)",
+  ],
 };

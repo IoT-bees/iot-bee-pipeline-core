@@ -3,7 +3,6 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { SchemaBuilder } from "@/components/forms/SchemaBuilder";
 import { useSchema, useUpdateSchema } from "@/lib/hooks/useSchemas";
-import type { BuilderInput } from "@/lib/schemas/validationSchema";
 
 export default function EditSchemaPage({
   params,
@@ -19,12 +18,16 @@ export default function EditSchemaPage({
   return (
     <div>
       <h1 className="t-title mb-1">edit · {data.name}</h1>
+      <p className="t-mono mb-6">
+        {"// "}name updates require a separate endpoint; this form only updates fields.
+      </p>
       <SchemaBuilder
-        defaultValues={data as BuilderInput}
+        defaultName={data.name}
+        defaultSchema={data.schema}
         submitLabel="✓ SAVE"
         submitting={update.isPending}
-        onSubmit={async (v) => {
-          await update.mutateAsync(v);
+        onSubmit={async (payload) => {
+          await update.mutateAsync(payload);
           router.push("/schemas");
         }}
       />

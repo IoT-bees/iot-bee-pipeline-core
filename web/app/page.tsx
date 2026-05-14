@@ -1,8 +1,8 @@
 import { MarketingNav } from "@/components/landing/MarketingNav";
 import { Hero } from "@/components/landing/Hero";
 import { ConceptStrip } from "@/components/landing/ConceptStrip";
-import { Pillars } from "@/components/landing/Pillars";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { UseCases } from "@/components/landing/UseCases";
 import { Architecture } from "@/components/landing/Architecture";
 import { SelfHost } from "@/components/landing/SelfHost";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -13,8 +13,8 @@ export default function Landing() {
       <MarketingNav />
       <Hero />
       <ConceptStrip />
-      <Pillars />
       <HowItWorks />
+      <UseCases />
       <Architecture />
       <SelfHost />
       <LandingFooter />

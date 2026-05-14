@@ -19,7 +19,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-[10px] tracking-[1.5px] px-2 py-0.5 border rounded-[2px]",
+        "inline-flex items-center gap-1.5 text-[11px] tracking-[1.5px] px-2.5 py-[3px] border rounded-[2px]",
         colors[state],
       )}
     >

@@ -8,9 +8,9 @@ export function useStartPipeline() {
   const push = useToasts((s) => s.push);
   return useMutation({
     mutationFn: (id: number) => lifecycleApi.start(id),
-    onSuccess: (d) => {
+    onSuccess: (_d, id) => {
       qc.invalidateQueries({ queryKey: ["pipelines"] });
-      push({ kind: "success", message: `started ${d.pipeline_name}` });
+      push({ kind: "success", message: `started pipeline #${id}` });
     },
     onError: (e: Error) => push({ kind: "error", message: e.message }),
   });

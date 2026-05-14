@@ -1,28 +1,31 @@
 "use client";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { Panel } from "@/components/ui/Panel";
-import { Pill, type PillState } from "@/components/ui/Pill";
+import { Pill } from "@/components/ui/Pill";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
+import { PipelineActions } from "@/components/pipelines/PipelineActions";
 import { useDeletePipeline, usePipelines } from "@/lib/hooks/usePipelines";
 import { usePipelineStatusAll } from "@/lib/hooks/usePipelineStatusAll";
-import { useStartPipeline } from "@/lib/hooks/useStartPipeline";
-import { useStopPipeline } from "@/lib/hooks/useStopPipeline";
-
-function toPill(s?: string): PillState {
-  if (s === "Running") return "running";
-  if (s === "Error") return "error";
-  return "idle";
-}
+import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
+import { fmtId } from "@/lib/fmt";
+import { toPillState } from "@/lib/status";
 
 export default function PipelinesPage() {
   const { data: pipes } = usePipelines();
   const { data: status } = usePipelineStatusAll();
-  const start = useStartPipeline();
-  const stop = useStopPipeline();
   const del = useDeletePipeline();
-  const stMap = new Map((status ?? []).map((s) => [s.pipeline_id, s.status]));
+  const confirmDelete = useConfirmDelete(del.mutateAsync);
+  const stMap = useMemo(
+    () =>
+      new Map(
+        (status ?? []).map((s) => [s.pipeline_id, s.pipeline_general_status]),
+      ),
+    [status],
+  );
   const list = pipes ?? [];
 
   return (
@@ -45,6 +48,8 @@ export default function PipelinesPage() {
               <THead>
                 <TH>#</TH>
                 <TH>NAME</TH>
+                <TH>SOURCE</TH>
+                <TH>STORE</TH>
                 <TH>REPL.</TH>
                 <TH>STATE</TH>
                 <TH className="text-right">ACTIONS</TH>
@@ -52,10 +57,9 @@ export default function PipelinesPage() {
               <tbody>
                 {list.map((p) => {
                   const st = stMap.get(p.id);
-                  const running = st === "Running";
                   return (
                     <TR key={p.id}>
-                      <TD>{String(p.id).padStart(2, "0")}</TD>
+                      <TD>{fmtId(p.id)}</TD>
                       <TD>
                         <Link
                           href={`/pipelines/${p.id}`}
@@ -64,35 +68,22 @@ export default function PipelinesPage() {
                           {p.name}
                         </Link>
                       </TD>
-                      <TD>{p.replication}</TD>
+                      <TD>{p.dataSource?.name ?? "—"}</TD>
+                      <TD>{p.dataStore?.name ?? "—"}</TD>
+                      <TD>{p.replicationFactor}</TD>
                       <TD>
-                        <Pill state={toPill(st)}>
+                        <Pill state={toPillState(st)}>
                           {(st ?? "STOPPED").toUpperCase()}
                         </Pill>
                       </TD>
                       <TD className="text-right">
                         <div className="flex gap-1.5 justify-end">
-                          {running ? (
-                            <button
-                              onClick={() => stop.mutate(p.id)}
-                              className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
-                            >
-                              ■ stop
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => start.mutate(p.id)}
-                              className="text-[10px] border border-[var(--color-accent)] text-[var(--color-accent)] px-2 py-1 rounded-[2px]"
-                            >
-                              ▸ start
-                            </button>
-                          )}
-                          <button
-                            onClick={() => confirm(`delete ${p.name}?`) && del.mutate(p.id)}
-                            className="text-[10px] border border-[#333] text-[var(--color-fg-3)] px-2 py-1 rounded-[2px]"
-                          >
-                            delete
-                          </button>
+                          <PipelineActions
+                            id={p.id}
+                            name={p.name}
+                            status={st}
+                            onDelete={confirmDelete.ask}
+                          />
                         </div>
                       </TD>
                     </TR>
@@ -104,46 +95,35 @@ export default function PipelinesPage() {
           <div className="md:hidden flex flex-col gap-2">
             {list.map((p) => {
               const st = stMap.get(p.id);
-              const running = st === "Running";
               return (
                 <Panel key={p.id}>
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <div className="t-label">{"// "}#{String(p.id).padStart(2, "0")}</div>
+                      <div className="t-label">
+                        {"// "}#{fmtId(p.id)}
+                      </div>
                       <Link
                         href={`/pipelines/${p.id}`}
                         className="font-bold hover:text-[var(--color-accent)]"
                       >
                         {p.name}
                       </Link>
-                      <div className="t-mono">{p.replication} replicas</div>
+                      <div className="t-mono">
+                        {p.dataSource?.name} → {p.dataStore?.name} ·{" "}
+                        {p.replicationFactor} replicas
+                      </div>
                     </div>
-                    <Pill state={toPill(st)}>
+                    <Pill state={toPillState(st)}>
                       {(st ?? "STOPPED").toUpperCase()}
                     </Pill>
                   </div>
-                  <div className="flex gap-2">
-                    {running ? (
-                      <button
-                        onClick={() => stop.mutate(p.id)}
-                        className="text-[10px] border border-[var(--color-danger)] text-[var(--color-danger)] px-2 py-1 rounded-[2px]"
-                      >
-                        ■ stop
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => start.mutate(p.id)}
-                        className="text-[10px] border border-[var(--color-accent)] text-[var(--color-accent)] px-2 py-1 rounded-[2px]"
-                      >
-                        ▸ start
-                      </button>
-                    )}
-                    <button
-                      onClick={() => confirm(`delete ${p.name}?`) && del.mutate(p.id)}
-                      className="text-[10px] border border-[#333] text-[var(--color-fg-3)] px-2 py-1 rounded-[2px]"
-                    >
-                      delete
-                    </button>
+                  <div className="flex gap-2 flex-wrap">
+                    <PipelineActions
+                      id={p.id}
+                      name={p.name}
+                      status={st}
+                      onDelete={confirmDelete.ask}
+                    />
                   </div>
                 </Panel>
               );
@@ -151,6 +131,16 @@ export default function PipelinesPage() {
           </div>
         </>
       )}
+
+      <DeleteResourceDialog
+        pending={confirmDelete.pending}
+        resourceLabel="pipeline"
+        impact="Pipelines that are currently running are stopped first. This action cannot be undone."
+        busy={del.isPending}
+        error={confirmDelete.error}
+        onConfirm={confirmDelete.confirm}
+        onClose={confirmDelete.cancel}
+      />
     </div>
   );
 }

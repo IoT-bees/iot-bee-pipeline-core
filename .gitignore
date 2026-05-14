@@ -46,3 +46,5 @@ docs/generated/
 
 # Claude Code local
 .claude/
+CLAUDE.md
+docs/index.html

@@ -7,7 +7,9 @@ export function Table({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <table className={cn("w-full text-[11px] font-mono", className)}>{children}</table>;
+  return (
+    <table className={cn("w-full text-[13px] font-mono", className)}>{children}</table>
+  );
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
@@ -22,7 +24,7 @@ export function TH({ children, className }: { children: React.ReactNode; classNa
   return (
     <th
       className={cn(
-        "border-b border-[var(--color-accent)] px-2 py-2 font-normal tracking-[1.5px]",
+        "border-b border-[var(--color-accent)] px-3 py-2.5 font-normal tracking-[1.5px] text-[12px]",
         className,
       )}
     >
@@ -41,7 +43,7 @@ export function TD({ children, className }: { children: React.ReactNode; classNa
   return (
     <td
       className={cn(
-        "border-b border-dashed border-[#1f1f1f] px-2 py-2 text-[var(--color-fg-2)]",
+        "border-b border-dashed border-[#1f1f1f] px-3 py-3 text-[var(--color-fg-2)]",
         className,
       )}
     >

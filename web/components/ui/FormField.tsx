@@ -14,14 +14,16 @@ export function FormField({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-3.5", className)}>
-      <div className="t-label mb-1">{"// "}{label}</div>
+    <div className={cn("mb-4", className)}>
+      <div className="text-[12px] tracking-[2px] uppercase text-[var(--color-fg-3)] mb-1.5">
+        {"// "}{label}
+      </div>
       {children}
       {hint && !error && (
-        <div className="text-[10px] text-[var(--color-fg-4)] mt-1">{hint}</div>
+        <div className="text-[12px] text-[var(--color-fg-4)] mt-1.5">{hint}</div>
       )}
       {error && (
-        <div className="text-[10px] text-[var(--color-danger)] mt-1">× {error}</div>
+        <div className="text-[12px] text-[var(--color-danger)] mt-1.5">× {error}</div>
       )}
     </div>
   );

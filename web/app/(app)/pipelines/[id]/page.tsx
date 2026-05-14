@@ -1,24 +1,15 @@
 "use client";
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 
 import { Panel } from "@/components/ui/Panel";
-import { Pill, type PillState } from "@/components/ui/Pill";
+import { Pill } from "@/components/ui/Pill";
 import { Button } from "@/components/ui/Button";
+import { PipelineActions } from "@/components/pipelines/PipelineActions";
 import { usePipeline } from "@/lib/hooks/usePipelines";
-import { useStartPipeline } from "@/lib/hooks/useStartPipeline";
-import { useStopPipeline } from "@/lib/hooks/useStopPipeline";
-import { sourcesApi } from "@/lib/api/endpoints/sources";
-import { storesApi } from "@/lib/api/endpoints/stores";
-import { schemasApi } from "@/lib/api/endpoints/schemas";
-import { lifecycleApi } from "@/lib/api/endpoints/lifecycle";
-
-function toPill(s?: string): PillState {
-  if (s === "Running") return "running";
-  if (s === "Error") return "error";
-  return "idle";
-}
+import { usePipelineStatusAll } from "@/lib/hooks/usePipelineStatusAll";
+import { fmtId } from "@/lib/fmt";
+import { toPillState } from "@/lib/status";
 
 export default function PipelineDetailPage({
   params,
@@ -28,80 +19,67 @@ export default function PipelineDetailPage({
   const { id } = use(params);
   const pid = Number(id);
   const { data: p } = usePipeline(pid);
-
-  const { data: st } = useQuery({
-    queryKey: ["pipelines", "status", pid],
-    queryFn: () => lifecycleApi.status(pid),
-    refetchInterval: 5000,
-    enabled: pid > 0,
-  });
-
-  const source = useQuery({
-    queryKey: ["sources", p?.data_source_id],
-    queryFn: () => sourcesApi.get(p!.data_source_id!),
-    enabled: !!p?.data_source_id,
-  });
-  const store = useQuery({
-    queryKey: ["stores", p?.data_store_id],
-    queryFn: () => storesApi.get(p!.data_store_id!),
-    enabled: !!p?.data_store_id,
-  });
-  const schema = useQuery({
-    queryKey: ["schemas", p?.validation_schema_id],
-    queryFn: () => schemasApi.get(p!.validation_schema_id!),
-    enabled: !!p?.validation_schema_id,
-  });
-
-  const start = useStartPipeline();
-  const stop = useStopPipeline();
+  const { data: allStatus } = usePipelineStatusAll();
+  const st = allStatus?.find((s) => s.pipeline_id === pid);
 
   if (!p) return <div className="t-mono">{"// "}loading…</div>;
-  const running = st?.status === "Running";
+  const general = st?.pipeline_general_status;
+  const replicaEntries = Object.entries(st?.replica_statuses ?? {});
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-2 flex-wrap">
         <h1 className="t-title">{p.name}</h1>
-        <Pill state={toPill(st?.status)}>
-          {(st?.status ?? "STOPPED").toUpperCase()}
+        <Pill state={toPillState(general)}>
+          {(general ?? "STOPPED").toUpperCase()}
         </Pill>
       </div>
       <p className="t-mono mb-4">
-        {"// "}pipeline #{String(p.id).padStart(2, "0")} · {p.replication} replicas
+        {"// "}pipeline #{fmtId(p.id)} · {p.replicationFactor} replicas
       </p>
       <div className="flex gap-3 items-center mb-6 flex-wrap">
-        {running ? (
-          <Button variant="danger" onClick={() => stop.mutate(p.id)}>
-            ■ STOP
-          </Button>
-        ) : (
-          <Button variant="primary" onClick={() => start.mutate(p.id)}>
-            ▸ START
-          </Button>
-        )}
+        <PipelineActions id={p.id} name={p.name} status={general} />
         <Link href="/pipelines">
-          <Button variant="ghost">back</Button>
+          <Button variant="ghost" size="sm">back to list</Button>
         </Link>
       </div>
-      <div className="grid md:grid-cols-3 gap-3">
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Panel>
           <div className="t-label">{"// "}SOURCE</div>
-          <div className="mt-1">
-            {source.data?.name ?? <span className="text-[var(--color-fg-3)]">none</span>}
-          </div>
+          <div className="mt-1 font-bold">{p.dataSource?.name ?? "—"}</div>
         </Panel>
         <Panel>
           <div className="t-label">{"// "}SCHEMA</div>
-          <div className="mt-1">
-            {schema.data?.name ?? <span className="text-[var(--color-fg-3)]">none</span>}
+          <div className="mt-1 font-bold">
+            {p.dataValidationSchema?.name ?? "—"}
           </div>
         </Panel>
         <Panel>
           <div className="t-label">{"// "}STORE</div>
-          <div className="mt-1">
-            {store.data?.name ?? <span className="text-[var(--color-fg-3)]">none</span>}
-          </div>
+          <div className="mt-1 font-bold">{p.dataStore?.name ?? "—"}</div>
+        </Panel>
+        <Panel>
+          <div className="t-label">{"// "}GROUP</div>
+          <div className="mt-1 font-bold">{p.pipelineGroup?.name ?? "—"}</div>
         </Panel>
       </div>
+
+      {replicaEntries.length > 0 && (
+        <>
+          <h2 className="t-section mb-3">{"// "}replicas</h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {replicaEntries.map(([rid, rstatus]) => (
+              <Panel key={rid} className="p-3 flex items-center justify-between">
+                <span className="font-mono text-[13px]">replica #{rid}</span>
+                <Pill state={toPillState(rstatus)}>
+                  {String(rstatus).toUpperCase()}
+                </Pill>
+              </Panel>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
