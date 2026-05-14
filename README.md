@@ -196,6 +196,11 @@ API_PORT=8080
 
 # Logging
 RUST_LOG=info
+
+# Auth
+JWT_SECRET=change-me-in-production-this-must-be-long-and-random
+JWT_EXPIRES_IN_HOURS=24
+CORS_ORIGINS=http://localhost:3000
 ```
 
 ### 3. Run database migrations
@@ -223,6 +228,9 @@ All configuration is read from environment variables at startup:
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `DATABASE_URL` | ✅ | — | SQLite connection string, e.g. `sqlite://data/iot-bee.db` |
+| `JWT_SECRET` | ✅ | — | Secret used to sign HS256 JWT access tokens. Must be long and random. |
+| `JWT_EXPIRES_IN_HOURS` | ❌ | `24` | Access token lifetime in hours. |
+| `CORS_ORIGINS` | ❌ | `http://localhost:3000` | Comma-separated list of CORS origins for the API. |
 | `API_HOST` | ❌ | `127.0.0.1` | HTTP server bind address |
 | `API_PORT` | ❌ | `8080` | HTTP server port |
 | `RUST_LOG` | ❌ | `info` | Log level filter (`trace`, `debug`, `info`, `warn`, `error`) |
@@ -239,6 +247,7 @@ Interactive docs (Swagger UI) are served at runtime: `http://127.0.0.1:8080/swag
 
 | Resource | Base path | Description |
 |---|---|---|
+| Auth | `/auth` | Login, first-admin register, current-user, has-users probe |
 | Connection Types | `/connection-types` | List available source/store type identifiers |
 | Data Sources | `/data-sources` | Manage message broker connection configs |
 | Data Stores | `/data-stores` | Manage persistence destination configs |
@@ -246,6 +255,25 @@ Interactive docs (Swagger UI) are served at runtime: `http://127.0.0.1:8080/swag
 | Pipeline Groups | `/pipeline-groups` | Organise pipelines into logical groups |
 | Pipelines | `/pipelines` | Create/manage pipelines and their relations |
 | Pipeline Lifecycle | `/pipeline-lifecycle` | Start, stop, and inspect running pipelines |
+
+All routes except `/auth/*` and `/swagger-ui/*` require an `Authorization: Bearer <jwt>` header. The first request to `POST /auth/register` creates the admin user; subsequent registrations are rejected with `403 RegistrationDisabled`.
+
+---
+
+## Web UI
+
+The Next.js web app lives in `web/` and contains the public landing page, the login/first-admin flow, and the authenticated control plane that exposes every API module above.
+
+```bash
+cd web
+cp .env.local.example .env.local
+pnpm install
+pnpm dev   # http://localhost:3000
+```
+
+`web/.env.local` points at the running backend via `NEXT_PUBLIC_API_URL` and `INTERNAL_API_URL` (defaults to `http://localhost:8080`). The session JWT is stored in an HttpOnly cookie issued by Next route handlers under `/api/auth/*`; browser calls to the backend go through `/api/proxy/[...path]` so the token never reaches client-side JS.
+
+The first user to register through `/login` becomes the admin and further open registration is disabled.
 
 ---
 
