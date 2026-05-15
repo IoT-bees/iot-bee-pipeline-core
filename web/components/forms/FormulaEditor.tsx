@@ -41,7 +41,7 @@ export function FormulaEditor({
         {parsed.ok ? (
           value.trim() === "" ? (
             <span className="text-[var(--color-fg-3)]">
-              // empty = no transformation
+              {"// "}empty = no transformation
             </span>
           ) : (
             <span className="text-[var(--color-accent)]">[✓ valid]</span>

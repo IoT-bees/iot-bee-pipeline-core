@@ -108,7 +108,7 @@ export interface CreatePipelineGroupRequest {
   description: string;
 }
 
-export type FieldType = "float" | "int" | "bool";
+export type FieldType = "float" | "int" | "bool" | "string";
 
 export interface ValidationRule {
   min?: number;

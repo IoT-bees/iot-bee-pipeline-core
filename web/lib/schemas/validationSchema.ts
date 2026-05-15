@@ -1,11 +1,14 @@
 import { z } from "zod";
 
-export const builderSchema = z.object({
-  name: z
-    .string()
-    .min(1, "name is required")
-    .max(32, "max 32 characters"),
-  schemaJson: z.string().min(2, "schema cannot be empty"),
-});
+export const fieldNameSchema = z
+  .string()
+  .min(1, "field name is required")
+  .regex(
+    /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+    "use letters, digits and underscores; start with a letter or _",
+  );
 
-export type BuilderInput = z.infer<typeof builderSchema>;
+export const schemaNameSchema = z
+  .string()
+  .min(1, "name is required")
+  .max(32, "max 32 characters");
