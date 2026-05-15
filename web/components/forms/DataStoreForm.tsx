@@ -61,7 +61,11 @@ export function DataStoreForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="max-w-[640px]">
+    <form
+      onSubmit={form.handleSubmit(handleSubmit)}
+      className="max-w-[640px]"
+      autoComplete="off"
+    >
       <FormField label="NAME" error={form.formState.errors.name?.message}>
         <Input {...form.register("name")} placeholder="e.g. influx-prod" />
       </FormField>
@@ -87,16 +91,27 @@ export function DataStoreForm({
             <Input
               {...form.register("config.url" as const)}
               placeholder="http://influxdb:8086"
+              autoComplete="off"
             />
           </FormField>
           <FormField label="DATABASE">
-            <Input {...form.register("config.data_base" as const)} />
+            <Input
+              {...form.register("config.data_base" as const)}
+              autoComplete="off"
+            />
           </FormField>
           <FormField label="MEASUREMENT">
-            <Input {...form.register("config.measurement" as const)} />
+            <Input
+              {...form.register("config.measurement" as const)}
+              autoComplete="off"
+            />
           </FormField>
           <FormField label="TOKEN">
-            <Input {...form.register("config.token" as const)} type="password" />
+            <Input
+              {...form.register("config.token" as const)}
+              type="password"
+              autoComplete="new-password"
+            />
           </FormField>
           <FormField
             label="TAG FIELDS (comma-separated)"
@@ -105,6 +120,7 @@ export function DataStoreForm({
             <Input
               {...form.register("config.tag_fields" as const)}
               placeholder="location, device_id"
+              autoComplete="off"
             />
           </FormField>
         </>
