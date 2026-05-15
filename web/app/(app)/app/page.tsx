@@ -7,6 +7,7 @@ import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { PipelineActions } from "@/components/pipelines/PipelineActions";
 import { usePipelineStatusAll } from "@/lib/hooks/usePipelineStatusAll";
+import { usePipelines } from "@/lib/hooks/usePipelines";
 import { useSources } from "@/lib/hooks/useSources";
 import { useStores } from "@/lib/hooks/useStores";
 import { useSchemas } from "@/lib/hooks/useSchemas";
@@ -57,14 +58,23 @@ function OnboardingCard({ step }: { step: OnboardingStep }) {
 }
 
 export default function Overview() {
-  const { data: status, isLoading, isPending: statusPending } =
-    usePipelineStatusAll();
+  const { data: status, isPending: statusPending } = usePipelineStatusAll();
+  const { data: pipes, isPending: pipesPending } = usePipelines();
   const sourcesQ = useSources();
   const storesQ = useStores();
   const schemasQ = useSchemas();
   const groupsQ = useGroups();
 
-  const list = status ?? [];
+  const isLoading = statusPending || pipesPending;
+
+  const statusByPid = new Map(
+    (status ?? []).map((s) => [s.pipeline_id, s.pipeline_general_status]),
+  );
+  const list = (pipes ?? []).map((p) => ({
+    pipeline_id: p.id,
+    pipeline_name: p.name,
+    pipeline_general_status: statusByPid.get(p.id),
+  }));
   const running = list.filter((p) => isRunning(p.pipeline_general_status))
     .length;
   const errored = list.filter((p) => isError(p.pipeline_general_status)).length;
@@ -221,7 +231,7 @@ export default function Overview() {
                     </TD>
                     <TD>
                       <Pill state={toPillState(p.pipeline_general_status)}>
-                        {p.pipeline_general_status?.toUpperCase()}
+                        {(p.pipeline_general_status ?? "STOPPED").toUpperCase()}
                       </Pill>
                     </TD>
                     <TD className="text-right">
@@ -254,7 +264,7 @@ export default function Overview() {
                     </Link>
                   </div>
                   <Pill state={toPillState(p.pipeline_general_status)}>
-                    {p.pipeline_general_status?.toUpperCase()}
+                    {(p.pipeline_general_status ?? "STOPPED").toUpperCase()}
                   </Pill>
                 </div>
                 <div className="flex gap-2">
