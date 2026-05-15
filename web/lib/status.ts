@@ -6,22 +6,21 @@ function normalise(s?: string): string {
 
 export function toPillState(s?: string): PillState {
   const v = normalise(s);
-  if (v === "RUNNING") return "running";
-  if (v === "ERROR" || v === "FAILED" || v === "DEGRADED") return "error";
-  if (v === "IDLE" || v === "STARTING" || v === "PENDING") return "starting";
+  if (v === "HEALTHY") return "running";
+  if (v === "DEGRADED") return "error";
+  if (v === "IDLE") return "idle";
   return "idle";
 }
 
-export function isRunning(s?: string): boolean {
-  return normalise(s) === "RUNNING";
+export function isHealthy(s?: string): boolean {
+  return normalise(s) === "HEALTHY";
 }
 
-export function isError(s?: string): boolean {
-  const v = normalise(s);
-  return v === "ERROR" || v === "FAILED" || v === "DEGRADED";
+export function isDegraded(s?: string): boolean {
+  return normalise(s) === "DEGRADED";
 }
 
 export function canStop(s?: string): boolean {
-  if (!s) return false;
-  return normalise(s) !== "STOPPED";
+  const v = normalise(s);
+  return v === "HEALTHY" || v === "DEGRADED";
 }

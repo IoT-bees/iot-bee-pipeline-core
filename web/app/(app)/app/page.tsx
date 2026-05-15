@@ -13,7 +13,7 @@ import { useStores } from "@/lib/hooks/useStores";
 import { useSchemas } from "@/lib/hooks/useSchemas";
 import { useGroups } from "@/lib/hooks/useGroups";
 import { fmtId } from "@/lib/fmt";
-import { isError, isRunning, toPillState } from "@/lib/status";
+import { isDegraded, isHealthy, toPillState } from "@/lib/status";
 
 interface OnboardingStep {
   href: string;
@@ -75,9 +75,10 @@ export default function Overview() {
     pipeline_name: p.name,
     pipeline_general_status: statusByPid.get(p.id),
   }));
-  const running = list.filter((p) => isRunning(p.pipeline_general_status))
+  const running = list.filter((p) => isHealthy(p.pipeline_general_status))
     .length;
-  const errored = list.filter((p) => isError(p.pipeline_general_status)).length;
+  const errored = list.filter((p) => isDegraded(p.pipeline_general_status))
+    .length;
   const total = list.length;
 
   const sourcesCount = sourcesQ.data?.length ?? 0;
