@@ -80,13 +80,11 @@ export const sourcesApi = {
     const raw = await api<RawDataSource>(`/data-sources/${id}`);
     return normalize(raw);
   },
-  create: async (b: CreateDataSourceRequest): Promise<DataSource> => {
-    const raw = await api<RawDataSource>("/data-sources", {
+  create: (b: CreateDataSourceRequest): Promise<void> =>
+    api<null>("/data-sources", {
       method: "POST",
       body: JSON.stringify(b),
-    });
-    return normalize(raw);
-  },
+    }).then(() => undefined),
   update: async (id: number, b: CreateDataSourceRequest): Promise<DataSource> => {
     const raw = await api<RawDataSource>(`/data-sources/${id}`, {
       method: "PUT",

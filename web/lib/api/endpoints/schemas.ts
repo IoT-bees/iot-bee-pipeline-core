@@ -33,13 +33,11 @@ export const schemasApi = {
     const raw = await api<RawValidationSchema>(`/validation-schemas/${id}`);
     return normalize(raw, id);
   },
-  create: async (b: CreateValidationSchemaRequest): Promise<ValidationSchema> => {
-    const raw = await api<RawValidationSchema>("/validation-schemas", {
+  create: (b: CreateValidationSchemaRequest): Promise<void> =>
+    api<null>("/validation-schemas", {
       method: "POST",
       body: JSON.stringify(b),
-    });
-    return normalize(raw);
-  },
+    }).then(() => undefined),
   update: async (
     id: number,
     b: CreateValidationSchemaRequest,

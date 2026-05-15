@@ -67,13 +67,11 @@ export const storesApi = {
     const raw = await api<RawDataStore>(`/data-stores/${id}`);
     return normalize(raw);
   },
-  create: async (b: CreateDataStoreRequest): Promise<DataStore> => {
-    const raw = await api<RawDataStore>("/data-stores", {
+  create: (b: CreateDataStoreRequest): Promise<void> =>
+    api<null>("/data-stores", {
       method: "POST",
       body: JSON.stringify(b),
-    });
-    return normalize(raw);
-  },
+    }).then(() => undefined),
   update: async (id: number, b: CreateDataStoreRequest): Promise<DataStore> => {
     const raw = await api<RawDataStore>(`/data-stores/${id}`, {
       method: "PUT",
