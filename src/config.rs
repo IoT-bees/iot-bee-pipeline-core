@@ -13,6 +13,9 @@ pub struct Config {
     pub jwt_secret: String,
     pub jwt_expires_in_hours: i64,
     pub cors_origins: Vec<String>,
+    pub admin_email: String,
+    pub admin_password: String,
+    pub admin_name: String,
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
@@ -40,6 +43,12 @@ impl Config {
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect(),
+                admin_email: env::var("ADMIN_EMAIL")
+                    .unwrap_or_else(|_| "admin@iot-bee.local".into())
+                    .to_lowercase(),
+                admin_password: env::var("ADMIN_PASSWORD")
+                    .unwrap_or_else(|_| "admin123".into()),
+                admin_name: env::var("ADMIN_NAME").unwrap_or_else(|_| "Admin".into()),
             }
         })
     }

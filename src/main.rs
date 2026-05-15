@@ -20,6 +20,11 @@ async fn main() -> std::io::Result<()> {
 
     // 1. Actor supervisor: arranca primero y carga los pipelines activos desde DB.
     let app_state = AppState::new(db.clone());
+
+    // Sembrar admin por defecto si la tabla users está vacía. Idempotente:
+    // si ya existe un usuario con ese email, no hace nada.
+    app_state.ensure_default_admin().await;
+
     app_state.start_all_pipelines().await;
 
     // 2. API HTTP: arranca después, ya con el supervisor vivo.

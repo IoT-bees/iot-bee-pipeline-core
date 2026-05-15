@@ -37,7 +37,10 @@ use adapters::actor_system::supervisor_actor_system::actor_wrapper::PipelineActo
 
 // para los casos de uso de auth
 use application::auth_cases::cases::AuthUseCasesImpl;
+use domain::auth::entities::user::NewUser;
 use domain::auth::inbound::auth_uses::AuthUseCases;
+use domain::auth::outbound::password_hasher::PasswordHasher;
+use domain::auth::outbound::user_repository::UserRepository;
 use infrastructure::persistence::repositories::users_repository::SqliteUserRepository;
 use infrastructure::security::argon2_hasher::Argon2Hasher;
 use infrastructure::security::jwt_issuer::JwtIssuer;
@@ -148,6 +151,47 @@ impl AppState {
         );
         let use_case: Arc<dyn PipelineLifecycleCases + Send + Sync> = Arc::new(use_case);
         web::Data::from(use_case)
+    }
+
+    pub async fn ensure_default_admin(&self) {
+        let repo = SqliteUserRepository::new(self.internal_data_base.clone());
+        let email = &self.config.admin_email;
+
+        match repo.find_by_email(email).await {
+            Ok(Some(_)) => {
+                tracing::info!("Admin por defecto '{}' ya existe, no se vuelve a crear", email);
+                return;
+            }
+            Ok(None) => {}
+            Err(e) => {
+                tracing::error!("No se pudo verificar el admin por defecto: {}", e);
+                return;
+            }
+        }
+
+        let hasher = Argon2Hasher::new();
+        let password_hash = match hasher.hash(&self.config.admin_password) {
+            Ok(h) => h,
+            Err(e) => {
+                tracing::error!("No se pudo hashear la contraseña del admin por defecto: {}", e);
+                return;
+            }
+        };
+
+        let new_user = NewUser {
+            email: email.clone(),
+            name: self.config.admin_name.clone(),
+            password_hash,
+            role: "admin".into(),
+        };
+
+        match repo.create(new_user).await {
+            Ok(_) => tracing::info!(
+                "Admin por defecto creado: '{}' (cambia ADMIN_PASSWORD en producción)",
+                email
+            ),
+            Err(e) => tracing::error!("No se pudo crear el admin por defecto: {}", e),
+        }
     }
 
     pub fn auth_app_state(&self) -> web::Data<dyn AuthUseCases + Send + Sync> {

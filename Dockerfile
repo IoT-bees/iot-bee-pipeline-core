@@ -85,10 +85,17 @@ WORKDIR /app
 USER iotbee
 
 # Default environment — override at runtime via docker-compose or `docker run -e`
+# IMPORTANTE: en producción, sobrescribe JWT_SECRET y ADMIN_PASSWORD.
 ENV DATABASE_URL=sqlite:///data/pipeline.db \
     API_HOST=0.0.0.0 \
     API_PORT=8080 \
-    RUST_LOG=info
+    RUST_LOG=info \
+    JWT_SECRET=change-me-in-production-this-must-be-long-and-random \
+    JWT_EXPIRES_IN_HOURS=24 \
+    CORS_ORIGINS=http://localhost:3000 \
+    ADMIN_EMAIL=admin@iot-bee.local \
+    ADMIN_PASSWORD=admin123 \
+    ADMIN_NAME=Admin
 
 EXPOSE 8080
 

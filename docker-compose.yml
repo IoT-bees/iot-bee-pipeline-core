@@ -13,6 +13,17 @@ services:
       API_HOST: "0.0.0.0"
       API_PORT: "8080"
       RUST_LOG: info
+      # --- Auth ---
+      # Cambia JWT_SECRET en producción (cualquier cadena larga y aleatoria).
+      JWT_SECRET: "change-me-in-production-this-must-be-long-and-random"
+      JWT_EXPIRES_IN_HOURS: "24"
+      CORS_ORIGINS: "http://localhost:3000"
+      # --- Admin sembrado al primer arranque ---
+      # Si la BD no tiene un usuario con este email, se crea con rol "admin".
+      # Idempotente: en arranques siguientes no hace nada. Cambia la contraseña en producción.
+      ADMIN_EMAIL: "admin@iot-bee.local"
+      ADMIN_PASSWORD: "admin123"
+      ADMIN_NAME: "Admin"
     ports:
       - "8080:8080"
     volumes:
