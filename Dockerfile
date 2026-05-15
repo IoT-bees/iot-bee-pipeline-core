@@ -59,6 +59,7 @@ RUN apt-get update \
         libsqlite3-0 \
         libssl3 \
         ca-certificates \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user for least-privilege execution.
@@ -85,7 +86,6 @@ WORKDIR /app
 USER iotbee
 
 # Default environment — override at runtime via docker-compose or `docker run -e`
-# IMPORTANTE: en producción, sobrescribe JWT_SECRET y ADMIN_PASSWORD.
 ENV DATABASE_URL=sqlite:///data/pipeline.db \
     API_HOST=0.0.0.0 \
     API_PORT=8080 \

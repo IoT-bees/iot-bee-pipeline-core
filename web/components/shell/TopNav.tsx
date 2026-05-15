@@ -95,15 +95,15 @@ export function TopNav({ user, apiUrl }: Props) {
             title={`Backend API connected · ${apiUrl}`}
             className="hidden lg:inline-flex items-center gap-1.5 text-[12px] text-[var(--color-fg-3)] border border-[#1f1f1f] px-2.5 py-1 rounded-[2px]"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-online)]" />
             Backend
-            <span className="text-[var(--color-accent)] uppercase tracking-[1.5px] text-[10px]">
+            <span className="text-[var(--color-online)] uppercase tracking-[1.5px] text-[10px]">
               online
             </span>
           </span>
           <span
             title={`Backend API connected · ${apiUrl}`}
-            className="lg:hidden inline-flex items-center text-[var(--color-accent)] text-[14px]"
+            className="lg:hidden inline-flex items-center text-[var(--color-online)] text-[14px]"
           >
             ●
           </span>
@@ -161,7 +161,7 @@ export function TopNav({ user, apiUrl }: Props) {
         <div className="flex items-center gap-3">
           <span
             title={`Backend API connected · ${apiUrl}`}
-            className="text-[var(--color-accent)] text-[14px]"
+            className="text-[var(--color-online)] text-[14px]"
           >
             ●
           </span>
@@ -238,8 +238,8 @@ export function TopNav({ user, apiUrl }: Props) {
               {"// "}backend
             </div>
             <div className="flex items-center gap-2 text-[12px] text-[var(--color-fg-3)] mb-4">
-              <span className="text-[var(--color-accent)]">●</span>
-              <span className="text-[var(--color-accent)] uppercase tracking-[1.5px]">
+              <span className="text-[var(--color-online)]">●</span>
+              <span className="text-[var(--color-online)] uppercase tracking-[1.5px]">
                 online
               </span>
               <span className="break-all">· {apiUrl}</span>
