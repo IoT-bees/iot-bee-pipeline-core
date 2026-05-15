@@ -29,6 +29,81 @@ export function useCreatePipeline() {
   });
 }
 
+export function useUpdatePipelineSource(pipelineId: number) {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (newSourceId: number) =>
+      pipelinesApi.updateSource(pipelineId, newSourceId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
+      qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
+      push({ kind: "success", message: "source updated" });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
+export function useUpdatePipelineStore(pipelineId: number) {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (newStoreId: number) =>
+      pipelinesApi.updateStore(pipelineId, newStoreId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
+      qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
+      push({ kind: "success", message: "store updated" });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
+export function useUpdatePipelineSchema(pipelineId: number) {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (newSchemaId: number) =>
+      pipelinesApi.updateSchema(pipelineId, newSchemaId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
+      qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
+      push({ kind: "success", message: "schema updated" });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
+export function useUpdatePipelineGroup(pipelineId: number) {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (newGroupId: number) =>
+      pipelinesApi.updateGroup(pipelineId, newGroupId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
+      qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
+      push({ kind: "success", message: "group updated" });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
+export function useUpdatePipelineReplicas(pipelineId: number) {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (replicationFactor: number) =>
+      pipelinesApi.updateReplicas(pipelineId, replicationFactor),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
+      qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
+      push({ kind: "success", message: "replicas updated" });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
 export function useDeletePipeline() {
   const qc = useQueryClient();
   const push = useToasts((s) => s.push);
