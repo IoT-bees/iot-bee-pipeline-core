@@ -211,6 +211,7 @@ impl AppState {
             password_hash,
             role: "admin".into(),
             status: "active".into(),
+            must_reset_password: false,
         };
 
         match repo.create(new_user).await {

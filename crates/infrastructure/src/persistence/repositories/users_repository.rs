@@ -27,6 +27,34 @@ fn parse_dt(raw: &str) -> Result<DateTime<Utc>, AuthError> {
         })
 }
 
+type UserRow = (
+    i64,
+    i64,
+    String,
+    String,
+    String,
+    String,
+    String,
+    i64,
+    String,
+);
+
+fn row_to_user(
+    (id, organization_id, email, name, ph, role, status, must_reset, ca): UserRow,
+) -> User {
+    User {
+        id,
+        organization_id,
+        email,
+        name,
+        password_hash: ph,
+        role,
+        status,
+        must_reset_password: must_reset != 0,
+        created_at: parse_dt(&ca).unwrap_or_else(|_| Utc::now()),
+    }
+}
+
 #[async_trait]
 impl UserRepository for SqliteUserRepository {
     async fn count(&self) -> Result<i64, AuthError> {
@@ -40,56 +68,30 @@ impl UserRepository for SqliteUserRepository {
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, AuthError> {
-        let row: Option<(i64, i64, String, String, String, String, String, String)> = sqlx::query_as(
-            "SELECT id, organization_id, email, name, password_hash, role, status, created_at FROM users WHERE email = ?",
+        let row: Option<UserRow> = sqlx::query_as(
+            "SELECT id, organization_id, email, name, password_hash, role, status, must_reset_password, created_at FROM users WHERE email = ?",
         )
         .bind(email)
         .fetch_optional(self.db.pool())
         .await
-        .map_err(|e| AuthError::Internal {
-            reason: e.to_string(),
-        })?;
-        Ok(row.map(
-            |(id, organization_id, email, name, ph, role, status, ca)| User {
-                id,
-                organization_id,
-                email,
-                name,
-                password_hash: ph,
-                role,
-                status,
-                created_at: parse_dt(&ca).unwrap_or_else(|_| Utc::now()),
-            },
-        ))
+        .map_err(|e| AuthError::Internal { reason: e.to_string() })?;
+        Ok(row.map(row_to_user))
     }
 
     async fn find_by_id(&self, id: i64) -> Result<Option<User>, AuthError> {
-        let row: Option<(i64, i64, String, String, String, String, String, String)> = sqlx::query_as(
-            "SELECT id, organization_id, email, name, password_hash, role, status, created_at FROM users WHERE id = ?",
+        let row: Option<UserRow> = sqlx::query_as(
+            "SELECT id, organization_id, email, name, password_hash, role, status, must_reset_password, created_at FROM users WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(self.db.pool())
         .await
-        .map_err(|e| AuthError::Internal {
-            reason: e.to_string(),
-        })?;
-        Ok(row.map(
-            |(id, organization_id, email, name, ph, role, status, ca)| User {
-                id,
-                organization_id,
-                email,
-                name,
-                password_hash: ph,
-                role,
-                status,
-                created_at: parse_dt(&ca).unwrap_or_else(|_| Utc::now()),
-            },
-        ))
+        .map_err(|e| AuthError::Internal { reason: e.to_string() })?;
+        Ok(row.map(row_to_user))
     }
 
     async fn create(&self, new_user: NewUser) -> Result<User, AuthError> {
         let result = sqlx::query(
-            "INSERT INTO users (organization_id, email, name, password_hash, role, status) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (organization_id, email, name, password_hash, role, status, must_reset_password) VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(new_user.organization_id)
         .bind(&new_user.email)
@@ -97,6 +99,7 @@ impl UserRepository for SqliteUserRepository {
         .bind(&new_user.password_hash)
         .bind(&new_user.role)
         .bind(&new_user.status)
+        .bind(if new_user.must_reset_password { 1_i64 } else { 0_i64 })
         .execute(self.db.pool())
         .await
         .map_err(|e| {

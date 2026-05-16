@@ -9,6 +9,7 @@ pub struct User {
     pub password_hash: String,
     pub role: String,
     pub status: String,
+    pub must_reset_password: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -20,4 +21,5 @@ pub struct NewUser {
     pub password_hash: String,
     pub role: String,
     pub status: String,
+    pub must_reset_password: bool,
 }

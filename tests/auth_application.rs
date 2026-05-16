@@ -53,6 +53,7 @@ impl UserRepository for InMemRepo {
             password_hash: new_user.password_hash,
             role: new_user.role,
             status: new_user.status,
+            must_reset_password: new_user.must_reset_password,
             created_at: Utc::now(),
         };
         self.users.lock().unwrap().push(user.clone());

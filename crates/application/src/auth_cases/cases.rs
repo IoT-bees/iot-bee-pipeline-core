@@ -65,6 +65,7 @@ impl AuthUseCases for AuthUseCasesImpl {
                 password_hash,
                 role: "admin".into(),
                 status: "active".into(),
+                must_reset_password: false,
             })
             .await?;
         let token = self
