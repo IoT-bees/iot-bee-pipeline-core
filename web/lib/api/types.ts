@@ -214,3 +214,92 @@ export interface LicenseStatus {
 export interface ActivateLicenseRequest {
   licenseKey: string;
 }
+
+// === Admin panel ===
+
+export interface AuditEvent {
+  id: number;
+  organizationId: number | null;
+  userId: number | null;
+  userEmail: string | null;
+  userRole: string | null;
+  action: string;
+  method: string;
+  path: string;
+  statusCode: number | null;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
+export interface AuditListResponse {
+  items: AuditEvent[];
+  nextCursor: number | null;
+}
+
+export interface AuditFilters {
+  userId?: number;
+  method?: string;
+  pathContains?: string;
+  status?: number;
+  from?: string;
+  to?: string;
+  cursor?: number;
+  limit?: number;
+}
+
+export interface Dependency {
+  name: string;
+  ok: boolean;
+  latencyMs: number | null;
+  error: string | null;
+}
+
+export interface SystemStatus {
+  probedAt: string;
+  dependencies: Dependency[];
+  runtime: {
+    configuredPipelines: number;
+    liveReplicas: number | null;
+    msgsLastHour: number | null;
+  };
+  build: { commit: string; buildTime: string; uptimeSeconds: number };
+}
+
+export interface AdminUser {
+  id: number;
+  organizationId: number;
+  email: string;
+  name: string;
+  role: "admin" | "operator";
+  status: "active" | "disabled";
+  mustResetPassword: boolean;
+  createdAt: string;
+}
+
+export interface AdminUsersListResponse { items: AdminUser[] }
+
+export interface CreateAdminUserRequest {
+  email: string;
+  name: string;
+  role: "admin" | "operator";
+  tempPassword: string;
+}
+
+export interface PatchAdminUserRequest {
+  name?: string;
+  role?: "admin" | "operator";
+  status?: "active" | "disabled";
+}
+
+export interface Organization {
+  id: number;
+  name: string;
+  slug: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatchOrganizationRequest {
+  name?: string;
+  slug?: string;
+}

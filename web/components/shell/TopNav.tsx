@@ -143,6 +143,14 @@ export function TopNav({ user, apiUrl }: Props) {
                     <RoleBadge role={user.role} />
                   </div>
                 </div>
+                {user.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className="block px-4 py-3 text-[13px] text-[var(--color-fg-1)] hover:bg-[var(--color-bg-elev)] transition-colors border-b border-[#1f1f1f]"
+                  >
+                    → Admin panel
+                  </Link>
+                )}
                 <button
                   onClick={logout}
                   className="block w-full text-left px-4 py-3 text-[13px] text-[var(--color-danger)] hover:bg-[var(--color-bg-elev)] transition-colors"
@@ -245,6 +253,15 @@ export function TopNav({ user, apiUrl }: Props) {
               </span>
               <span className="break-all">· {apiUrl}</span>
             </div>
+            {user.role === "admin" && (
+              <Link
+                href="/admin"
+                onClick={() => setDrawerOpen(false)}
+                className="block w-full text-center text-[14px] border border-[var(--color-accent)] text-[var(--color-accent)] px-4 py-3 rounded-[2px] mb-3"
+              >
+                → Admin panel
+              </Link>
+            )}
             <button
               onClick={logout}
               className="block w-full text-center text-[14px] border border-[var(--color-danger)] text-[var(--color-danger)] px-4 py-3 rounded-[2px] font-bold"
