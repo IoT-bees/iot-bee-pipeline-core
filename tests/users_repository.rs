@@ -23,6 +23,7 @@ async fn create_then_find_by_email_and_id() {
             password_hash: "h".into(),
             role: "admin".into(),
             status: "active".into(),
+            must_reset_password: false,
         })
         .await
         .unwrap();
