@@ -7,5 +7,6 @@ pub mod error;
 pub mod inbound;
 pub mod organization;
 pub mod outbound;
+pub mod plan;
 pub mod system;
 pub mod value_objects;

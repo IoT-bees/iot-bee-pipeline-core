@@ -53,6 +53,7 @@ impl ApiComposer {
         let system_uc = app_state.system_app_state();
         let user_admin_uc = app_state.user_admin_app_state();
         let organization_uc = app_state.organization_app_state();
+        let plans_uc = app_state.plans_app_state();
         let audit_repo = app_state.audit_repo();
         let cors_origins = app_state.config.cors_origins.clone();
         let rate_limit = RateLimit::default();
@@ -109,6 +110,7 @@ impl ApiComposer {
                                 system: system_uc.clone(),
                                 users: user_admin_uc.clone(),
                                 organization: organization_uc.clone(),
+                                plans: plans_uc.clone(),
                             })
                             .wrap(AdminOnly),
                         ),

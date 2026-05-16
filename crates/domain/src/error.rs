@@ -139,6 +139,18 @@ pub enum UserAdminError {
 }
 
 #[derive(Error, Debug, Clone)]
+pub enum PlanError {
+    #[error("plan not found: {id}")]
+    NotFound { id: i64 },
+    #[error("plan slug already exists in this scope: {slug}")]
+    SlugTaken { slug: String },
+    #[error("invalid plan field: {reason}")]
+    Invalid { reason: String },
+    #[error("internal plan error: {reason}")]
+    Internal { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
 pub enum OrganizationError {
     #[error("organization not found: {id}")]
     NotFound { id: i64 },
@@ -191,4 +203,6 @@ pub enum IoTBeeError {
     UserAdminError(#[from] UserAdminError),
     #[error("Organization error: {0}")]
     OrganizationError(#[from] OrganizationError),
+    #[error("Plan error: {0}")]
+    PlanError(#[from] PlanError),
 }

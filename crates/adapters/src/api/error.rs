@@ -180,6 +180,12 @@ impl ResponseError for ApiError {
                     StatusCode::INTERNAL_SERVER_ERROR
                 }
             },
+            IoTBeeError::PlanError(inner) => match inner {
+                domain::error::PlanError::NotFound { .. } => StatusCode::NOT_FOUND,
+                domain::error::PlanError::SlugTaken { .. } => StatusCode::CONFLICT,
+                domain::error::PlanError::Invalid { .. } => StatusCode::BAD_REQUEST,
+                domain::error::PlanError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            },
         }
     }
 
@@ -236,6 +242,11 @@ impl ResponseError for ApiError {
                 })
             }
             IoTBeeError::OrganizationError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::PlanError(e) => {
                 HttpResponse::build(self.status_code()).json(ErrorResponse {
                     error: e.to_string(),
                 })

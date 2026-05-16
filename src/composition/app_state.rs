@@ -59,15 +59,19 @@ use std::time::Instant;
 // Admin / audit / system / organization wiring
 use application::audit_cases::cases::AuditUseCasesImpl;
 use application::organization_cases::cases::OrganizationUseCasesImpl;
+use application::plan_cases::cases::PlanUseCasesImpl;
 use application::system_cases::cases::SystemUseCasesImpl;
 use application::user_admin_cases::cases::UserAdminUseCasesImpl;
 use domain::audit::inbound::audit_uses::AuditUseCases;
 use domain::audit::outbound::audit_repository::AuditRepository;
 use domain::auth::inbound::user_admin_uses::UserAdminUseCases;
 use domain::organization::inbound::organization_uses::OrganizationUseCases;
+use domain::plan::inbound::plan_uses::PlanUseCases;
+use domain::plan::outbound::plan_repository::PlanRepository;
 use domain::system::inbound::system_uses::SystemUseCases;
 use infrastructure::persistence::repositories::audit_events_repository::SqliteAuditEventsRepository;
 use infrastructure::persistence::repositories::organizations_repository::SqliteOrganizationsRepository;
+use infrastructure::persistence::repositories::plans_repository::SqlitePlansRepository;
 use infrastructure::system::status_probe::SystemStatusProbeImpl;
 
 use crate::config::Config;
@@ -288,6 +292,16 @@ impl AppState {
         ));
         let uc: Arc<dyn OrganizationUseCases + Send + Sync> =
             Arc::new(OrganizationUseCasesImpl::new(repo));
+        web::Data::from(uc)
+    }
+
+    pub fn plan_repo(&self) -> Arc<dyn PlanRepository> {
+        Arc::new(SqlitePlansRepository::new(self.internal_data_base.clone()))
+    }
+
+    pub fn plans_app_state(&self) -> web::Data<dyn PlanUseCases + Send + Sync> {
+        let uc: Arc<dyn PlanUseCases + Send + Sync> =
+            Arc::new(PlanUseCasesImpl::new(self.plan_repo()));
         web::Data::from(uc)
     }
 
