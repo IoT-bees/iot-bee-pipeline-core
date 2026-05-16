@@ -161,6 +161,25 @@ impl ResponseError for ApiError {
                 | LicenseError::InvalidPlan { .. }
                 | LicenseError::InvalidState { .. } => StatusCode::BAD_REQUEST,
             },
+            IoTBeeError::AuditError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            IoTBeeError::SystemError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            IoTBeeError::UserAdminError(inner) => match inner {
+                domain::error::UserAdminError::EmailTaken { .. } => StatusCode::CONFLICT,
+                domain::error::UserAdminError::NotFound { .. } => StatusCode::NOT_FOUND,
+                domain::error::UserAdminError::CannotDeactivateSelf
+                | domain::error::UserAdminError::InvalidRole { .. }
+                | domain::error::UserAdminError::InvalidStatus { .. }
+                | domain::error::UserAdminError::WeakPassword { .. } => StatusCode::BAD_REQUEST,
+                domain::error::UserAdminError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            },
+            IoTBeeError::OrganizationError(inner) => match inner {
+                domain::error::OrganizationError::NotFound { .. } => StatusCode::NOT_FOUND,
+                domain::error::OrganizationError::SlugTaken { .. } => StatusCode::CONFLICT,
+                domain::error::OrganizationError::InvalidSlug { .. } => StatusCode::BAD_REQUEST,
+                domain::error::OrganizationError::Internal { .. } => {
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            },
         }
     }
 
@@ -197,6 +216,26 @@ impl ResponseError for ApiError {
                 })
             }
             IoTBeeError::LicenseError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::AuditError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::SystemError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::UserAdminError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::OrganizationError(e) => {
                 HttpResponse::build(self.status_code()).json(ErrorResponse {
                     error: e.to_string(),
                 })

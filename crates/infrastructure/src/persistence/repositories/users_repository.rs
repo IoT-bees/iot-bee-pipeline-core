@@ -117,4 +117,56 @@ impl UserRepository for SqliteUserRepository {
             reason: "user not found after insert".into(),
         })
     }
+
+    async fn list_by_org(&self, organization_id: i64) -> Result<Vec<User>, AuthError> {
+        let rows: Vec<UserRow> = sqlx::query_as(
+            "SELECT id, organization_id, email, name, password_hash, role, status, must_reset_password, created_at \
+             FROM users WHERE organization_id = ? ORDER BY id DESC",
+        )
+        .bind(organization_id)
+        .fetch_all(self.db.pool())
+        .await
+        .map_err(|e| AuthError::Internal { reason: e.to_string() })?;
+        Ok(rows.into_iter().map(row_to_user).collect())
+    }
+
+    async fn update_role(&self, id: i64, role: &str) -> Result<(), AuthError> {
+        sqlx::query("UPDATE users SET role = ? WHERE id = ?")
+            .bind(role)
+            .bind(id)
+            .execute(self.db.pool())
+            .await
+            .map_err(|e| AuthError::Internal {
+                reason: e.to_string(),
+            })?;
+        Ok(())
+    }
+
+    async fn set_status(&self, id: i64, status: &str) -> Result<(), AuthError> {
+        sqlx::query("UPDATE users SET status = ? WHERE id = ?")
+            .bind(status)
+            .bind(id)
+            .execute(self.db.pool())
+            .await
+            .map_err(|e| AuthError::Internal {
+                reason: e.to_string(),
+            })?;
+        Ok(())
+    }
+
+    async fn update_name(&self, id: i64, name: &str) -> Result<(), AuthError> {
+        sqlx::query("UPDATE users SET name = ? WHERE id = ?")
+            .bind(name)
+            .bind(id)
+            .execute(self.db.pool())
+            .await
+            .map_err(|e| AuthError::Internal {
+                reason: e.to_string(),
+            })?;
+        Ok(())
+    }
+
+    async fn create_as_admin(&self, new_user: NewUser) -> Result<User, AuthError> {
+        self.create(new_user).await
+    }
 }

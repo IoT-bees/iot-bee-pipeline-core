@@ -59,6 +59,38 @@ impl UserRepository for InMemRepo {
         self.users.lock().unwrap().push(user.clone());
         Ok(user)
     }
+
+    async fn list_by_org(&self, organization_id: i64) -> Result<Vec<User>, AuthError> {
+        Ok(self
+            .users
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|u| u.organization_id == organization_id)
+            .cloned()
+            .collect())
+    }
+    async fn update_role(&self, id: i64, role: &str) -> Result<(), AuthError> {
+        if let Some(u) = self.users.lock().unwrap().iter_mut().find(|u| u.id == id) {
+            u.role = role.into();
+        }
+        Ok(())
+    }
+    async fn set_status(&self, id: i64, status: &str) -> Result<(), AuthError> {
+        if let Some(u) = self.users.lock().unwrap().iter_mut().find(|u| u.id == id) {
+            u.status = status.into();
+        }
+        Ok(())
+    }
+    async fn update_name(&self, id: i64, name: &str) -> Result<(), AuthError> {
+        if let Some(u) = self.users.lock().unwrap().iter_mut().find(|u| u.id == id) {
+            u.name = name.into();
+        }
+        Ok(())
+    }
+    async fn create_as_admin(&self, new_user: NewUser) -> Result<User, AuthError> {
+        self.create(new_user).await
+    }
 }
 
 struct StubHasher;

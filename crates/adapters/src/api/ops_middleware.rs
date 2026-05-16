@@ -8,6 +8,8 @@ use actix_web::body::EitherBody;
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready};
 use actix_web::http::Method;
 use actix_web::{Error, HttpMessage, HttpResponse};
+use domain::audit::entities::audit_event::NewAuditEvent;
+use domain::audit::outbound::audit_repository::AuditRepository;
 use domain::auth::value_objects::claims::JwtClaims;
 use futures_util::future::LocalBoxFuture;
 use logging::AppLogger;
@@ -169,7 +171,16 @@ where
     }
 }
 
-pub struct AuditLog;
+#[derive(Clone)]
+pub struct AuditLog {
+    repo: Arc<dyn AuditRepository>,
+}
+
+impl AuditLog {
+    pub fn new(repo: Arc<dyn AuditRepository>) -> Self {
+        Self { repo }
+    }
+}
 
 impl<S, B> Transform<S, ServiceRequest> for AuditLog
 where
@@ -185,12 +196,14 @@ where
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(AuditLogMw {
             service: Rc::new(service),
+            repo: self.repo.clone(),
         }))
     }
 }
 
 pub struct AuditLogMw<S> {
     service: Rc<S>,
+    repo: Arc<dyn AuditRepository>,
 }
 
 impl<S, B> Service<ServiceRequest> for AuditLogMw<S>
@@ -206,6 +219,7 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let svc = self.service.clone();
+        let repo = self.repo.clone();
         let method = req.method().to_string();
         let path = req.path().to_string();
         let ip = req
@@ -228,9 +242,80 @@ where
                         res.status().as_u16(),
                         ip
                     ));
+                    let event = NewAuditEvent {
+                        organization_id: Some(claims.organization_id),
+                        user_id: Some(claims.user_id),
+                        user_email: Some(claims.email.clone()),
+                        user_role: Some(claims.role.clone()),
+                        action: format!("{} {}", method, path),
+                        method: method.clone(),
+                        path: path.clone(),
+                        status_code: Some(res.status().as_u16() as i64),
+                        ip_address: Some(ip.clone()),
+                    };
+                    let repo = repo.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = repo.record(event).await {
+                            AUDIT_LOGGER.warn(&format!("audit persistence failed: {}", e));
+                        }
+                    });
                 }
             }
             Ok(res)
+        })
+    }
+}
+
+pub struct AdminOnly;
+
+impl<S, B> Transform<S, ServiceRequest> for AdminOnly
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<EitherBody<B>>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = AdminOnlyMw<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        ready(Ok(AdminOnlyMw {
+            service: Rc::new(service),
+        }))
+    }
+}
+
+pub struct AdminOnlyMw<S> {
+    service: Rc<S>,
+}
+
+impl<S, B> Service<ServiceRequest> for AdminOnlyMw<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<EitherBody<B>>;
+    type Error = Error;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    forward_ready!(service);
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let svc = self.service.clone();
+        Box::pin(async move {
+            let allowed = req
+                .extensions()
+                .get::<JwtClaims>()
+                .map(|c| c.role == "admin")
+                .unwrap_or(false);
+            if !allowed {
+                let resp =
+                    HttpResponse::Forbidden().json(serde_json::json!({"error": "admin only"}));
+                return Ok(req.into_response(resp).map_into_right_body());
+            }
+            let res = svc.call(req).await?;
+            Ok(res.map_into_left_body())
         })
     }
 }

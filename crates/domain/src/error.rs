@@ -109,6 +109,48 @@ pub enum AuthError {
 }
 
 #[derive(Error, Debug, Clone)]
+pub enum AuditError {
+    #[error("audit persistence error: {reason}")]
+    Persistence { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
+pub enum SystemError {
+    #[error("system probe failed: {reason}")]
+    ProbeFailed { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
+pub enum UserAdminError {
+    #[error("invalid role: '{role}' (allowed: admin, operator)")]
+    InvalidRole { role: String },
+    #[error("invalid status: '{status}' (allowed: active, disabled)")]
+    InvalidStatus { status: String },
+    #[error("user not found: {id}")]
+    NotFound { id: i64 },
+    #[error("you cannot deactivate yourself")]
+    CannotDeactivateSelf,
+    #[error("email already taken: {email}")]
+    EmailTaken { email: String },
+    #[error("weak password: {reason}")]
+    WeakPassword { reason: String },
+    #[error("internal user admin error: {reason}")]
+    Internal { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
+pub enum OrganizationError {
+    #[error("organization not found: {id}")]
+    NotFound { id: i64 },
+    #[error("slug '{slug}' already taken")]
+    SlugTaken { slug: String },
+    #[error("invalid slug: {reason}")]
+    InvalidSlug { reason: String },
+    #[error("internal organization error: {reason}")]
+    Internal { reason: String },
+}
+
+#[derive(Error, Debug, Clone)]
 pub enum LicenseError {
     #[error("invalid license key")]
     InvalidKey,
@@ -141,4 +183,12 @@ pub enum IoTBeeError {
     AuthError(#[from] AuthError),
     #[error("License error: {0}")]
     LicenseError(#[from] LicenseError),
+    #[error("Audit error: {0}")]
+    AuditError(#[from] AuditError),
+    #[error("System error: {0}")]
+    SystemError(#[from] SystemError),
+    #[error("User admin error: {0}")]
+    UserAdminError(#[from] UserAdminError),
+    #[error("Organization error: {0}")]
+    OrganizationError(#[from] OrganizationError),
 }

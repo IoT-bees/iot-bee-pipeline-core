@@ -54,12 +54,28 @@ use actix_web::web;
 
 use infrastructure::persistence::connection::InternalDataBase;
 use std::sync::Arc;
+use std::time::Instant;
+
+// Admin / audit / system / organization wiring
+use application::audit_cases::cases::AuditUseCasesImpl;
+use application::organization_cases::cases::OrganizationUseCasesImpl;
+use application::system_cases::cases::SystemUseCasesImpl;
+use application::user_admin_cases::cases::UserAdminUseCasesImpl;
+use domain::audit::inbound::audit_uses::AuditUseCases;
+use domain::audit::outbound::audit_repository::AuditRepository;
+use domain::auth::inbound::user_admin_uses::UserAdminUseCases;
+use domain::organization::inbound::organization_uses::OrganizationUseCases;
+use domain::system::inbound::system_uses::SystemUseCases;
+use infrastructure::persistence::repositories::audit_events_repository::SqliteAuditEventsRepository;
+use infrastructure::persistence::repositories::organizations_repository::SqliteOrganizationsRepository;
+use infrastructure::system::status_probe::SystemStatusProbeImpl;
 
 use crate::config::Config;
 
 pub struct AppState {
     internal_data_base: Arc<InternalDataBase>,
     pub config: &'static Config,
+    pub process_start: Instant,
 }
 
 impl AppState {
@@ -68,6 +84,7 @@ impl AppState {
         Self {
             internal_data_base,
             config,
+            process_start: Instant::now(),
         }
     }
 
@@ -232,6 +249,45 @@ impl AppState {
         ));
         let uc: Arc<dyn AuthUseCases + Send + Sync> =
             Arc::new(AuthUseCasesImpl::new(repo, hasher, issuer));
+        web::Data::from(uc)
+    }
+
+    pub fn audit_repo(&self) -> Arc<dyn AuditRepository> {
+        Arc::new(SqliteAuditEventsRepository::new(
+            self.internal_data_base.clone(),
+        ))
+    }
+
+    pub fn audit_app_state(&self) -> web::Data<dyn AuditUseCases + Send + Sync> {
+        let repo = self.audit_repo();
+        let uc: Arc<dyn AuditUseCases + Send + Sync> = Arc::new(AuditUseCasesImpl::new(repo));
+        web::Data::from(uc)
+    }
+
+    pub fn system_app_state(&self) -> web::Data<dyn SystemUseCases + Send + Sync> {
+        let probe = Arc::new(SystemStatusProbeImpl::new(
+            self.internal_data_base.clone(),
+            self.process_start,
+            self.config.rabbitmq_url.clone(),
+        ));
+        let uc: Arc<dyn SystemUseCases + Send + Sync> = Arc::new(SystemUseCasesImpl::new(probe));
+        web::Data::from(uc)
+    }
+
+    pub fn user_admin_app_state(&self) -> web::Data<dyn UserAdminUseCases + Send + Sync> {
+        let repo = Arc::new(SqliteUserRepository::new(self.internal_data_base.clone()));
+        let hasher = Arc::new(Argon2Hasher::new());
+        let uc: Arc<dyn UserAdminUseCases + Send + Sync> =
+            Arc::new(UserAdminUseCasesImpl::new(repo, hasher));
+        web::Data::from(uc)
+    }
+
+    pub fn organization_app_state(&self) -> web::Data<dyn OrganizationUseCases + Send + Sync> {
+        let repo = Arc::new(SqliteOrganizationsRepository::new(
+            self.internal_data_base.clone(),
+        ));
+        let uc: Arc<dyn OrganizationUseCases + Send + Sync> =
+            Arc::new(OrganizationUseCasesImpl::new(repo));
         web::Data::from(uc)
     }
 

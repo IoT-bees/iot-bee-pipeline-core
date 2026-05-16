@@ -27,9 +27,10 @@ use adapters::api::license::routers::{license_scope, stripe_license_sync_scope};
 //auth
 use actix_cors::Cors;
 use actix_web::web;
+use adapters::api::admin::routers::{AdminUseCases, admin_scope};
 use adapters::api::auth::middleware::JwtAuth;
 use adapters::api::auth::routers::auth_scope;
-use adapters::api::ops_middleware::{AuditLog, RateLimit, RolePolicy};
+use adapters::api::ops_middleware::{AdminOnly, AuditLog, RateLimit, RolePolicy};
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::composition::api_composition::api_composer");
 use actix_web::{App, HttpServer};
@@ -48,6 +49,11 @@ impl ApiComposer {
         let pipeline_lifecycle = app_state.pipeline_lifecycle_app_state();
         let license = app_state.license_app_state();
         let auth = app_state.auth_app_state();
+        let audit_uc = app_state.audit_app_state();
+        let system_uc = app_state.system_app_state();
+        let user_admin_uc = app_state.user_admin_app_state();
+        let organization_uc = app_state.organization_app_state();
+        let audit_repo = app_state.audit_repo();
         let cors_origins = app_state.config.cors_origins.clone();
         let rate_limit = RateLimit::default();
 
@@ -86,7 +92,7 @@ impl ApiComposer {
                 .service(
                     web::scope("")
                         .app_data(auth.clone())
-                        .wrap(AuditLog)
+                        .wrap(AuditLog::new(audit_repo.clone()))
                         .wrap(RolePolicy)
                         .wrap(JwtAuth)
                         .service(connection_types_scope())
@@ -96,7 +102,16 @@ impl ApiComposer {
                         .service(data_store_scope(data_stores.clone()))
                         .service(pipeline_data_scope(pipeline_data.clone()))
                         .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone()))
-                        .service(license_scope(license.clone(), pipeline_data.clone())),
+                        .service(license_scope(license.clone(), pipeline_data.clone()))
+                        .service(
+                            admin_scope(AdminUseCases {
+                                audit: audit_uc.clone(),
+                                system: system_uc.clone(),
+                                users: user_admin_uc.clone(),
+                                organization: organization_uc.clone(),
+                            })
+                            .wrap(AdminOnly),
+                        ),
                 )
         })
         .bind(format!("{}:{}", host, port))?

@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod api_docs;
 pub mod auth;
 pub mod connection_types;

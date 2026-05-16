@@ -16,6 +16,7 @@ pub struct Config {
     pub admin_email: String,
     pub admin_password: String,
     pub admin_name: String,
+    pub rabbitmq_url: Option<String>,
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
@@ -48,6 +49,7 @@ impl Config {
                     .to_lowercase(),
                 admin_password: env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin123".into()),
                 admin_name: env::var("ADMIN_NAME").unwrap_or_else(|_| "Admin".into()),
+                rabbitmq_url: env::var("RABBITMQ_URL").ok(),
             }
         })
     }
