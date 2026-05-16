@@ -172,3 +172,38 @@ export interface PipelineStatus {
   pipeline_general_status: string;
   replica_statuses: Record<string, string>;
 }
+
+export interface PlanLimits {
+  maxPipelines: number;
+  maxReplicasPerPipeline: number;
+  alertsEnabled: boolean;
+  premiumConnectors: boolean;
+  multiUser: boolean;
+}
+
+export interface LicenseUsage {
+  pipelines: number;
+}
+
+export interface LicenseStatus {
+  plan: "free" | "starter" | "pro" | "enterprise";
+  state: "active" | "inactive" | "expired";
+  limits: PlanLimits;
+  usage: LicenseUsage;
+  licenseKeyLast4: string | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionStatus: string | null;
+  stripePaymentStatus: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  latestInvoiceId: string | null;
+  amountCents: number | null;
+  currency: string | null;
+}
+
+export interface ActivateLicenseRequest {
+  licenseKey: string;
+}

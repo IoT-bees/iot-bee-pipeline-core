@@ -67,6 +67,7 @@ export function CommandBar() {
               { label: "go stores", href: "/stores" },
               { label: "go schemas", href: "/schemas" },
               { label: "go groups", href: "/groups" },
+              { label: "go billing", href: "/billing" },
               { label: "new pipeline", href: "/pipelines/new" },
               { label: "new source", href: "/sources/new" },
               { label: "new store", href: "/stores/new" },

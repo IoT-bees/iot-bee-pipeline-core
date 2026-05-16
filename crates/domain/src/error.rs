@@ -108,6 +108,20 @@ pub enum AuthError {
     Internal { reason: String },
 }
 
+#[derive(Error, Debug, Clone)]
+pub enum LicenseError {
+    #[error("invalid license key")]
+    InvalidKey,
+    #[error("invalid license plan: {plan}")]
+    InvalidPlan { plan: String },
+    #[error("invalid license state: {state}")]
+    InvalidState { state: String },
+    #[error("license limit exceeded: {reason}")]
+    LimitExceeded { reason: String },
+    #[error("license persistence error: {reason}")]
+    Persistence { reason: String },
+}
+
 // define a proper domain error for all my sistem
 #[derive(Error, Debug)]
 pub enum IoTBeeError {
@@ -125,4 +139,6 @@ pub enum IoTBeeError {
     DataExternalStoreError(#[from] DataExternalStoreError),
     #[error("Auth error: {0}")]
     AuthError(#[from] AuthError),
+    #[error("License error: {0}")]
+    LicenseError(#[from] LicenseError),
 }

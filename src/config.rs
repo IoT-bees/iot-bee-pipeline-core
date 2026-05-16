@@ -46,8 +46,7 @@ impl Config {
                 admin_email: env::var("ADMIN_EMAIL")
                     .unwrap_or_else(|_| "admin@iot-bee.local".into())
                     .to_lowercase(),
-                admin_password: env::var("ADMIN_PASSWORD")
-                    .unwrap_or_else(|_| "admin123".into()),
+                admin_password: env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin123".into()),
                 admin_name: env::var("ADMIN_NAME").unwrap_or_else(|_| "Admin".into()),
             }
         })

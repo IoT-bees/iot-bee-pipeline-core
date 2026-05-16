@@ -168,11 +168,14 @@ impl Handler<StatusPipelineMessageAll> for SystemActorSupervisor {
     }
 }
 
-
 impl Handler<UpdateReplicationFactorMessage> for SystemActorSupervisor {
     type Result = ResponseActFuture<Self, Result<(), IoTBeeError>>;
 
-    fn handle(&mut self, msg: UpdateReplicationFactorMessage, _ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(
+        &mut self,
+        msg: UpdateReplicationFactorMessage,
+        _ctx: &mut Context<Self>,
+    ) -> Self::Result {
         let pipeline_id = msg.pipeline_id;
         let replication_factor = msg.replication_factor;
 

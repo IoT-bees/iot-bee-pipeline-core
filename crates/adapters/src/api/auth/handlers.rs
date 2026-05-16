@@ -101,10 +101,7 @@ pub async fn has_users(use_case: web::Data<UseCase>) -> Result<HttpResponse, Api
     tag = "Auth"
 )]
 #[get("/me")]
-pub async fn me(
-    req: HttpRequest,
-    use_case: web::Data<UseCase>,
-) -> Result<HttpResponse, ApiError> {
+pub async fn me(req: HttpRequest, use_case: web::Data<UseCase>) -> Result<HttpResponse, ApiError> {
     let token = req
         .headers()
         .get("Authorization")

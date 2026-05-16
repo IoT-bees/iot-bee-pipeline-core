@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { canStop } from "@/lib/status";
 
 interface Props {
   currentValue: number;
@@ -18,8 +17,8 @@ export function RescaleControl({
 }: Props) {
   const [value, setValue] = useState(currentValue);
   const [busy, setBusy] = useState(false);
-  const blocked = canStop(pipelineStatus);
   const changed = value !== currentValue;
+  const hotScale = pipelineStatus && pipelineStatus.toLowerCase() !== "idle";
 
   async function handleApply() {
     setBusy(true);
@@ -57,14 +56,14 @@ export function RescaleControl({
           variant="primary"
           size="sm"
           onClick={handleApply}
-          disabled={busy || blocked}
+          disabled={busy}
         >
-          apply
+          {hotScale ? "hot scale" : "apply"}
         </Button>
       )}
-      {changed && blocked && (
-        <span className="text-[12px] text-[var(--color-danger)] font-mono">
-          × pipeline is running — stop it first
+      {changed && hotScale && (
+        <span className="text-[12px] text-[var(--color-accent)] font-mono">
+          ↻ applies live and persists for restart
         </span>
       )}
     </div>

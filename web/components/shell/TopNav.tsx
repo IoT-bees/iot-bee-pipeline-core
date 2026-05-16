@@ -21,6 +21,7 @@ const tabs = [
   { href: "/stores", label: "stores" },
   { href: "/schemas", label: "schemas" },
   { href: "/groups", label: "groups" },
+  { href: "/billing", label: "billing" },
 ];
 
 interface Props {

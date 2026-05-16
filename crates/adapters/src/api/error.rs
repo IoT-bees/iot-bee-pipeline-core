@@ -3,6 +3,7 @@ use actix_web::{HttpResponse, ResponseError};
 use domain::error::{
     AuthError,
     IoTBeeError,
+    LicenseError,
     PipelineLifecycleError,
     PipelinePersistenceError, // ya
 };
@@ -10,7 +11,7 @@ use serde::Serialize;
 
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct ErrorResponse {
-    error: String,
+    pub error: String,
 }
 use std::fmt;
 
@@ -153,6 +154,13 @@ impl ResponseError for ApiError {
                 AuthError::WeakPassword { .. } => StatusCode::BAD_REQUEST,
                 AuthError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             },
+            IoTBeeError::LicenseError(inner) => match inner {
+                LicenseError::LimitExceeded { .. } => StatusCode::PAYMENT_REQUIRED,
+                LicenseError::Persistence { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+                LicenseError::InvalidKey
+                | LicenseError::InvalidPlan { .. }
+                | LicenseError::InvalidState { .. } => StatusCode::BAD_REQUEST,
+            },
         }
     }
 
@@ -183,9 +191,16 @@ impl ResponseError for ApiError {
                 .json(ErrorResponse {
                     error: format!("External store error: {}", e),
                 }),
-            IoTBeeError::AuthError(e) => HttpResponse::build(self.status_code()).json(ErrorResponse {
-                error: e.to_string(),
-            }),
+            IoTBeeError::AuthError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
+            IoTBeeError::LicenseError(e) => {
+                HttpResponse::build(self.status_code()).json(ErrorResponse {
+                    error: e.to_string(),
+                })
+            }
         }
     }
 }

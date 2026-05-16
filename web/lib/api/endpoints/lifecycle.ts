@@ -9,4 +9,9 @@ export const lifecycleApi = {
     api<null>(`/pipeline-lifecycle/start/${id}`, { method: "POST" }),
   stop: (id: number) =>
     api<null>(`/pipeline-lifecycle/stop/${id}`, { method: "POST" }),
+  updateReplicas: (id: number, replicas: number): Promise<void> =>
+    api<null>(
+      `/pipeline-lifecycle/update-replication-factor/${id}/${replicas}`,
+      { method: "PUT" },
+    ).then(() => undefined),
 };

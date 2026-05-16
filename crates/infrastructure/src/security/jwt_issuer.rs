@@ -42,7 +42,9 @@ impl TokenIssuer for JwtIssuer {
             &claims,
             &EncodingKey::from_secret(self.secret.as_bytes()),
         )
-        .map_err(|e| AuthError::Internal { reason: e.to_string() })
+        .map_err(|e| AuthError::Internal {
+            reason: e.to_string(),
+        })
     }
 
     fn verify(&self, token: &str) -> Result<JwtClaims, AuthError> {
@@ -61,7 +63,8 @@ impl TokenIssuer for JwtIssuer {
             email: c.email,
             role: c.role,
             issued_at: chrono::DateTime::from_timestamp(c.iat, 0).ok_or(AuthError::InvalidToken)?,
-            expires_at: chrono::DateTime::from_timestamp(c.exp, 0).ok_or(AuthError::InvalidToken)?,
+            expires_at: chrono::DateTime::from_timestamp(c.exp, 0)
+                .ok_or(AuthError::InvalidToken)?,
         })
     }
 }

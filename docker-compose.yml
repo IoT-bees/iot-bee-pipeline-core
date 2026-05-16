@@ -16,6 +16,7 @@ services:
       JWT_SECRET: "change-me-in-production-this-must-be-long-and-random"
       JWT_EXPIRES_IN_HOURS: "24"
       CORS_ORIGINS: "http://localhost:3000"
+      STRIPE_SYNC_SECRET: "${STRIPE_SYNC_SECRET:-iot-bee-local-stripe-sync-secret}"
       ADMIN_EMAIL: "admin@iot-bee.local"
       ADMIN_PASSWORD: "admin123"
       ADMIN_NAME: "Admin"
@@ -63,6 +64,10 @@ services:
       INTERNAL_API_URL: "http://iot-bee:8080"
       AUTH_COOKIE_NAME: "iot_bee_session"
       AUTH_COOKIE_MAX_AGE_HOURS: "24"
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET:-}"
+      STRIPE_SYNC_SECRET: "${STRIPE_SYNC_SECRET:-iot-bee-local-stripe-sync-secret}"
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     ports:

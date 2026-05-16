@@ -22,11 +22,13 @@ use adapters::api::data_store::routers::data_store_scope;
 use adapters::api::pipeline_data::routers::pipeline_data_scope;
 //pipeline lifecycle
 use adapters::api::pipeline_lifecycle::routers::pipeline_lifecycle_scope;
+//license
+use adapters::api::license::routers::{license_scope, stripe_license_sync_scope};
 //auth
 use actix_cors::Cors;
+use actix_web::web;
 use adapters::api::auth::middleware::JwtAuth;
 use adapters::api::auth::routers::auth_scope;
-use actix_web::web;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::composition::api_composition::api_composer");
 use actix_web::{App, HttpServer};
@@ -43,6 +45,7 @@ impl ApiComposer {
         let data_stores = app_state.data_stores_app_state();
         let pipeline_data = app_state.pipeline_data_app_state();
         let pipeline_lifecycle = app_state.pipeline_lifecycle_app_state();
+        let license = app_state.license_app_state();
         let auth = app_state.auth_app_state();
         let cors_origins = app_state.config.cors_origins.clone();
 
@@ -73,6 +76,10 @@ impl ApiComposer {
                         .url("/api-docs/openapi.json", ApiDoc::openapi()),
                 )
                 .service(auth_scope(auth.clone()))
+                .service(stripe_license_sync_scope(
+                    license.clone(),
+                    pipeline_data.clone(),
+                ))
                 .service(
                     web::scope("")
                         .app_data(auth.clone())
@@ -83,7 +90,8 @@ impl ApiComposer {
                         .service(pipeline_groups_scope(pipeline_groups.clone()))
                         .service(data_store_scope(data_stores.clone()))
                         .service(pipeline_data_scope(pipeline_data.clone()))
-                        .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone())),
+                        .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone()))
+                        .service(license_scope(license.clone(), pipeline_data.clone())),
                 )
         })
         .bind(format!("{}:{}", host, port))?

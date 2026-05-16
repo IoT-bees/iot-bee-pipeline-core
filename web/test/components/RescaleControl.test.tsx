@@ -42,7 +42,7 @@ describe("RescaleControl", () => {
     expect(onApply).toHaveBeenCalledWith(3);
   });
 
-  it("disables apply when the pipeline is running", () => {
+  it("allows hot scaling when the pipeline is running", () => {
     render(
       <RescaleControl
         currentValue={2}
@@ -51,7 +51,7 @@ describe("RescaleControl", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "+" }));
-    expect(screen.getByRole("button", { name: /apply/i })).toBeDisabled();
-    expect(screen.getByText(/stop it first/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /hot scale/i })).toBeEnabled();
+    expect(screen.getByText(/applies live/i)).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { pipelinesApi } from "@/lib/api/endpoints/pipelines";
+import { lifecycleApi } from "@/lib/api/endpoints/lifecycle";
 import type { CreatePipelineRequest } from "@/lib/api/types";
 import { useToasts } from "@/lib/store/useToasts";
 
@@ -94,11 +95,12 @@ export function useUpdatePipelineReplicas(pipelineId: number) {
   const push = useToasts((s) => s.push);
   return useMutation({
     mutationFn: (replicationFactor: number) =>
-      pipelinesApi.updateReplicas(pipelineId, replicationFactor),
+      lifecycleApi.updateReplicas(pipelineId, replicationFactor),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pipelines", pipelineId] });
       qc.invalidateQueries({ queryKey: ["pipelines", "list"] });
-      push({ kind: "success", message: "replicas updated" });
+      qc.invalidateQueries({ queryKey: ["pipelines", "status", "all"] });
+      push({ kind: "success", message: "replicas scaled" });
     },
     onError: (e: Error) => push({ kind: "error", message: e.message }),
   });

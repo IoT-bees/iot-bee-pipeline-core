@@ -55,6 +55,20 @@ impl PipelineControllerRepository for PipelineDataRepository {
         Ok(())
     }
 
+    async fn count_pipelines(&self) -> Result<u32, IoTBeeError> {
+        let pool = self.data_base_connection().pool();
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM pipelines")
+            .fetch_one(pool)
+            .await
+            .map_err(|e| {
+                IoTBeeError::from(PipelinePersistenceError::Database {
+                    reason: e.to_string(),
+                })
+            })?;
+
+        Ok(count as u32)
+    }
+
     async fn get_pipeline(&self) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError> {
         let pool = self.data_base_connection().pool();
         let rows_result = sqlx::query_as::<_, PipelineRowFlat>(

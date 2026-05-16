@@ -145,6 +145,7 @@ pub trait PipelineDataStoreRepository {
 #[async_trait]
 pub trait PipelineControllerRepository {
     async fn save_pipeline(&self, pipeline: &PipelineDataInputModel) -> Result<(), IoTBeeError>;
+    async fn count_pipelines(&self) -> Result<u32, IoTBeeError>;
     async fn get_pipeline(&self) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
     async fn get_pipeline_by_id(
         &self,
@@ -190,6 +191,4 @@ pub trait PipelineControllerRepository {
         pipeline_id: &DataStoreId,
         replication_factor: &u32,
     ) -> Result<(), IoTBeeError>;
-     
-
 }

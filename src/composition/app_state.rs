@@ -28,6 +28,11 @@ use application::pipeline_data_cases::cases::PipelineDataUseCases;
 use application::pipeline_data_cases::cases::PipelineDataUseCasesImpl;
 use infrastructure::persistence::repositories::pipeline_data_repository::PipelineDataRepository;
 
+// para los casos de uso de licencias
+use application::license_cases::cases::LicenseUseCases;
+use application::license_cases::cases::LicenseUseCasesImpl;
+use infrastructure::persistence::repositories::license_repository::SqliteLicenseRepository;
+
 // // para los casos de uso de pipeline lifecycle
 use application::pipeline_lifecycle_cases::cases::PipelineLifecycleCases;
 use application::pipeline_lifecycle_cases::cases::PipelineLifecycleCasesImpl;
@@ -69,9 +74,7 @@ impl AppState {
     pub async fn build_db() -> Result<Arc<InternalDataBase>, Box<dyn std::error::Error>> {
         let config = Config::get();
         let db = Arc::new(InternalDataBase::new(&config.database_url).await?);
-        sqlx::migrate!("./migrations")
-            .run(db.pool())
-            .await?;
+        sqlx::migrate!("./migrations").run(db.pool()).await?;
         Ok(db)
     }
 
@@ -121,9 +124,22 @@ impl AppState {
     pub fn pipeline_data_app_state(&self) -> web::Data<dyn PipelineDataUseCases + Send + Sync> {
         let pipeline_data_repo: Arc<PipelineDataRepository> =
             Arc::new(PipelineDataRepository::new(self.internal_data_base.clone()));
-        let pipeline_data_use_case: Arc<dyn PipelineDataUseCases + Send + Sync> =
-            Arc::new(PipelineDataUseCasesImpl::new(pipeline_data_repo));
+        let license_repo: Arc<SqliteLicenseRepository> = Arc::new(SqliteLicenseRepository::new(
+            self.internal_data_base.clone(),
+        ));
+        let pipeline_data_use_case: Arc<dyn PipelineDataUseCases + Send + Sync> = Arc::new(
+            PipelineDataUseCasesImpl::new(pipeline_data_repo, license_repo),
+        );
         web::Data::from(pipeline_data_use_case)
+    }
+
+    pub fn license_app_state(&self) -> web::Data<dyn LicenseUseCases + Send + Sync> {
+        let license_repo: Arc<SqliteLicenseRepository> = Arc::new(SqliteLicenseRepository::new(
+            self.internal_data_base.clone(),
+        ));
+        let license_use_case: Arc<dyn LicenseUseCases + Send + Sync> =
+            Arc::new(LicenseUseCasesImpl::new(license_repo));
+        web::Data::from(license_use_case)
     }
 
     pub fn pipeline_lifecycle_app_state(
@@ -140,6 +156,9 @@ impl AppState {
         let data_store_repository =
             Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
         let component_factory = Box::new(InfrastructurePipelineComponentFactory::new());
+        let license_repository = Box::new(SqliteLicenseRepository::new(
+            self.internal_data_base.clone(),
+        ));
 
         let use_case = PipelineLifecycleCasesImpl::new(
             pipeline_lifecycle,
@@ -148,6 +167,7 @@ impl AppState {
             validation_schema_repository,
             data_store_repository,
             component_factory,
+            license_repository,
         );
         let use_case: Arc<dyn PipelineLifecycleCases + Send + Sync> = Arc::new(use_case);
         web::Data::from(use_case)
@@ -159,7 +179,10 @@ impl AppState {
 
         match repo.find_by_email(email).await {
             Ok(Some(_)) => {
-                tracing::info!("Admin por defecto '{}' ya existe, no se vuelve a crear", email);
+                tracing::info!(
+                    "Admin por defecto '{}' ya existe, no se vuelve a crear",
+                    email
+                );
                 return;
             }
             Ok(None) => {}
@@ -173,7 +196,10 @@ impl AppState {
         let password_hash = match hasher.hash(&self.config.admin_password) {
             Ok(h) => h,
             Err(e) => {
-                tracing::error!("No se pudo hashear la contraseña del admin por defecto: {}", e);
+                tracing::error!(
+                    "No se pudo hashear la contraseña del admin por defecto: {}",
+                    e
+                );
                 return;
             }
         };
@@ -218,6 +244,9 @@ impl AppState {
         let data_store_repository =
             Box::new(DataStoreRepository::new(self.internal_data_base.clone()));
         let component_factory = Box::new(InfrastructurePipelineComponentFactory::new());
+        let license_repository = Box::new(SqliteLicenseRepository::new(
+            self.internal_data_base.clone(),
+        ));
 
         let use_case = PipelineLifecycleCasesImpl::new(
             pipeline_lifecycle,
@@ -226,6 +255,7 @@ impl AppState {
             validation_schema_repository,
             data_store_repository,
             component_factory,
+            license_repository,
         );
 
         if let Err(e) = use_case.start_all_pipelines_in_system().await {

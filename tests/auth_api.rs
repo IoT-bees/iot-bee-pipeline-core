@@ -77,8 +77,7 @@ async fn first_register_then_me_works() {
 async fn second_register_returns_403() {
     let db = fresh_db().await;
     let auth = auth_data(db.clone());
-    let app =
-        test::init_service(App::new().service(auth_scope(auth.clone()))).await;
+    let app = test::init_service(App::new().service(auth_scope(auth.clone()))).await;
 
     let req = test::TestRequest::post()
         .uri("/auth/register")

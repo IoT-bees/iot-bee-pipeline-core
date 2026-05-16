@@ -139,7 +139,10 @@ async fn login_with_wrong_password_fails() {
     uc.register("a@b.com".into(), "Ana".into(), "secret123".into())
         .await
         .unwrap();
-    let err = uc.login("a@b.com".into(), "WRONG".into()).await.unwrap_err();
+    let err = uc
+        .login("a@b.com".into(), "WRONG".into())
+        .await
+        .unwrap_err();
     assert!(matches!(err, AuthError::InvalidCredentials));
 }
 

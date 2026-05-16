@@ -13,11 +13,7 @@ pub trait AuthUseCases: Send + Sync {
         password: String,
     ) -> Result<(User, String), AuthError>;
 
-    async fn login(
-        &self,
-        email: String,
-        password: String,
-    ) -> Result<(User, String), AuthError>;
+    async fn login(&self, email: String, password: String) -> Result<(User, String), AuthError>;
 
     async fn verify_token(&self, token: &str) -> Result<JwtClaims, AuthError>;
 

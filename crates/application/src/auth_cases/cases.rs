@@ -22,7 +22,11 @@ impl AuthUseCasesImpl {
         hasher: Arc<dyn PasswordHasher>,
         issuer: Arc<dyn TokenIssuer>,
     ) -> Self {
-        Self { repo, hasher, issuer }
+        Self {
+            repo,
+            hasher,
+            issuer,
+        }
     }
 
     fn check_password_strength(password: &str) -> Result<(), AuthError> {
