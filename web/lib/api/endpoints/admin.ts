@@ -5,9 +5,13 @@ import type {
   AuditFilters,
   AuditListResponse,
   CreateAdminUserRequest,
+  CreatePlanRequest,
   Organization,
   PatchAdminUserRequest,
   PatchOrganizationRequest,
+  PatchPlanRequest,
+  Plan,
+  PlanListResponse,
   SystemStatus,
 } from "../types";
 
@@ -45,4 +49,14 @@ export const adminApi = {
       method: "PATCH",
       body: JSON.stringify(b),
     }),
+  listPlans: () => api<PlanListResponse>("/admin/plans"),
+  createPlan: (b: CreatePlanRequest) =>
+    api<Plan>("/admin/plans", { method: "POST", body: JSON.stringify(b) }),
+  patchPlan: (id: number, b: PatchPlanRequest) =>
+    api<Plan>(`/admin/plans/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(b),
+    }),
+  deletePlan: (id: number) =>
+    api<void>(`/admin/plans/${id}`, { method: "DELETE" }),
 };

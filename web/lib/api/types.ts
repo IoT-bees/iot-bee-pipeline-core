@@ -303,3 +303,53 @@ export interface PatchOrganizationRequest {
   name?: string;
   slug?: string;
 }
+
+export interface Plan {
+  id: number;
+  slug: string;
+  organizationId: number | null;
+  displayName: string;
+  description: string | null;
+  priceCents: number;
+  currency: string;
+  maxPipelines: number;
+  maxReplicasPerPipeline: number;
+  alertsEnabled: boolean;
+  premiumConnectors: boolean;
+  multiUser: boolean;
+  isCustom: boolean;
+  stripePriceId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanListResponse { items: Plan[] }
+
+export interface CreatePlanRequest {
+  slug: string;
+  organizationId?: number | null;
+  displayName: string;
+  description?: string | null;
+  priceCents: number;
+  currency: string;
+  maxPipelines: number;
+  maxReplicasPerPipeline: number;
+  alertsEnabled?: boolean;
+  premiumConnectors?: boolean;
+  multiUser?: boolean;
+  isCustom?: boolean;
+  stripePriceId?: string | null;
+}
+
+export interface PatchPlanRequest {
+  displayName?: string;
+  description?: string | null;
+  priceCents?: number;
+  currency?: string;
+  maxPipelines?: number;
+  maxReplicasPerPipeline?: number;
+  alertsEnabled?: boolean;
+  premiumConnectors?: boolean;
+  multiUser?: boolean;
+  stripePriceId?: string | null;
+}
