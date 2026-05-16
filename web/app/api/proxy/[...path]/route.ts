@@ -40,3 +40,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ path: string[] 
 export async function DELETE(req: Request, ctx: { params: Promise<{ path: string[] }> }) {
   return forward(req, (await ctx.params).path);
 }
+
+export async function PATCH(req: Request, ctx: { params: Promise<{ path: string[] }> }) {
+  return forward(req, (await ctx.params).path);
+}
