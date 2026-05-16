@@ -54,3 +54,12 @@ export function useDeleteStore() {
     onError: (e: Error) => push({ kind: "error", message: e.message }),
   });
 }
+
+export function useTestStore() {
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (id: number) => storesApi.test(id),
+    onSuccess: (res) => push({ kind: "success", message: res.message }),
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}

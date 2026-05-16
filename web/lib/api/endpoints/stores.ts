@@ -2,6 +2,7 @@ import { api } from "../client";
 import { parseJsonObject } from "../parseJson";
 import type {
   CreateDataStoreRequest,
+  ConnectionTestResponse,
   DataStore,
   InfluxDbConfig,
   LocalLogConfig,
@@ -81,4 +82,6 @@ export const storesApi = {
   },
   remove: (id: number) =>
     api<{ message: string }>(`/data-stores/${id}`, { method: "DELETE" }),
+  test: (id: number) =>
+    api<ConnectionTestResponse>(`/data-stores/${id}/test`, { method: "POST" }),
 };

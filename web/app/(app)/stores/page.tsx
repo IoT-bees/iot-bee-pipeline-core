@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/Button";
 import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { Panel } from "@/components/ui/Panel";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
-import { useDeleteStore, useStores } from "@/lib/hooks/useStores";
+import { useDeleteStore, useStores, useTestStore } from "@/lib/hooks/useStores";
 import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import { fmtId } from "@/lib/fmt";
 
 export default function StoresPage() {
   const { data, isLoading } = useStores();
   const del = useDeleteStore();
+  const testStore = useTestStore();
   const confirmDelete = useConfirmDelete(del.mutateAsync);
   const list = data ?? [];
   return (
@@ -53,6 +54,14 @@ export default function StoresPage() {
                           <Button variant="ghost" size="sm">edit</Button>
                         </Link>
                         <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={testStore.isPending}
+                          onClick={() => testStore.mutate(s.id)}
+                        >
+                          test
+                        </Button>
+                        <Button
                           variant="danger"
                           size="sm"
                           onClick={() => confirmDelete.ask(s.id, s.name)}
@@ -83,6 +92,14 @@ export default function StoresPage() {
                   <Link href={`/stores/${s.id}/edit`}>
                     <Button variant="ghost" size="sm">edit</Button>
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={testStore.isPending}
+                    onClick={() => testStore.mutate(s.id)}
+                  >
+                    test
+                  </Button>
                   <Button
                     variant="danger"
                     size="sm"

@@ -1,8 +1,10 @@
 export interface UserResponse {
   id: number;
+  organizationId: number;
   email: string;
   name: string;
   role: string;
+  status: string;
 }
 
 export interface AuthResponse {
@@ -93,6 +95,11 @@ export interface DataStore {
   config: InfluxDbConfig | LocalLogConfig;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ConnectionTestResponse {
+  ok: boolean;
+  message: string;
 }
 
 export interface PipelineGroup {

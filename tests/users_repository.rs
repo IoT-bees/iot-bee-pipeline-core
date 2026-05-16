@@ -17,10 +17,12 @@ async fn create_then_find_by_email_and_id() {
     let repo = SqliteUserRepository::new(db);
     let created = repo
         .create(NewUser {
+            organization_id: 1,
             email: "a@b.com".into(),
             name: "Ana".into(),
             password_hash: "h".into(),
             role: "admin".into(),
+            status: "active".into(),
         })
         .await
         .unwrap();

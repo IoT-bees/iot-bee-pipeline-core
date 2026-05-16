@@ -205,10 +205,12 @@ impl AppState {
         };
 
         let new_user = NewUser {
+            organization_id: 1,
             email: email.clone(),
             name: self.config.admin_name.clone(),
             password_hash,
             role: "admin".into(),
+            status: "active".into(),
         };
 
         match repo.create(new_user).await {

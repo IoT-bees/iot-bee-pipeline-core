@@ -17,9 +17,12 @@ pub struct LoginRequest {
 #[derive(Serialize, ToSchema)]
 pub struct UserResponse {
     pub id: i64,
+    #[serde(rename = "organizationId")]
+    pub organization_id: i64,
     pub email: String,
     pub name: String,
     pub role: String,
+    pub status: String,
 }
 
 #[derive(Serialize, ToSchema)]

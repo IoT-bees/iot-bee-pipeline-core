@@ -47,10 +47,12 @@ impl UserRepository for InMemRepo {
         *id += 1;
         let user = User {
             id: *id,
+            organization_id: new_user.organization_id,
             email: new_user.email,
             name: new_user.name,
             password_hash: new_user.password_hash,
             role: new_user.role,
+            status: new_user.status,
             created_at: Utc::now(),
         };
         self.users.lock().unwrap().push(user.clone());
@@ -70,18 +72,25 @@ impl PasswordHasher for StubHasher {
 
 struct StubIssuer;
 impl TokenIssuer for StubIssuer {
-    fn issue(&self, user_id: i64, email: &str, role: &str) -> Result<String, AuthError> {
-        Ok(format!("token:{user_id}:{email}:{role}"))
+    fn issue(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+        email: &str,
+        role: &str,
+    ) -> Result<String, AuthError> {
+        Ok(format!("token:{user_id}:{organization_id}:{email}:{role}"))
     }
     fn verify(&self, token: &str) -> Result<JwtClaims, AuthError> {
-        let parts: Vec<&str> = token.splitn(4, ':').collect();
-        if parts.len() != 4 || parts[0] != "token" {
+        let parts: Vec<&str> = token.splitn(5, ':').collect();
+        if parts.len() != 5 || parts[0] != "token" {
             return Err(AuthError::InvalidToken);
         }
         Ok(JwtClaims {
             user_id: parts[1].parse().unwrap(),
-            email: parts[2].into(),
-            role: parts[3].into(),
+            organization_id: parts[2].parse().unwrap(),
+            email: parts[3].into(),
+            role: parts[4].into(),
             issued_at: Utc::now(),
             expires_at: Utc::now(),
         })

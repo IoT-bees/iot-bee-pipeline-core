@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/Button";
 import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { Panel } from "@/components/ui/Panel";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
-import { useDeleteSource, useSources } from "@/lib/hooks/useSources";
+import { useDeleteSource, useSources, useTestSource } from "@/lib/hooks/useSources";
 import { useConfirmDelete } from "@/lib/hooks/useConfirmDelete";
 import { fmtId } from "@/lib/fmt";
 
 export default function SourcesPage() {
   const { data, isLoading } = useSources();
   const del = useDeleteSource();
+  const testSource = useTestSource();
   const confirmDelete = useConfirmDelete(del.mutateAsync);
   const list = data ?? [];
   return (
@@ -53,6 +54,14 @@ export default function SourcesPage() {
                           <Button variant="ghost" size="sm">edit</Button>
                         </Link>
                         <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={testSource.isPending}
+                          onClick={() => testSource.mutate(s.id)}
+                        >
+                          test
+                        </Button>
+                        <Button
                           variant="danger"
                           size="sm"
                           onClick={() => confirmDelete.ask(s.id, s.name)}
@@ -83,6 +92,14 @@ export default function SourcesPage() {
                   <Link href={`/sources/${s.id}/edit`}>
                     <Button variant="ghost" size="sm">edit</Button>
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={testSource.isPending}
+                    onClick={() => testSource.mutate(s.id)}
+                  >
+                    test
+                  </Button>
                   <Button
                     variant="danger"
                     size="sm"

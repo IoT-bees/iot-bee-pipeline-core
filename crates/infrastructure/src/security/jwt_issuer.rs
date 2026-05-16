@@ -9,6 +9,7 @@ use domain::error::AuthError;
 #[derive(Debug, Serialize, Deserialize)]
 struct InternalClaims {
     sub: String,
+    org: i64,
     email: String,
     role: String,
     iat: i64,
@@ -27,11 +28,18 @@ impl JwtIssuer {
 }
 
 impl TokenIssuer for JwtIssuer {
-    fn issue(&self, user_id: i64, email: &str, role: &str) -> Result<String, AuthError> {
+    fn issue(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+        email: &str,
+        role: &str,
+    ) -> Result<String, AuthError> {
         let now = Utc::now();
         let exp = now + Duration::hours(self.ttl_hours);
         let claims = InternalClaims {
             sub: user_id.to_string(),
+            org: organization_id,
             email: email.to_string(),
             role: role.to_string(),
             iat: now.timestamp(),
@@ -60,6 +68,7 @@ impl TokenIssuer for JwtIssuer {
         let c = data.claims;
         Ok(JwtClaims {
             user_id: c.sub.parse().map_err(|_| AuthError::InvalidToken)?,
+            organization_id: c.org,
             email: c.email,
             role: c.role,
             issued_at: chrono::DateTime::from_timestamp(c.iat, 0).ok_or(AuthError::InvalidToken)?,

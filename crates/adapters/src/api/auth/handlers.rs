@@ -14,9 +14,11 @@ type UseCase = dyn AuthUseCases + Send + Sync;
 fn user_resp(u: &User) -> UserResponse {
     UserResponse {
         id: u.id,
+        organization_id: u.organization_id,
         email: u.email.clone(),
         name: u.name.clone(),
         role: u.role.clone(),
+        status: u.status.clone(),
     }
 }
 

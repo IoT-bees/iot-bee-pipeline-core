@@ -4,6 +4,7 @@ import type {
   CreateDataSourceRequest,
   DataSource,
   KafkaConfig,
+  ConnectionTestResponse,
   MqttConfig,
   RabbitmqConfig,
   SourceType,
@@ -94,4 +95,6 @@ export const sourcesApi = {
   },
   remove: (id: number) =>
     api<{ message: string }>(`/data-sources/${id}`, { method: "DELETE" }),
+  test: (id: number) =>
+    api<ConnectionTestResponse>(`/data-sources/${id}/test`, { method: "POST" }),
 };

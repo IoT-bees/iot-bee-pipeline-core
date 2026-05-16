@@ -29,6 +29,7 @@ use actix_cors::Cors;
 use actix_web::web;
 use adapters::api::auth::middleware::JwtAuth;
 use adapters::api::auth::routers::auth_scope;
+use adapters::api::ops_middleware::{AuditLog, RateLimit, RolePolicy};
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::composition::api_composition::api_composer");
 use actix_web::{App, HttpServer};
@@ -48,6 +49,7 @@ impl ApiComposer {
         let license = app_state.license_app_state();
         let auth = app_state.auth_app_state();
         let cors_origins = app_state.config.cors_origins.clone();
+        let rate_limit = RateLimit::default();
 
         let port = app_state.config.api_port.unwrap_or(8080);
         let host = app_state
@@ -70,6 +72,7 @@ impl ApiComposer {
                 cors = cors.allowed_origin(origin);
             }
             App::new()
+                .wrap(rate_limit.clone())
                 .wrap(cors)
                 .service(
                     SwaggerUi::new("/swagger-ui/{_:.*}")
@@ -83,6 +86,8 @@ impl ApiComposer {
                 .service(
                     web::scope("")
                         .app_data(auth.clone())
+                        .wrap(AuditLog)
+                        .wrap(RolePolicy)
                         .wrap(JwtAuth)
                         .service(connection_types_scope())
                         .service(validation_schemas_scope(validation_schemas.clone()))

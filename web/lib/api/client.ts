@@ -14,6 +14,16 @@ export class ApiError extends Error {
   }
 }
 
+function friendlyMessage(status: number, message: string) {
+  if (status === 402) return `Plan limit reached: ${message}`;
+  if (status === 403) return `You do not have permission to do that: ${message}`;
+  if (status === 404) return `We could not find that resource. It may have been deleted.`;
+  if (status === 409) return `That conflicts with an existing record. ${message}`;
+  if (status === 429) return `Too many requests. Please wait a moment and try again.`;
+  if (status >= 500) return `The server had a problem. Please retry; if it keeps happening, check backend logs.`;
+  return message;
+}
+
 type Init = RequestInit & { token?: string };
 
 export async function api<T>(path: string, init: Init = {}): Promise<T> {
@@ -29,7 +39,11 @@ export async function api<T>(path: string, init: Init = {}): Promise<T> {
   const body = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const message = body?.error ?? `request failed (${res.status})`;
-    throw new ApiError(res.status, body?.code ?? "unknown", message);
+    throw new ApiError(
+      res.status,
+      body?.code ?? "unknown",
+      friendlyMessage(res.status, message),
+    );
   }
   return body as T;
 }

@@ -12,6 +12,7 @@ import { useSources } from "@/lib/hooks/useSources";
 import { useStores } from "@/lib/hooks/useStores";
 import { useSchemas } from "@/lib/hooks/useSchemas";
 import { useGroups } from "@/lib/hooks/useGroups";
+import { useLicenseStatus } from "@/lib/hooks/useLicense";
 import { fmtId } from "@/lib/fmt";
 import { isDegraded, isHealthy, toPillState } from "@/lib/status";
 
@@ -64,6 +65,7 @@ export default function Overview() {
   const storesQ = useStores();
   const schemasQ = useSchemas();
   const groupsQ = useGroups();
+  const licenseQ = useLicenseStatus();
 
   const isLoading = statusPending || pipesPending;
 
@@ -85,6 +87,7 @@ export default function Overview() {
   const storesCount = storesQ.data?.length ?? 0;
   const schemasCount = schemasQ.data?.length ?? 0;
   const groupsCount = groupsQ.data?.length ?? 0;
+  const hasPaidPlan = licenseQ.data?.state === "active" && licenseQ.data.plan !== "free";
 
   const setupReady =
     !sourcesQ.isPending &&
@@ -96,40 +99,47 @@ export default function Overview() {
   const onboarding: OnboardingStep[] = [
     {
       href: "/sources/new",
-      num: "01",
+      num: "02",
       title: "Connect a broker",
       why: "Tell iot-bee where messages come from (RabbitMQ, MQTT or Kafka).",
       done: sourcesCount > 0,
     },
     {
       href: "/schemas/new",
-      num: "02",
+      num: "03",
       title: "Define a schema",
       why: "Describe the fields you expect; bad messages get dropped automatically.",
       done: schemasCount > 0,
     },
     {
       href: "/stores/new",
-      num: "03",
+      num: "04",
       title: "Add a destination",
       why: "InfluxDB or a local log — where validated records will land.",
       done: storesCount > 0,
     },
     {
       href: "/groups",
-      num: "04",
+      num: "05",
       title: "Create a group",
       why: "Logical container so you can organize many pipelines later.",
       done: groupsCount > 0,
     },
     {
       href: "/pipelines/new",
-      num: "05",
+      num: "06",
       title: "Wire & start a pipeline",
       why: "Glue source + schema + store, hit ▸ start, and watch data flow.",
       done: total > 0,
     },
   ];
+  onboarding.unshift({
+    href: "/billing",
+    num: "01",
+    title: "Choose a plan",
+    why: "Pick the subscription tier that unlocks the capacity you need.",
+    done: hasPaidPlan,
+  });
   const completed = onboarding.filter((s) => s.done).length;
   const onboardingDone = completed === onboarding.length;
 

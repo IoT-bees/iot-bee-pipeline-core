@@ -59,13 +59,17 @@ impl AuthUseCases for AuthUseCasesImpl {
         let user = self
             .repo
             .create(NewUser {
+                organization_id: 1,
                 email: email.clone(),
                 name,
                 password_hash,
                 role: "admin".into(),
+                status: "active".into(),
             })
             .await?;
-        let token = self.issuer.issue(user.id, &user.email, &user.role)?;
+        let token = self
+            .issuer
+            .issue(user.id, user.organization_id, &user.email, &user.role)?;
         Ok((user, token))
     }
 
@@ -79,7 +83,9 @@ impl AuthUseCases for AuthUseCasesImpl {
         if !self.hasher.verify(&password, &user.password_hash)? {
             return Err(AuthError::InvalidCredentials);
         }
-        let token = self.issuer.issue(user.id, &user.email, &user.role)?;
+        let token = self
+            .issuer
+            .issue(user.id, user.organization_id, &user.email, &user.role)?;
         Ok((user, token))
     }
 

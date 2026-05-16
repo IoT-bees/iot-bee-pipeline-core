@@ -54,3 +54,12 @@ export function useDeleteSource() {
     onError: (e: Error) => push({ kind: "error", message: e.message }),
   });
 }
+
+export function useTestSource() {
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (id: number) => sourcesApi.test(id),
+    onSuccess: (res) => push({ kind: "success", message: res.message }),
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
