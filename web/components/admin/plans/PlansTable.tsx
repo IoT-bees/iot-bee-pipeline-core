@@ -1,6 +1,8 @@
 "use client";
+import { useState } from "react";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
+import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
 import { useDeletePlan } from "@/lib/hooks/usePlans";
 import type { Plan } from "@/lib/api/types";
 
@@ -40,68 +42,83 @@ export function PlansTable({
   onEdit: (plan: Plan) => void;
 }) {
   const del = useDeletePlan();
+  const [pending, setPending] = useState<Plan | null>(null);
+
+  function confirmDelete() {
+    if (!pending) return;
+    del.mutate(pending.id, { onSettled: () => setPending(null) });
+  }
+
   return (
-    <Table>
-      <THead>
-        <TH>slug</TH>
-        <TH>name</TH>
-        <TH>price</TH>
-        <TH>limits</TH>
-        <TH>features</TH>
-        <TH>scope</TH>
-        <TH className="text-right">actions</TH>
-      </THead>
-      <tbody>
-        {plans.map((p) => (
-          <TR key={p.id}>
-            <TD className="font-mono text-[13px]">{p.slug}</TD>
-            <TD>{p.displayName}</TD>
-            <TD className="font-mono text-[13px]">
-              {formatPrice(p.priceCents, p.currency)}
-            </TD>
-            <TD className="text-[12px]">
-              <div>{p.maxPipelines} pipelines</div>
-              <div className="text-[var(--color-fg-3)]">
-                {p.maxReplicasPerPipeline} replicas
-              </div>
-            </TD>
-            <TD>
-              <Features plan={p} />
-            </TD>
-            <TD className="text-[12px]">
-              {p.organizationId != null ? (
-                <span className="text-[var(--color-accent)] font-mono">
-                  custom · org #{p.organizationId}
-                </span>
-              ) : (
-                <span className="text-[var(--color-fg-3)]">global</span>
-              )}
-            </TD>
-            <TD className="text-right">
-              <Button variant="ghost" size="sm" onClick={() => onEdit(p)}>
-                edit
-              </Button>
-              {(p.organizationId != null || p.slug !== "free") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `Delete plan "${p.displayName}" (${p.slug})? This cannot be undone.`,
-                      )
-                    ) {
-                      del.mutate(p.id);
-                    }
-                  }}
-                >
-                  delete
-                </Button>
-              )}
-            </TD>
-          </TR>
-        ))}
-      </tbody>
-    </Table>
+    <>
+      <Table>
+        <THead>
+          <TH>slug</TH>
+          <TH>name</TH>
+          <TH>price</TH>
+          <TH>limits</TH>
+          <TH>features</TH>
+          <TH>scope</TH>
+          <TH className="text-right">actions</TH>
+        </THead>
+        <tbody>
+          {plans.map((p) => (
+            <TR key={p.id}>
+              <TD className="font-mono text-[13px]">{p.slug}</TD>
+              <TD>{p.displayName}</TD>
+              <TD className="font-mono text-[13px]">
+                {formatPrice(p.priceCents, p.currency)}
+              </TD>
+              <TD className="text-[12px]">
+                <div>{p.maxPipelines} pipelines</div>
+                <div className="text-[var(--color-fg-3)]">
+                  {p.maxReplicasPerPipeline} replicas
+                </div>
+              </TD>
+              <TD>
+                <Features plan={p} />
+              </TD>
+              <TD className="text-[12px]">
+                {p.organizationId != null ? (
+                  <span className="text-[var(--color-accent)] font-mono">
+                    custom · org #{p.organizationId}
+                  </span>
+                ) : (
+                  <span className="text-[var(--color-fg-3)]">global</span>
+                )}
+              </TD>
+              <TD className="text-right">
+                <div className="inline-flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(p)}>
+                    edit
+                  </Button>
+                  {(p.organizationId != null || p.slug !== "free") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPending(p)}
+                    >
+                      delete
+                    </Button>
+                  )}
+                </div>
+              </TD>
+            </TR>
+          ))}
+        </tbody>
+      </Table>
+      <DeleteResourceDialog
+        pending={pending ? { name: `${pending.displayName} (${pending.slug})` } : null}
+        resourceLabel="plan"
+        impact={
+          pending?.organizationId != null
+            ? "The organization will fall back to the matching global plan."
+            : "Any organization currently on this plan will need to be migrated to another one."
+        }
+        busy={del.isPending}
+        onConfirm={confirmDelete}
+        onClose={() => !del.isPending && setPending(null)}
+      />
+    </>
   );
 }

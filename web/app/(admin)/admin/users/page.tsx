@@ -18,7 +18,9 @@ export default function AdminUsersPage() {
         <h2 className="text-[18px] font-bold text-[var(--color-fg-0)]">
           users
         </h2>
-        <Button onClick={() => setOpen(true)}>+ Create user</Button>
+        <Button variant="primary" onClick={() => setOpen(true)}>
+          + Create user
+        </Button>
       </div>
       <Panel>
         {isLoading && (

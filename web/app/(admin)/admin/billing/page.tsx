@@ -64,7 +64,11 @@ export default function AdminBillingPage() {
               <h3 className="text-[14px] text-[var(--color-fg-1)] tracking-[1.5px] uppercase">
                 global plans
               </h3>
-              <Button size="sm" onClick={() => openCreate(false)}>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => openCreate(false)}
+              >
                 + New global plan
               </Button>
             </div>
@@ -78,7 +82,11 @@ export default function AdminBillingPage() {
               <h3 className="text-[14px] text-[var(--color-fg-1)] tracking-[1.5px] uppercase">
                 custom plans (per organization)
               </h3>
-              <Button size="sm" onClick={() => openCreate(true)}>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => openCreate(true)}
+              >
                 + New custom plan
               </Button>
             </div>

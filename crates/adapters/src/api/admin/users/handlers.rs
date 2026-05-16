@@ -101,14 +101,17 @@ pub async fn create(
 )]
 #[patch("/{id}")]
 pub async fn patch_user(
+    req: HttpRequest,
     path: web::Path<i64>,
     body: web::Json<PatchUserRequest>,
     uc: web::Data<UseCase>,
 ) -> Result<HttpResponse, ApiError> {
+    let c = claims(&req)?;
     let id = path.into_inner();
     let body = body.into_inner();
     let u = uc
         .update(
+            c.user_id,
             id,
             UpdateUserInput {
                 name: body.name,

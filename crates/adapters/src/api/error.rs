@@ -167,6 +167,7 @@ impl ResponseError for ApiError {
                 domain::error::UserAdminError::EmailTaken { .. } => StatusCode::CONFLICT,
                 domain::error::UserAdminError::NotFound { .. } => StatusCode::NOT_FOUND,
                 domain::error::UserAdminError::CannotDeactivateSelf
+                | domain::error::UserAdminError::CannotChangeSelfRoleOrStatus
                 | domain::error::UserAdminError::InvalidRole { .. }
                 | domain::error::UserAdminError::InvalidStatus { .. }
                 | domain::error::UserAdminError::WeakPassword { .. } => StatusCode::BAD_REQUEST,

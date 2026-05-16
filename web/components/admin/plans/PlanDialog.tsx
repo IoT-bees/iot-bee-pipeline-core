@@ -268,7 +268,7 @@ export function PlanDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? "Saving…" : editing ? "Save" : "Create"}
           </Button>
         </div>

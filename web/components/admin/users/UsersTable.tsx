@@ -1,7 +1,9 @@
 "use client";
+import { useState } from "react";
 import { Table, THead, TH, TR, TD } from "@/components/ui/Table";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   usePatchAdminUser,
   useDeactivateAdminUser,
@@ -26,12 +28,13 @@ function StatusPill({ status }: { status: string }) {
 function UserRow({
   user,
   isSelf,
+  onAskDeactivate,
 }: {
   user: AdminUser;
   isSelf: boolean;
+  onAskDeactivate: (u: AdminUser) => void;
 }) {
   const patch = usePatchAdminUser(user.id);
-  const deactivate = useDeactivateAdminUser();
   return (
     <TR>
       <TD className="font-mono text-[13px]">{user.email}</TD>
@@ -40,6 +43,7 @@ function UserRow({
         <Select
           value={user.role}
           disabled={isSelf}
+          title={isSelf ? "You cannot change your own role" : undefined}
           onChange={(e) =>
             patch.mutate({
               role: e.target.value as "admin" | "operator",
@@ -62,15 +66,7 @@ function UserRow({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (
-                confirm(
-                  `Deactivate ${user.email}? They will no longer be able to sign in.`,
-                )
-              ) {
-                deactivate.mutate(user.id);
-              }
-            }}
+            onClick={() => onAskDeactivate(user)}
           >
             deactivate
           </Button>
@@ -87,21 +83,57 @@ export function UsersTable({
   users: AdminUser[];
   meId: number;
 }) {
+  const deactivate = useDeactivateAdminUser();
+  const [pending, setPending] = useState<AdminUser | null>(null);
+
+  function confirmDeactivate() {
+    if (!pending) return;
+    deactivate.mutate(pending.id, {
+      onSettled: () => setPending(null),
+    });
+  }
+
   return (
-    <Table>
-      <THead>
-        <TH>email</TH>
-        <TH>name</TH>
-        <TH>role</TH>
-        <TH>status</TH>
-        <TH>created</TH>
-        <TH className="text-right">actions</TH>
-      </THead>
-      <tbody>
-        {users.map((u) => (
-          <UserRow key={u.id} user={u} isSelf={u.id === meId} />
-        ))}
-      </tbody>
-    </Table>
+    <>
+      <Table>
+        <THead>
+          <TH>email</TH>
+          <TH>name</TH>
+          <TH>role</TH>
+          <TH>status</TH>
+          <TH>created</TH>
+          <TH className="text-right">actions</TH>
+        </THead>
+        <tbody>
+          {users.map((u) => (
+            <UserRow
+              key={u.id}
+              user={u}
+              isSelf={u.id === meId}
+              onAskDeactivate={setPending}
+            />
+          ))}
+        </tbody>
+      </Table>
+      <ConfirmDialog
+        open={pending !== null}
+        title={`Deactivate ${pending?.email ?? ""}?`}
+        message={
+          <>
+            This will prevent{" "}
+            <span className="text-[var(--color-fg-0)] font-bold">
+              {pending?.email}
+            </span>{" "}
+            from signing in. Their data stays — re-activate any time by editing
+            their status. Audit history is kept.
+          </>
+        }
+        confirmLabel="Deactivate"
+        danger
+        busy={deactivate.isPending}
+        onConfirm={confirmDeactivate}
+        onClose={() => !deactivate.isPending && setPending(null)}
+      />
+    </>
   );
 }

@@ -111,7 +111,7 @@ export function CreateUserDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={create.isPending}>
+          <Button type="submit" variant="primary" disabled={create.isPending}>
             {create.isPending ? "Creating…" : "Create"}
           </Button>
         </div>

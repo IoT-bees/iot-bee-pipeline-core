@@ -130,6 +130,8 @@ pub enum UserAdminError {
     NotFound { id: i64 },
     #[error("you cannot deactivate yourself")]
     CannotDeactivateSelf,
+    #[error("you cannot change your own role or status")]
+    CannotChangeSelfRoleOrStatus,
     #[error("email already taken: {email}")]
     EmailTaken { email: String },
     #[error("weak password: {reason}")]

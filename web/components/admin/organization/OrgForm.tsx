@@ -56,6 +56,7 @@ export function OrgForm({ initial }: { initial: Organization }) {
       <div className="flex justify-end gap-2">
         <Button
           type="submit"
+          variant="primary"
           disabled={!dirty || patch.isPending}
         >
           {patch.isPending ? "Saving…" : "Save"}

@@ -108,7 +108,16 @@ impl UserAdminUseCases for UserAdminUseCasesImpl {
             .map_err(map_auth_err)
     }
 
-    async fn update(&self, id: i64, input: UpdateUserInput) -> Result<User, UserAdminError> {
+    async fn update(
+        &self,
+        caller_id: i64,
+        id: i64,
+        input: UpdateUserInput,
+    ) -> Result<User, UserAdminError> {
+        let touches_role_or_status = input.role.is_some() || input.status.is_some();
+        if caller_id == id && touches_role_or_status {
+            return Err(UserAdminError::CannotChangeSelfRoleOrStatus);
+        }
         if let Some(role) = input.role.as_deref() {
             Self::check_role(role)?;
             self.repo
