@@ -43,15 +43,13 @@ export function PlansTable({
   return (
     <Table>
       <THead>
-        <TR>
-          <TH>slug</TH>
-          <TH>name</TH>
-          <TH>price</TH>
-          <TH>limits</TH>
-          <TH>features</TH>
-          <TH>scope</TH>
-          <TH className="text-right">actions</TH>
-        </TR>
+        <TH>slug</TH>
+        <TH>name</TH>
+        <TH>price</TH>
+        <TH>limits</TH>
+        <TH>features</TH>
+        <TH>scope</TH>
+        <TH className="text-right">actions</TH>
       </THead>
       <tbody>
         {plans.map((p) => (

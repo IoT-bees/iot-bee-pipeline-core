@@ -33,14 +33,12 @@ export function AuditTable({
     <div className="font-mono">
       <Table>
         <THead>
-          <TR>
-            <TH>when</TH>
-            <TH>user</TH>
-            <TH>method</TH>
-            <TH>path</TH>
-            <TH>status</TH>
-            <TH>ip</TH>
-          </TR>
+          <TH>when</TH>
+          <TH>user</TH>
+          <TH>method</TH>
+          <TH>path</TH>
+          <TH>status</TH>
+          <TH>ip</TH>
         </THead>
         <tbody>
           {events.map((e) => (

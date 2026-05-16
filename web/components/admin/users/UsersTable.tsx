@@ -90,14 +90,12 @@ export function UsersTable({
   return (
     <Table>
       <THead>
-        <TR>
-          <TH>email</TH>
-          <TH>name</TH>
-          <TH>role</TH>
-          <TH>status</TH>
-          <TH>created</TH>
-          <TH className="text-right">actions</TH>
-        </TR>
+        <TH>email</TH>
+        <TH>name</TH>
+        <TH>role</TH>
+        <TH>status</TH>
+        <TH>created</TH>
+        <TH className="text-right">actions</TH>
       </THead>
       <tbody>
         {users.map((u) => (
