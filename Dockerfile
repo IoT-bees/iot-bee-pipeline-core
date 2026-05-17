@@ -59,6 +59,7 @@ RUN apt-get update \
         libsqlite3-0 \
         libssl3 \
         ca-certificates \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user for least-privilege execution.
@@ -88,7 +89,13 @@ USER iotbee
 ENV DATABASE_URL=sqlite:///data/pipeline.db \
     API_HOST=0.0.0.0 \
     API_PORT=8080 \
-    RUST_LOG=info
+    RUST_LOG=info \
+    JWT_SECRET=change-me-in-production-this-must-be-long-and-random \
+    JWT_EXPIRES_IN_HOURS=24 \
+    CORS_ORIGINS=http://localhost:3000 \
+    ADMIN_EMAIL=admin@iot-bee.local \
+    ADMIN_PASSWORD=admin123 \
+    ADMIN_NAME=Admin
 
 EXPOSE 8080
 

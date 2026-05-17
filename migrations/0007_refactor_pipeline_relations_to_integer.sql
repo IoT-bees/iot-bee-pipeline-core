@@ -6,6 +6,7 @@
 -- 3) pipelines.group_id y pipelines.db_id -> INTEGER con FKs correctas
 
 -- Snapshot de databases para mapear IDs legacy (TEXT -> INTEGER).
+DROP TABLE IF EXISTS databases_snapshot;
 CREATE TEMP TABLE databases_snapshot AS
 SELECT
     ROW_NUMBER() OVER (ORDER BY rowid) AS seq,
@@ -33,6 +34,7 @@ SELECT
 FROM databases_snapshot
 ORDER BY seq;
 
+DROP TABLE IF EXISTS db_id_map;
 CREATE TEMP TABLE db_id_map (
     old_id TEXT PRIMARY KEY,
     new_id INTEGER NOT NULL UNIQUE
@@ -49,6 +51,7 @@ ALTER TABLE databases RENAME TO databases_old;
 ALTER TABLE databases_new RENAME TO databases;
 
 -- Snapshot de pipeline_groups para mapear IDs legacy (TEXT -> INTEGER).
+DROP TABLE IF EXISTS pipeline_groups_snapshot;
 CREATE TEMP TABLE pipeline_groups_snapshot AS
 SELECT
     ROW_NUMBER() OVER (ORDER BY rowid) AS seq,
@@ -76,6 +79,7 @@ SELECT
 FROM pipeline_groups_snapshot
 ORDER BY seq;
 
+DROP TABLE IF EXISTS pipeline_group_id_map;
 CREATE TEMP TABLE pipeline_group_id_map (
     old_id TEXT PRIMARY KEY,
     new_id INTEGER NOT NULL UNIQUE

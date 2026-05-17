@@ -38,8 +38,13 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                     return Box::pin(async { ConsumerActorState::Consuming }.into_actor(self));
                 }
                 // Si está deteniendo/detenido, ignorar cualquier retry programado.
-                if matches!(self.state(), ConsumerActorState::Stopping | ConsumerActorState::Stopped) {
-                    LOGGER.info("StartConsuming retry received but actor is stopping/stopped. Ignoring.");
+                if matches!(
+                    self.state(),
+                    ConsumerActorState::Stopping | ConsumerActorState::Stopped
+                ) {
+                    LOGGER.info(
+                        "StartConsuming retry received but actor is stopping/stopped. Ignoring.",
+                    );
                     let state = self.state();
                     return Box::pin(async move { state }.into_actor(self));
                 }
@@ -47,7 +52,6 @@ impl Handler<ConsumerActorActionMessage> for DataConsumerActor {
                 let (tx, rx) = mpsc::channel::<DataConsumerRawType>(CHANNEL_CAPACITY);
                 self.set_sender(Some(tx.clone()));
 
-                
                 if self.state() == ConsumerActorState::Reconnecting {
                     self.set_operation_state(ActorOperationStatus::Degraded);
                 }

@@ -1,6 +1,8 @@
+use crate::license_cases::cases::effective_limits;
 use async_trait::async_trait;
 use domain::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
-use domain::error::{IoTBeeError, PipelinePersistenceError};
+use domain::error::{IoTBeeError, LicenseError, PipelinePersistenceError};
+use domain::outbound::license_repository::LicenseRepository;
 use domain::outbound::pipeline_persistence::PipelineControllerRepository;
 use domain::value_objects::pipelines_values::DataStoreId;
 use logging::AppLogger;
@@ -44,22 +46,54 @@ pub trait PipelineDataUseCases {
     ) -> Result<(), IoTBeeError>;
 }
 
-pub struct PipelineDataUseCasesImpl<T: PipelineControllerRepository + Send + Sync> {
+pub struct PipelineDataUseCasesImpl<
+    T: PipelineControllerRepository + Send + Sync,
+    U: LicenseRepository + Send + Sync,
+> {
     repository: Arc<T>,
+    license_repository: Arc<U>,
 }
-impl<T: PipelineControllerRepository + Send + Sync> PipelineDataUseCasesImpl<T> {
-    pub fn new(repository: Arc<T>) -> Self {
-        Self { repository }
+impl<T, U> PipelineDataUseCasesImpl<T, U>
+where
+    T: PipelineControllerRepository + Send + Sync,
+    U: LicenseRepository + Send + Sync,
+{
+    pub fn new(repository: Arc<T>, license_repository: Arc<U>) -> Self {
+        Self {
+            repository,
+            license_repository,
+        }
     }
 }
 
 #[async_trait]
-impl<T> PipelineDataUseCases for PipelineDataUseCasesImpl<T>
+impl<T, U> PipelineDataUseCases for PipelineDataUseCasesImpl<T, U>
 where
     T: PipelineControllerRepository + Send + Sync,
+    U: LicenseRepository + Send + Sync,
 {
     async fn create_pipeline(&self, pipeline: &PipelineDataInputModel) -> Result<(), IoTBeeError> {
         LOGGER.debug("create_pipeline use case called");
+        let limits = effective_limits(self.license_repository.as_ref()).await?;
+        let current_count = self.repository.count_pipelines().await?;
+        if current_count >= limits.max_pipelines {
+            return Err(LicenseError::LimitExceeded {
+                reason: format!(
+                    "your current plan allows {} pipelines; upgrade your license to create more",
+                    limits.max_pipelines
+                ),
+            }
+            .into());
+        }
+        if pipeline.pipeline_replication() > limits.max_replicas_per_pipeline {
+            return Err(LicenseError::LimitExceeded {
+                reason: format!(
+                    "your current plan allows up to {} replicas per pipeline",
+                    limits.max_replicas_per_pipeline
+                ),
+            }
+            .into());
+        }
         self.repository.save_pipeline(pipeline).await.map_err(|e| {
             LOGGER.error(&format!("Failed to save pipeline: {e}"));
             e
@@ -309,6 +343,16 @@ where
             "update_replication_factor use case called for pipeline_id={} and replication_factor={}",
             pipeline_id, replication_factor
         ));
+        let limits = effective_limits(self.license_repository.as_ref()).await?;
+        if *replication_factor > limits.max_replicas_per_pipeline {
+            return Err(LicenseError::LimitExceeded {
+                reason: format!(
+                    "your current plan allows up to {} replicas per pipeline",
+                    limits.max_replicas_per_pipeline
+                ),
+            }
+            .into());
+        }
         let pipeline_id = DataStoreId::new(*pipeline_id)?;
         self.repository
             .update_pipeline_replication_factor(&pipeline_id, replication_factor)

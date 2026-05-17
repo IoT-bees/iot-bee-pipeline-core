@@ -138,7 +138,6 @@ impl DataSource for RabbitMQDataSource {
     }
 }
 
-
 impl RabbitMQDataSource {
     /// Loop de consumo ejecutado dentro del tokio::spawn tras la conexión inicial.
     /// Maneja el consumo de mensajes y la reconexión cuando el stream se cierra.
@@ -265,10 +264,7 @@ impl RabbitMQDataSource {
                     LOGGER.info("Reconexión a RabbitMQ exitosa.");
                 }
                 Err(e) => {
-                    LOGGER.error(&format!(
-                        "Reconexión fallida: {}. Se reintentará.",
-                        e
-                    ));
+                    LOGGER.error(&format!("Reconexión fallida: {}. Se reintentará.", e));
                 }
             }
         }

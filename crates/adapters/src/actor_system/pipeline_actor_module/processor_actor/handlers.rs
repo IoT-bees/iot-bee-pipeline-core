@@ -22,7 +22,10 @@ static LOGGER: AppLogger = AppLogger::new(
 fn format_rejection_reason(rejection: &domain::ast::schemas::RejectionReason) -> String {
     match &rejection.reason {
         RejectionKind::MissingRequiredField => {
-            format!("Campo requerido '{}' no está presente", rejection.field_name)
+            format!(
+                "Campo requerido '{}' no está presente",
+                rejection.field_name
+            )
         }
         RejectionKind::BelowMinimum { value, min } => {
             format!(
@@ -60,12 +63,13 @@ impl Handler<ProcessDataMessage> for DataProcessorActor {
                 match outcome {
                     ProcessingOutcome::Processed(output) => {
                         // Serializar y enviar al data store
-                        let json = serde_json::to_string(&output)
-                            .map_err(|e| DomainValidationError::DataFormatError {
+                        let json = serde_json::to_string(&output).map_err(|e| {
+                            DomainValidationError::DataFormatError {
                                 reason: format!("Error al serializar resultado: {}", e),
-                            })?;
+                            }
+                        })?;
                         let processed_data = DataConsumerRawType::new(json)?;
-                        
+
                         data_store.send(&processed_data).await
                     }
                     ProcessingOutcome::Rejected(rejection) => {
@@ -73,10 +77,9 @@ impl Handler<ProcessDataMessage> for DataProcessorActor {
                         let reason = format_rejection_reason(&rejection);
                         //POSTERIORMENTE VOY A IMPLEMENTAR UN 4 ACTOR ACA PARA CREAR SISTEMAS DE ALARMAS EVENT DRIVEN, POR AHORA SOLO LOGUEAMOS
                         LOGGER.warn(&format!(
-                            "Dato rechazado por validación: {} | Dato original: {}", 
-                            reason, 
-                            rejection.original_data
-                        ));                        
+                            "Dato rechazado por validación: {} | Dato original: {}",
+                            reason, rejection.original_data
+                        ));
                         Ok(())
                     }
                 }

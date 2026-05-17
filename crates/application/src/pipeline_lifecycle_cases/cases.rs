@@ -4,14 +4,17 @@ use domain::error::{IoTBeeError, PipelineLifecycleError};
 
 use domain::entities::pipeline_data::PipelineConfiguration;
 use domain::inbound::pipeline_lifecycle::PipelineLifecycle;
+use domain::outbound::license_repository::LicenseRepository;
 use domain::outbound::pipeline_component_factory::PipelineComponentFactory;
 use domain::outbound::pipeline_persistence::{
     PipelineControllerRepository, PipelineDataSourceRepository, PipelineDataStoreRepository,
     PipelineValidationSchemaRepository,
 };
 use domain::value_objects::lifecycle_values::PipelineStatusReport;
-use domain::value_objects::pipelines_values::DataStoreId;
+use domain::value_objects::pipelines_values::{DataStoreId, ReplicationFactor};
 use logging::AppLogger;
+
+use crate::license_cases::cases::effective_limits;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::application::pipeline_lifecycle_cases::cases");
 
@@ -22,7 +25,11 @@ pub trait PipelineLifecycleCases {
     async fn stop_pipeline(&self, id: u32) -> Result<(), IoTBeeError>;
     async fn get_pipeline_status(&self, id: u32) -> Result<PipelineStatusReport, IoTBeeError>;
     async fn get_all_pipeline_status(&self) -> Result<Vec<PipelineStatusReport>, IoTBeeError>;
-    async fn update_pipeline_replication_factor(&self, id: u32, replication_factor: u32) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_replication_factor(
+        &self,
+        id: u32,
+        replication_factor: u32,
+    ) -> Result<(), IoTBeeError>;
 }
 
 pub struct PipelineLifecycleCasesImpl {
@@ -32,6 +39,7 @@ pub struct PipelineLifecycleCasesImpl {
     validation_schema_repository: Box<dyn PipelineValidationSchemaRepository + Send + Sync>,
     data_store_repository: Box<dyn PipelineDataStoreRepository + Send + Sync>,
     component_factory: Box<dyn PipelineComponentFactory + Send + Sync>,
+    license_repository: Box<dyn LicenseRepository + Send + Sync>,
 }
 
 impl PipelineLifecycleCasesImpl {
@@ -42,6 +50,7 @@ impl PipelineLifecycleCasesImpl {
         validation_schema_repository: Box<dyn PipelineValidationSchemaRepository + Send + Sync>,
         data_store_repository: Box<dyn PipelineDataStoreRepository + Send + Sync>,
         component_factory: Box<dyn PipelineComponentFactory + Send + Sync>,
+        license_repository: Box<dyn LicenseRepository + Send + Sync>,
     ) -> Self {
         Self {
             pipeline_lifecycle,
@@ -50,6 +59,7 @@ impl PipelineLifecycleCasesImpl {
             validation_schema_repository,
             data_store_repository,
             component_factory,
+            license_repository,
         }
     }
 }
@@ -357,10 +367,40 @@ impl PipelineLifecycleCases for PipelineLifecycleCasesImpl {
         Ok(enriched)
     }
 
-    async fn update_pipeline_replication_factor(&self, id: u32, replication_factor: u32) -> Result<(), IoTBeeError> {
+    async fn update_pipeline_replication_factor(
+        &self,
+        id: u32,
+        replication_factor: u32,
+    ) -> Result<(), IoTBeeError> {
         let pipeline_id = DataStoreId::new(id)?;
-        self.pipeline_lifecycle
-            .update_replication_factor(&pipeline_id, &replication_factor)
+        let replication_factor = ReplicationFactor::new(replication_factor)?.replication_factor();
+        let limits = effective_limits(self.license_repository.as_ref()).await?;
+        if replication_factor > limits.max_replicas_per_pipeline {
+            return Err(domain::error::LicenseError::LimitExceeded {
+                reason: format!(
+                    "your current plan allows up to {} replicas per pipeline",
+                    limits.max_replicas_per_pipeline
+                ),
+            }
+            .into());
+        }
+
+        let pipeline = self
+            .pipeline_controller
+            .get_pipeline_by_id(&pipeline_id)
+            .await?
+            .ok_or_else(|| PipelineLifecycleError::NotFound {
+                pipeline_id: id.to_string(),
+            })?;
+
+        if pipeline.is_active() {
+            self.pipeline_lifecycle
+                .update_replication_factor(&pipeline_id, &replication_factor)
+                .await?;
+        }
+
+        self.pipeline_controller
+            .update_pipeline_replication_factor(&pipeline_id, &replication_factor)
             .await
     }
 }

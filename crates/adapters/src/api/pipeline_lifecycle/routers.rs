@@ -156,7 +156,6 @@ pub async fn get_all_pipeline_status(
     Ok(HttpResponse::Ok().json(response))
 }
 
-
 #[utoipa::path(
     put,
     path = "/pipeline-lifecycle/update-replication-factor/{pipeline_id}/{replication_factor}",
@@ -174,7 +173,7 @@ pub async fn get_all_pipeline_status(
 #[put("/update-replication-factor/{pipeline_id}/{replication_factor}")]
 pub async fn update_pipeline_replication_factor(
     use_case: web::Data<UseCase>,
-    path : web::Path<(u32, u32)>,
+    path: web::Path<(u32, u32)>,
 ) -> Result<HttpResponse, ApiError> {
     LOGGER.debug("update_pipeline_replication_factor handler called");
     let (pipeline_id, replication_factor) = path.into_inner();
@@ -183,10 +182,15 @@ pub async fn update_pipeline_replication_factor(
         pipeline_id.clone(),
         replication_factor.clone()
     ));
-    use_case.update_pipeline_replication_factor(pipeline_id, replication_factor).await.map_err(|e| {
-        LOGGER.error(&format!("Failed to update pipeline replication factor: {e}"));
-        e
-    })?;
+    use_case
+        .update_pipeline_replication_factor(pipeline_id, replication_factor)
+        .await
+        .map_err(|e| {
+            LOGGER.error(&format!(
+                "Failed to update pipeline replication factor: {e}"
+            ));
+            e
+        })?;
     LOGGER.info("Pipeline replication factor updated successfully");
     Ok(HttpResponse::Ok().finish())
 }

@@ -1,10 +1,11 @@
 use crate::persistence::models::{
-    ConnectionTypeRow, DataSourceRow, DataStoreRow, PipelineGroupRow, PipelineRowFlat,
-    ValidationSchemaRow, ValidationSchemaRowWhitId,
+    ConnectionTypeRow, DataSourceRow, DataStoreRow, LicenseSubscriptionRow, PipelineGroupRow,
+    PipelineRowFlat, ValidationSchemaRow, ValidationSchemaRowWhitId,
 };
 use domain::entities::connection_type::ConnectionTypeModel;
 use domain::entities::data_source::PipelineDataSourceOutputModel;
 use domain::entities::data_store::PipelineDataStoreOutputModel;
+use domain::entities::license::{LicensePlan, LicenseState, LicenseSubscription};
 use domain::entities::pipeline_data::PipelineDataOutputModel;
 use domain::entities::pipeline_groups::PipelineGroupOutputModel;
 use domain::entities::validation_schema::{
@@ -32,20 +33,20 @@ impl TryFrom<ValidationSchemaRow> for PipelineNewValidateSchema {
     type Error = IoTBeeError;
 
     fn try_from(row: ValidationSchemaRow) -> Result<Self, Self::Error> {
-        let created_at = parse_datetime(&row.created_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let created_at =
+            parse_datetime(&row.created_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
             })?;
 
-        let updated_at = parse_datetime(&row.updated_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let updated_at =
+            parse_datetime(&row.updated_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
             })?;
 
         let result = PipelineNewValidateSchema::existing(
             row.json_name,
             row.json_schema,
-            created_at,                    
+            created_at,
             updated_at,
         )?;
 
@@ -57,13 +58,13 @@ impl TryFrom<ValidationSchemaRowWhitId> for PipelineValidationSchemaModel {
     type Error = IoTBeeError;
 
     fn try_from(row: ValidationSchemaRowWhitId) -> Result<Self, Self::Error> {
-        let created_at = parse_datetime(&row.created_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let created_at =
+            parse_datetime(&row.created_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
             })?;
 
-        let updated_at = parse_datetime(&row.updated_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let updated_at =
+            parse_datetime(&row.updated_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
             })?;
 
@@ -89,13 +90,13 @@ impl TryFrom<DataSourceRow> for PipelineDataSourceOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: DataSourceRow) -> Result<Self, Self::Error> {
-        let created_at = parse_datetime(&row.created_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let created_at =
+            parse_datetime(&row.created_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
             })?;
 
-        let updated_at = parse_datetime(&row.updated_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let updated_at =
+            parse_datetime(&row.updated_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
             })?;
 
@@ -120,13 +121,13 @@ impl TryFrom<PipelineGroupRow> for PipelineGroupOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: PipelineGroupRow) -> Result<Self, Self::Error> {
-        let created_at = parse_datetime(&row.created_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let created_at =
+            parse_datetime(&row.created_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
             })?;
 
-        let updated_at = parse_datetime(&row.updated_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let updated_at =
+            parse_datetime(&row.updated_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
             })?;
 
@@ -144,13 +145,13 @@ impl TryFrom<DataStoreRow> for PipelineDataStoreOutputModel {
     type Error = IoTBeeError;
 
     fn try_from(row: DataStoreRow) -> Result<Self, Self::Error> {
-        let created_at = parse_datetime(&row.created_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let created_at =
+            parse_datetime(&row.created_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid created_at: {}", e),
             })?;
 
-        let updated_at = parse_datetime(&row.updated_at)
-            .map_err(|e| PipelinePersistenceError::InvalidData {
+        let updated_at =
+            parse_datetime(&row.updated_at).map_err(|e| PipelinePersistenceError::InvalidData {
                 reason: format!("invalid updated_at: {}", e),
             })?;
 
@@ -204,5 +205,61 @@ impl TryFrom<PipelineRowFlat> for PipelineDataOutputModel {
             created_at,
             updated_at,
         )?)
+    }
+}
+
+impl TryFrom<LicenseSubscriptionRow> for LicenseSubscription {
+    type Error = IoTBeeError;
+
+    fn try_from(row: LicenseSubscriptionRow) -> Result<Self, Self::Error> {
+        let activated_at = parse_datetime(&row.activated_at).map_err(|e| {
+            PipelinePersistenceError::InvalidData {
+                reason: format!("invalid license activated_at: {}", e),
+            }
+        })?;
+        let expires_at = row
+            .expires_at
+            .as_deref()
+            .map(parse_datetime)
+            .transpose()
+            .map_err(|e| PipelinePersistenceError::InvalidData {
+                reason: format!("invalid license expires_at: {}", e),
+            })?;
+        let last_checked_at = parse_datetime(&row.last_checked_at).map_err(|e| {
+            PipelinePersistenceError::InvalidData {
+                reason: format!("invalid license last_checked_at: {}", e),
+            }
+        })?;
+        let current_period_end = row
+            .current_period_end
+            .as_deref()
+            .map(parse_datetime)
+            .transpose()
+            .map_err(|e| PipelinePersistenceError::InvalidData {
+                reason: format!("invalid license current_period_end: {}", e),
+            })?;
+
+        Ok(LicenseSubscription::new(
+            row.license_key,
+            LicensePlan::from_str(&row.plan)?,
+            LicenseState::from_str(&row.state)?,
+            activated_at,
+            expires_at,
+            last_checked_at,
+        ))
+        .map(|subscription| {
+            subscription.with_stripe_billing(
+                row.stripe_customer_id,
+                row.stripe_subscription_id,
+                row.stripe_checkout_session_id,
+                row.stripe_subscription_status,
+                row.stripe_payment_status,
+                current_period_end,
+                row.cancel_at_period_end,
+                row.latest_invoice_id,
+                row.amount_cents,
+                row.currency,
+            )
+        })
     }
 }

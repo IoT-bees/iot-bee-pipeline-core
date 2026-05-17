@@ -1,8 +1,8 @@
 use actix::prelude::*;
 
 use super::messges::{
-    InternalInsertReplicasMessage, InternalReInsertReplicasMessage,
-    ReplicaCountMessage, RestartAllReplicasMessage, StartAllPipelinesMessage, StartPipelineMessage,
+    InternalInsertReplicasMessage, InternalReInsertReplicasMessage, ReplicaCountMessage,
+    RestartAllReplicasMessage, StartAllPipelinesMessage, StartPipelineMessage,
     StatusAllReplicasMessage, StatusAllReplicasMessageResult, StopAllReplicasMessage,
     StopPipelineMessage, UpdateReplicationFactorMessage,
 };
@@ -74,11 +74,7 @@ impl Handler<StartPipelineMessage> for PipelineSupervisor {
 impl Handler<StartAllPipelinesMessage> for PipelineSupervisor {
     type Result = ResponseFuture<Result<(), IoTBeeError>>;
 
-    fn handle(
-        &mut self,
-        _msg: StartAllPipelinesMessage,
-        ctx: &mut Context<Self>,
-    ) -> Self::Result {
+    fn handle(&mut self, _msg: StartAllPipelinesMessage, ctx: &mut Context<Self>) -> Self::Result {
         let replica_count = self.pipeline_configuration().pipeline_replication();
         let self_addr = ctx.address();
 
@@ -88,14 +84,11 @@ impl Handler<StartAllPipelinesMessage> for PipelineSupervisor {
         ));
         Box::pin(async move {
             for _ in 0..replica_count {
-                self_addr
-                    .send(StartPipelineMessage)
-                    .await
-                    .map_err(|e| {
-                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
-                            reason: e.to_string(),
-                        })
-                    })??;
+                self_addr.send(StartPipelineMessage).await.map_err(|e| {
+                    IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                        reason: e.to_string(),
+                    })
+                })??;
             }
             Ok(())
         })
@@ -226,7 +219,6 @@ impl Handler<InternalReInsertReplicasMessage> for PipelineSupervisor {
     }
 }
 
-
 // ── ReplicaCount ── síncrono ──────────────────────────────────────────────────
 
 impl Handler<ReplicaCountMessage> for PipelineSupervisor {
@@ -301,29 +293,26 @@ impl Handler<UpdateReplicationFactorMessage> for PipelineSupervisor {
 
         Box::pin(async move {
             if new_factor == 0 {
-                return self_addr
-                    .send(StopAllReplicasMessage)
-                    .await
-                    .map_err(|e| {
-                        IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
-                            reason: e.to_string(),
-                        })
-                    })?;
+                return self_addr.send(StopAllReplicasMessage).await.map_err(|e| {
+                    IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                        reason: e.to_string(),
+                    })
+                })?;
             }
 
             match new_factor.cmp(&current_count) {
                 Ordering::Greater => {
                     let to_add = new_factor - current_count;
-                    LOGGER.info(&format!("Escalando pipeline: agregando {} réplica(s).", to_add));
+                    LOGGER.info(&format!(
+                        "Escalando pipeline: agregando {} réplica(s).",
+                        to_add
+                    ));
                     for _ in 0..to_add {
-                        self_addr
-                            .send(StartPipelineMessage)
-                            .await
-                            .map_err(|e| {
-                                IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
-                                    reason: e.to_string(),
-                                })
-                            })??;
+                        self_addr.send(StartPipelineMessage).await.map_err(|e| {
+                            IoTBeeError::from(PipelineLifecycleError::InternalCommunication {
+                                reason: e.to_string(),
+                            })
+                        })??;
                     }
                 }
                 Ordering::Less => {
