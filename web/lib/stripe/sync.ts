@@ -1,4 +1,4 @@
-import { findBillingPlan } from "@/lib/billing/plans";
+import { licensePrefixFor } from "@/lib/billing/plans";
 
 const BACKEND_BASE = process.env.INTERNAL_API_URL ?? "http://localhost:8080";
 
@@ -57,8 +57,8 @@ export async function syncStripeSubscriptionToBackend({
   event?: { id: string; type: string; payload: string };
 }) {
   const metadata = subscription.metadata as Record<string, string> | undefined;
-  const plan = findBillingPlan(metadata?.planId ?? "");
-  if (!plan) throw new Error("missing subscription plan metadata");
+  const planSlug = metadata?.planId;
+  if (!planSlug) throw new Error("missing subscription plan metadata");
 
   const subscriptionId = asId(subscription.id);
   if (!subscriptionId) throw new Error("missing Stripe subscription id");
@@ -69,7 +69,15 @@ export async function syncStripeSubscriptionToBackend({
 
   const latestInvoiceId = asId(subscription.latest_invoice);
   const checkoutSessionId = checkoutSession ? asId(checkoutSession.id) : null;
-  const amountCents = Math.round(Number(plan.priceUsd) * 100);
+  // Trust the actual amount Stripe is charging, not a local catalog snapshot.
+  const items = subscription.items as { data?: unknown[] } | undefined;
+  const firstItem = items?.data?.[0] as Record<string, unknown> | undefined;
+  const price = firstItem?.price as Record<string, unknown> | undefined;
+  const stripeAmount =
+    typeof price?.unit_amount === "number" ? price.unit_amount : 0;
+  const stripeCurrency =
+    typeof price?.currency === "string" ? price.currency : "usd";
+  const amountCents = stripeAmount;
 
   const res = await fetch(`${BACKEND_BASE}/internal/stripe/license-sync`, {
     method: "POST",
@@ -78,8 +86,8 @@ export async function syncStripeSubscriptionToBackend({
       "x-stripe-sync-secret": process.env.STRIPE_SYNC_SECRET ?? "",
     },
     body: JSON.stringify({
-      licenseKey: licenseKeyFor(plan.licensePrefix, subscriptionId),
-      plan: plan.id,
+      licenseKey: licenseKeyFor(licensePrefixFor(planSlug), subscriptionId),
+      plan: planSlug,
       state: accessStateFromStripe(status),
       stripeCustomerId: customerId,
       stripeSubscriptionId: subscriptionId,
@@ -90,7 +98,7 @@ export async function syncStripeSubscriptionToBackend({
       cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
       latestInvoiceId,
       amountCents,
-      currency: "usd",
+      currency: stripeCurrency,
       stripeEventId: event?.id,
       eventType: event?.type,
       eventPayload: event?.payload,

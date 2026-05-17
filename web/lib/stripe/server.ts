@@ -1,4 +1,4 @@
-import { findBillingPlan, type PaidPlan } from "@/lib/billing/plans";
+import type { Plan } from "@/lib/api/types";
 
 const STRIPE_BASE = "https://api.stripe.com";
 
@@ -17,15 +17,12 @@ function formBody(entries: Record<string, string>) {
 }
 
 export async function createStripeCheckoutSession({
-  planId,
+  plan,
   origin,
 }: {
-  planId: PaidPlan;
+  plan: Plan;
   origin: string;
 }): Promise<{ id: string; url: string }> {
-  const plan = findBillingPlan(planId);
-  if (!plan) throw new Error("unknown billing plan");
-
   const res = await fetch(`${STRIPE_BASE}/v1/checkout/sessions`, {
     method: "POST",
     headers: {
@@ -37,16 +34,15 @@ export async function createStripeCheckoutSession({
       success_url: `${origin}/billing/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/billing`,
       client_reference_id: "iot-bee-single-admin",
-      "metadata[planId]": plan.id,
-      "subscription_data[metadata][planId]": plan.id,
+      "metadata[planId]": plan.slug,
+      "subscription_data[metadata][planId]": plan.slug,
       "line_items[0][quantity]": "1",
-      "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][unit_amount]": String(
-        Math.round(Number(plan.priceUsd) * 100),
-      ),
+      "line_items[0][price_data][currency]": plan.currency.toLowerCase(),
+      "line_items[0][price_data][unit_amount]": String(plan.priceCents),
       "line_items[0][price_data][recurring][interval]": "month",
-      "line_items[0][price_data][product_data][name]": `iot-bee ${plan.name}`,
-      "line_items[0][price_data][product_data][description]": plan.description,
+      "line_items[0][price_data][product_data][name]": `iot-bee ${plan.displayName}`,
+      "line_items[0][price_data][product_data][description]":
+        plan.description ?? plan.displayName,
     }),
   });
 

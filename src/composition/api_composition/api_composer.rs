@@ -31,6 +31,7 @@ use adapters::api::admin::routers::{AdminUseCases, admin_scope};
 use adapters::api::auth::middleware::JwtAuth;
 use adapters::api::auth::routers::auth_scope;
 use adapters::api::ops_middleware::{AdminOnly, AuditLog, RateLimit, RolePolicy};
+use adapters::api::plans::routers::plans_scope;
 
 static LOGGER: AppLogger = AppLogger::new("iot_bee::composition::api_composition::api_composer");
 use actix_web::{App, HttpServer};
@@ -104,6 +105,7 @@ impl ApiComposer {
                         .service(pipeline_data_scope(pipeline_data.clone()))
                         .service(pipeline_lifecycle_scope(pipeline_lifecycle.clone()))
                         .service(license_scope(license.clone(), pipeline_data.clone()))
+                        .service(plans_scope(plans_uc.clone()))
                         .service(
                             admin_scope(AdminUseCases {
                                 audit: audit_uc.clone(),

@@ -7,13 +7,14 @@ import { StripePortalButton } from "@/components/billing/StripePortalButton";
 import { Input } from "@/components/ui/Input";
 import { Panel } from "@/components/ui/Panel";
 import { Pill } from "@/components/ui/Pill";
-import { BILLING_PLANS } from "@/lib/billing/plans";
 import {
   useActivateLicense,
   useDeactivateLicense,
   useLicenseStatus,
 } from "@/lib/hooks/useLicense";
+import { useBillingPlans } from "@/lib/hooks/useBillingPlans";
 import { useToasts } from "@/lib/store/useToasts";
+import type { Plan } from "@/lib/api/types";
 
 function yesNo(value: boolean) {
   return value ? "yes" : "no";
@@ -41,6 +42,7 @@ function fmtDate(value: string | null) {
 
 export default function BillingPage() {
   const { data, error, isError, isPending, refetch } = useLicenseStatus();
+  const plansQuery = useBillingPlans();
   const activate = useActivateLicense();
   const deactivate = useDeactivateLicense();
   const push = useToasts((s) => s.push);
@@ -126,13 +128,16 @@ export default function BillingPage() {
     100,
     Math.round((data.usage.pipelines / data.limits.maxPipelines) * 100),
   );
-  const currentPlanIndex = BILLING_PLANS.findIndex(
-    (plan) => plan.id === data.plan,
+  const subscribablePlans: Plan[] = (plansQuery.data?.items ?? [])
+    .filter((p) => p.slug !== "free")
+    .sort((a, b) => a.priceCents - b.priceCents);
+  const currentPlanIndex = subscribablePlans.findIndex(
+    (plan) => plan.slug === data.plan,
   );
   const hasActivePaidPlan = data.state === "active" && currentPlanIndex >= 0;
   const availablePlans = hasActivePaidPlan
-    ? BILLING_PLANS.slice(currentPlanIndex + 1)
-    : BILLING_PLANS;
+    ? subscribablePlans.slice(currentPlanIndex + 1)
+    : subscribablePlans;
   const shouldShowPlanCards = !hasActivePaidPlan || showUpgradePlans;
 
   return (
@@ -332,16 +337,25 @@ export default function BillingPage() {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
                         <div className="font-mono font-bold text-[18px] text-[var(--color-fg-0)]">
-                          {plan.name}
+                          {plan.displayName}
+                          {plan.organizationId != null && (
+                            <span className="ml-2 text-[10px] tracking-[1.5px] uppercase text-[var(--color-accent)]">
+                              custom
+                            </span>
+                          )}
                         </div>
                         <div className="text-[12px] text-[var(--color-fg-3)]">
-                          {plan.description}
+                          {plan.description ?? ""}
                         </div>
                       </div>
                       <div className="font-mono font-bold text-[var(--color-accent)]">
-                        ${plan.priceUsd}
+                        {new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: plan.currency,
+                          maximumFractionDigits: 0,
+                        }).format(plan.priceCents / 100)}
                         <span className="text-[11px] text-[var(--color-fg-4)] font-normal">
-                          {" "}/ test
+                          {" "}/ month
                         </span>
                       </div>
                     </div>
@@ -368,7 +382,7 @@ export default function BillingPage() {
                       />
                     </div>
                     <StripeCheckoutButton
-                      planId={plan.id}
+                      planId={plan.slug}
                       onError={(message) => push({ kind: "error", message })}
                     />
                   </div>

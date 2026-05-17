@@ -10,4 +10,5 @@ pub mod ops_middleware;
 pub mod pipeline_data;
 pub mod pipeline_groups;
 pub mod pipeline_lifecycle;
+pub mod plans;
 pub mod validation_schemas;

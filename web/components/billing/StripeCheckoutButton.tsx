@@ -1,14 +1,13 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import type { PaidPlan } from "@/lib/billing/plans";
 
 export function StripeCheckoutButton({
   planId,
   disabled,
   onError,
 }: {
-  planId: PaidPlan;
+  planId: string;
   disabled?: boolean;
   onError: (message: string) => void;
 }) {

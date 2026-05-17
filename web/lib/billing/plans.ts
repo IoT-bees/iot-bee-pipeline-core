@@ -1,57 +1,26 @@
-export type PaidPlan = "starter" | "pro" | "enterprise";
+// Plans are managed in the iot-bee backend (see /admin/billing). This file
+// only keeps the type alias and a helper to fetch a plan by slug from the
+// backend with the current user's bearer token — used by server-side Stripe
+// integration so the catalog stays consistent with what the admin configured.
 
-export interface BillingPlan {
-  id: PaidPlan;
-  name: string;
-  priceUsd: string;
-  licensePrefix: string;
-  description: string;
-  maxPipelines: number;
-  maxReplicasPerPipeline: number;
-  alertsEnabled: boolean;
-  premiumConnectors: boolean;
-  multiUser: boolean;
+import type { Plan } from "@/lib/api/types";
+
+export type PaidPlan = string;
+
+const BACKEND_BASE = process.env.INTERNAL_API_URL ?? "http://localhost:8080";
+
+export function licensePrefixFor(slug: string): string {
+  return `IOTBEE-${slug.toUpperCase()}`;
 }
 
-export const BILLING_PLANS: BillingPlan[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    priceUsd: "5.00",
-    licensePrefix: "IOTBEE-STARTER",
-    description: "Small deployments and paid pilots.",
-    maxPipelines: 10,
-    maxReplicasPerPipeline: 4,
-    alertsEnabled: false,
-    premiumConnectors: false,
-    multiUser: false,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    priceUsd: "15.00",
-    licensePrefix: "IOTBEE-PRO",
-    description: "Production teams with more pipelines and replicas.",
-    maxPipelines: 50,
-    maxReplicasPerPipeline: 16,
-    alertsEnabled: true,
-    premiumConnectors: true,
-    multiUser: false,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    priceUsd: "49.00",
-    licensePrefix: "IOTBEE-ENTERPRISE",
-    description: "Larger sites, premium capabilities and support.",
-    maxPipelines: 250,
-    maxReplicasPerPipeline: 64,
-    alertsEnabled: true,
-    premiumConnectors: true,
-    multiUser: true,
-  },
-];
-
-export function findBillingPlan(planId: string): BillingPlan | undefined {
-  return BILLING_PLANS.find((plan) => plan.id === planId);
+export async function fetchPlanBySlug(
+  slug: string,
+  token: string,
+): Promise<Plan | null> {
+  const res = await fetch(`${BACKEND_BASE}/plans`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { items: Plan[] };
+  return body.items.find((p) => p.slug === slug) ?? null;
 }
