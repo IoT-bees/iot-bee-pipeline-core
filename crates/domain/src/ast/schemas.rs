@@ -39,6 +39,7 @@ pub struct ValidationRule {
     pub max: Option<f64>,
 }
 
+
 pub enum ProcessingOutcome {
     /// El record fue procesado y transformado exitosamente
     Processed(HashMap<String, Value>),

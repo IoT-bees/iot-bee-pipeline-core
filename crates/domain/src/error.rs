@@ -90,94 +90,6 @@ pub enum AstractError {
     ValidationSchemaError { e: String },
 }
 
-#[derive(Error, Debug, Clone)]
-pub enum AuthError {
-    #[error("invalid credentials")]
-    InvalidCredentials,
-    #[error("email '{email}' is already taken")]
-    EmailAlreadyTaken { email: String },
-    #[error("registration is disabled")]
-    RegistrationDisabled,
-    #[error("invalid token")]
-    InvalidToken,
-    #[error("expired token")]
-    ExpiredToken,
-    #[error("password is too weak: {reason}")]
-    WeakPassword { reason: String },
-    #[error("internal auth error: {reason}")]
-    Internal { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum AuditError {
-    #[error("audit persistence error: {reason}")]
-    Persistence { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum SystemError {
-    #[error("system probe failed: {reason}")]
-    ProbeFailed { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum UserAdminError {
-    #[error("invalid role: '{role}' (allowed: admin, operator)")]
-    InvalidRole { role: String },
-    #[error("invalid status: '{status}' (allowed: active, disabled)")]
-    InvalidStatus { status: String },
-    #[error("user not found: {id}")]
-    NotFound { id: i64 },
-    #[error("you cannot deactivate yourself")]
-    CannotDeactivateSelf,
-    #[error("you cannot change your own role or status")]
-    CannotChangeSelfRoleOrStatus,
-    #[error("email already taken: {email}")]
-    EmailTaken { email: String },
-    #[error("weak password: {reason}")]
-    WeakPassword { reason: String },
-    #[error("internal user admin error: {reason}")]
-    Internal { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum PlanError {
-    #[error("plan not found: {id}")]
-    NotFound { id: i64 },
-    #[error("plan slug already exists in this scope: {slug}")]
-    SlugTaken { slug: String },
-    #[error("invalid plan field: {reason}")]
-    Invalid { reason: String },
-    #[error("internal plan error: {reason}")]
-    Internal { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum OrganizationError {
-    #[error("organization not found: {id}")]
-    NotFound { id: i64 },
-    #[error("slug '{slug}' already taken")]
-    SlugTaken { slug: String },
-    #[error("invalid slug: {reason}")]
-    InvalidSlug { reason: String },
-    #[error("internal organization error: {reason}")]
-    Internal { reason: String },
-}
-
-#[derive(Error, Debug, Clone)]
-pub enum LicenseError {
-    #[error("invalid license key")]
-    InvalidKey,
-    #[error("invalid license plan: {plan}")]
-    InvalidPlan { plan: String },
-    #[error("invalid license state: {state}")]
-    InvalidState { state: String },
-    #[error("license limit exceeded: {reason}")]
-    LimitExceeded { reason: String },
-    #[error("license persistence error: {reason}")]
-    Persistence { reason: String },
-}
-
 // define a proper domain error for all my sistem
 #[derive(Error, Debug)]
 pub enum IoTBeeError {
@@ -193,18 +105,4 @@ pub enum IoTBeeError {
     DomainValidationError(#[from] DomainValidationError),
     #[error("Data external store error: {0}")]
     DataExternalStoreError(#[from] DataExternalStoreError),
-    #[error("Auth error: {0}")]
-    AuthError(#[from] AuthError),
-    #[error("License error: {0}")]
-    LicenseError(#[from] LicenseError),
-    #[error("Audit error: {0}")]
-    AuditError(#[from] AuditError),
-    #[error("System error: {0}")]
-    SystemError(#[from] SystemError),
-    #[error("User admin error: {0}")]
-    UserAdminError(#[from] UserAdminError),
-    #[error("Organization error: {0}")]
-    OrganizationError(#[from] OrganizationError),
-    #[error("Plan error: {0}")]
-    PlanError(#[from] PlanError),
 }

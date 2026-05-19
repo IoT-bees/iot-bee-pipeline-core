@@ -22,26 +22,9 @@ pub fn data_sources_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_data_source)
         .service(get_data_source)
         .service(list_data_sources)
-        .service(test_data_source)
         .service(update_data_source_name)
         .service(update_data_source)
         .service(delete_data_source)
-}
-
-#[post("/{id}/test")]
-pub async fn test_data_source(
-    use_case: web::Data<UseCase>,
-    id: web::Path<DataSourceId>,
-) -> Result<HttpResponse, ApiError> {
-    let raw_id = *id;
-    let message = use_case.test_data_source(&id).await.map_err(|e| {
-        LOGGER.error(&format!("Failed to test data source id={raw_id}: {e}"));
-        e
-    })?;
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "ok": true,
-        "message": message
-    })))
 }
 
 #[utoipa::path(

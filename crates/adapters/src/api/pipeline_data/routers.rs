@@ -354,14 +354,13 @@ async fn update_pipeline_group(
 #[put("/replication_factor/{pipeline_id}/{replication_factor}")]
 async fn update_pipeline_replication_factor(
     use_case: web::Data<UseCase>,
-    path: web::Path<(u32, u32)>,
+    path : web::Path<(u32, u32)>,
 ) -> Result<HttpResponse, ApiError> {
     let (pipeline_id, replication_factor) = path.into_inner();
     LOGGER.debug(&format!(
         "update_pipeline_replication_factor handler called for pipeline_id={pipeline_id}, replication_factor={replication_factor}"
     ));
-    use_case
-        .update_replication_factor(&pipeline_id, &replication_factor)
+    use_case.update_replication_factor(&pipeline_id, &replication_factor)
         .await
         .map_err(|e| {
             LOGGER.error(&format!(

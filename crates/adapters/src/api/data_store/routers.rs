@@ -18,22 +18,8 @@ pub fn data_store_scope(use_case: web::Data<UseCase>) -> actix_web::Scope {
         .service(create_data_store)
         .service(get_data_store)
         .service(list_data_stores)
-        .service(test_data_store)
         .service(update_configuration)
         .service(delete_data_store)
-}
-
-#[post("/{id}/test")]
-pub async fn test_data_store(
-    use_case: web::Data<UseCase>,
-    id: web::Path<DataStoreId>,
-) -> Result<HttpResponse, ApiError> {
-    let data_id: u32 = id.into_inner();
-    let message = use_case.test_data_store(&data_id).await?;
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "ok": true,
-        "message": message
-    })))
 }
 
 #[utoipa::path(

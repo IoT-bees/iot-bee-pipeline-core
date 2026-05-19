@@ -7,7 +7,6 @@
 -- 5) crear pipeline_migrations con id INTEGER unico y FK a pipelines(id)
 
 -- Snapshot de databases para preservar orden de insercion y mapear IDs legacy -> nuevos.
-DROP TABLE IF EXISTS databases_snapshot;
 CREATE TEMP TABLE databases_snapshot AS
 SELECT
     ROW_NUMBER() OVER (ORDER BY rowid) AS seq,
@@ -35,7 +34,6 @@ SELECT
 FROM databases_snapshot
 ORDER BY seq;
 
-DROP TABLE IF EXISTS db_id_map;
 CREATE TEMP TABLE db_id_map (
     old_id TEXT PRIMARY KEY,
     new_id INTEGER NOT NULL UNIQUE
@@ -53,7 +51,6 @@ ALTER TABLE databases RENAME TO databases_old;
 ALTER TABLE databases_new RENAME TO databases;
 
 -- Snapshot de pipelines para migrar a ID entero y corregir FK db_id.
-DROP TABLE IF EXISTS pipelines_snapshot;
 CREATE TEMP TABLE pipelines_snapshot AS
 SELECT
     id AS old_id,

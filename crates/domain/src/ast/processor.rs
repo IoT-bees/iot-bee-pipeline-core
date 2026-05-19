@@ -1,10 +1,10 @@
 use super::compiler::CompiledField;
 use super::schemas::FieldSchema;
-use super::schemas::{ProcessingOutcome, RejectionKind, RejectionReason};
 use super::vm::Vm;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use super::schemas::{ProcessingOutcome, RejectionReason, RejectionKind};
 
 use crate::error::{DomainValidationError, IoTBeeError};
 

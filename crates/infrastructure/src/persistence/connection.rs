@@ -10,7 +10,8 @@ pub struct InternalDataBase {
 
 impl InternalDataBase {
     pub async fn new(db_url: &str) -> Result<Self, SqlxError> {
-        let connect_options = SqliteConnectOptions::from_str(db_url)?.create_if_missing(true);
+        let connect_options = SqliteConnectOptions::from_str(db_url)?
+            .create_if_missing(true);
 
         let pool = SqlitePoolOptions::new()
             .max_connections(10)

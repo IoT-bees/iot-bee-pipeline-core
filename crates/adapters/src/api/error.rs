@@ -1,9 +1,7 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use domain::error::{
-    AuthError,
     IoTBeeError,
-    LicenseError,
     PipelineLifecycleError,
     PipelinePersistenceError, // ya
 };
@@ -11,7 +9,7 @@ use serde::Serialize;
 
 #[derive(Serialize, utoipa::ToSchema)]
 pub struct ErrorResponse {
-    pub error: String,
+    error: String,
 }
 use std::fmt;
 
@@ -145,48 +143,6 @@ impl ResponseError for ApiError {
             IoTBeeError::DataSourceError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DomainValidationError(_) => StatusCode::BAD_REQUEST,
             IoTBeeError::DataExternalStoreError(_) => StatusCode::BAD_REQUEST,
-            IoTBeeError::AuthError(inner) => match inner {
-                AuthError::InvalidCredentials
-                | AuthError::InvalidToken
-                | AuthError::ExpiredToken => StatusCode::UNAUTHORIZED,
-                AuthError::EmailAlreadyTaken { .. } => StatusCode::CONFLICT,
-                AuthError::RegistrationDisabled => StatusCode::FORBIDDEN,
-                AuthError::WeakPassword { .. } => StatusCode::BAD_REQUEST,
-                AuthError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            },
-            IoTBeeError::LicenseError(inner) => match inner {
-                LicenseError::LimitExceeded { .. } => StatusCode::PAYMENT_REQUIRED,
-                LicenseError::Persistence { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-                LicenseError::InvalidKey
-                | LicenseError::InvalidPlan { .. }
-                | LicenseError::InvalidState { .. } => StatusCode::BAD_REQUEST,
-            },
-            IoTBeeError::AuditError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            IoTBeeError::SystemError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            IoTBeeError::UserAdminError(inner) => match inner {
-                domain::error::UserAdminError::EmailTaken { .. } => StatusCode::CONFLICT,
-                domain::error::UserAdminError::NotFound { .. } => StatusCode::NOT_FOUND,
-                domain::error::UserAdminError::CannotDeactivateSelf
-                | domain::error::UserAdminError::CannotChangeSelfRoleOrStatus
-                | domain::error::UserAdminError::InvalidRole { .. }
-                | domain::error::UserAdminError::InvalidStatus { .. }
-                | domain::error::UserAdminError::WeakPassword { .. } => StatusCode::BAD_REQUEST,
-                domain::error::UserAdminError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            },
-            IoTBeeError::OrganizationError(inner) => match inner {
-                domain::error::OrganizationError::NotFound { .. } => StatusCode::NOT_FOUND,
-                domain::error::OrganizationError::SlugTaken { .. } => StatusCode::CONFLICT,
-                domain::error::OrganizationError::InvalidSlug { .. } => StatusCode::BAD_REQUEST,
-                domain::error::OrganizationError::Internal { .. } => {
-                    StatusCode::INTERNAL_SERVER_ERROR
-                }
-            },
-            IoTBeeError::PlanError(inner) => match inner {
-                domain::error::PlanError::NotFound { .. } => StatusCode::NOT_FOUND,
-                domain::error::PlanError::SlugTaken { .. } => StatusCode::CONFLICT,
-                domain::error::PlanError::Invalid { .. } => StatusCode::BAD_REQUEST,
-                domain::error::PlanError::Internal { .. } => StatusCode::INTERNAL_SERVER_ERROR,
-            },
         }
     }
 
@@ -217,41 +173,6 @@ impl ResponseError for ApiError {
                 .json(ErrorResponse {
                     error: format!("External store error: {}", e),
                 }),
-            IoTBeeError::AuthError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::LicenseError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::AuditError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::SystemError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::UserAdminError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::OrganizationError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
-            IoTBeeError::PlanError(e) => {
-                HttpResponse::build(self.status_code()).json(ErrorResponse {
-                    error: e.to_string(),
-                })
-            }
         }
     }
 }

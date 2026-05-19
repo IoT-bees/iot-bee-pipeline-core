@@ -50,11 +50,6 @@ lapin = "4.4.0"
 
 influxdb = {version = "0.8.0", features = ["chrono", "serde"] }
 
-# Auth
-argon2 = { version = "0.5.3", features = ["std"] }
-jsonwebtoken = "9.3.0"
-actix-cors = "0.7"
-
 [package]
 name = "iot-bee"
 version = "0.1.0"
@@ -79,12 +74,10 @@ actix-rt       = { workspace = true }
 async-trait     = { workspace = true }
 actix           = { workspace = true }
 sqlx            = { workspace = true }
-actix-cors      = { workspace = true }
 
 [dev-dependencies]
 serde_json  = { workspace = true }
 chrono      = { workspace = true }
 dotenvy     = { workspace = true }
 tokio       = { workspace = true }
-async-trait = { workspace = true }
 

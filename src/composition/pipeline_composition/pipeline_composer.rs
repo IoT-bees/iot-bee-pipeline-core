@@ -7,7 +7,7 @@ use application::pipeline_lifecycle_cases::cases::{
 use infrastructure::persistence::connection::InternalDataBase;
 use infrastructure::persistence::repositories::{
     data_source_repository::DataSourceRepository, data_store_repository::DataStoreRepository,
-    license_repository::SqliteLicenseRepository, pipeline_data_repository::PipelineDataRepository,
+    pipeline_data_repository::PipelineDataRepository,
     validation_schemas_repository::ValidationSchemaRepository,
 };
 use infrastructure::pipeline_component_factory::infra_pipeline_component_factory::InfrastructurePipelineComponentFactory;
@@ -32,7 +32,6 @@ impl PipelineSystemComposer {
         let validation_schema_repository = Box::new(ValidationSchemaRepository::new(db.clone()));
         let data_store_repository = Box::new(DataStoreRepository::new(db.clone()));
         let component_factory = Box::new(InfrastructurePipelineComponentFactory::new());
-        let license_repository = Box::new(SqliteLicenseRepository::new(db.clone()));
 
         let use_case = PipelineLifecycleCasesImpl::new(
             pipeline_lifecycle,
@@ -41,7 +40,6 @@ impl PipelineSystemComposer {
             validation_schema_repository,
             data_store_repository,
             component_factory,
-            license_repository,
         );
 
         if let Err(e) = use_case.start_all_pipelines_in_system().await {

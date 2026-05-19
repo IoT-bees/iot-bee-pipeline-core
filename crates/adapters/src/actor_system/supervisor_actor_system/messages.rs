@@ -178,6 +178,9 @@ impl Message for StartAllPipelinesInLocalStorageMessage {
     type Result = Result<(), IoTBeeError>;
 }
 
+
+
+
 pub struct UpdateReplicationFactorMessage {
     pub pipeline_id: u32,
     pub replication_factor: u32,
