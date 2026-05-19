@@ -33,7 +33,6 @@ pub trait DataSourcesUseCases {
         data_source_id: &u32,
     ) -> Result<PipelineDataSourceOutputModel, IoTBeeError>;
     async fn list_data_sources(&self) -> Result<Vec<PipelineDataSourceOutputModel>, IoTBeeError>;
-    async fn test_data_source(&self, data_source_id: &u32) -> Result<String, IoTBeeError>;
 
     //Caso de eliminar un data source que esta siendo usado por un pipeline:
     async fn delete_data_source(&self, data_source_id: &u32) -> Result<(), IoTBeeError>;
@@ -109,14 +108,6 @@ where
             })?;
         LOGGER.info(&format!("Found {} data sources", result.len()));
         Ok(result)
-    }
-
-    async fn test_data_source(&self, data_source_id: &u32) -> Result<String, IoTBeeError> {
-        let data_source = self.get_data_source(data_source_id).await?;
-        Ok(format!(
-            "{} configuration looks valid. Runtime connection is verified when the pipeline starts.",
-            String::from(data_source.source_type())
-        ))
     }
 
     async fn update_data_source(

@@ -13,24 +13,11 @@ services:
       API_HOST: "0.0.0.0"
       API_PORT: "8080"
       RUST_LOG: info
-      JWT_SECRET: "change-me-in-production-this-must-be-long-and-random"
-      JWT_EXPIRES_IN_HOURS: "24"
-      CORS_ORIGINS: "http://localhost:3000"
-      STRIPE_SYNC_SECRET: "${STRIPE_SYNC_SECRET:-iot-bee-local-stripe-sync-secret}"
-      ADMIN_EMAIL: "admin@iot-bee.local"
-      ADMIN_PASSWORD: "admin123"
-      ADMIN_NAME: "Admin"
     ports:
       - "8080:8080"
     volumes:
-      - iot_bee_data:/data
+      - ./data:/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--tries=1", "--timeout=2", "-O", "/dev/null", "http://localhost:8080/auth/has-users"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 10s
 
     # --- Seguridad ---
     # El proceso corre como iotbee (UID 1001), definido con USER en el Dockerfile.
@@ -53,41 +40,3 @@ services:
     # Directorio temporal con escritura (requerido por algunos runtimes de Rust/TLS).
     tmpfs:
       - /tmp:size=64m,noexec,nosuid
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile.dev
-    container_name: iot-bee-web
-    environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:8080"
-      INTERNAL_API_URL: "http://iot-bee:8080"
-      AUTH_COOKIE_NAME: "iot_bee_session"
-      AUTH_COOKIE_MAX_AGE_HOURS: "24"
-      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}"
-      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY:-}"
-      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET:-}"
-      STRIPE_SYNC_SECRET: "${STRIPE_SYNC_SECRET:-iot-bee-local-stripe-sync-secret}"
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./web:/app
-      - web_node_modules:/app/node_modules
-      - web_next_cache:/app/.next
-    depends_on:
-      iot-bee:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:3000/"]
-      interval: 10s
-      timeout: 8s
-      retries: 12
-      start_period: 60s
-
-volumes:
-  web_node_modules:
-  web_next_cache:
-  iot_bee_data:

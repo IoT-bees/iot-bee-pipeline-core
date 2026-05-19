@@ -1,9 +1,9 @@
 use actix::prelude::*;
 
 use super::messges::{
-    ReplicaCountMessage, RestartAllReplicasMessage, StartAllPipelinesMessage,
-    StatusAllReplicasMessage, StatusAllReplicasMessageResult, StopAllReplicasMessage,
-    UpdateReplicationFactorMessage,
+    ReplicaCountMessage, RestartAllReplicasMessage,
+    StartAllPipelinesMessage, StatusAllReplicasMessage, StatusAllReplicasMessageResult,
+    StopAllReplicasMessage, UpdateReplicationFactorMessage,
 };
 use super::pipeline_supervisor::PipelineSupervisor;
 use domain::error::{IoTBeeError, PipelineLifecycleError};
@@ -53,6 +53,7 @@ impl SupervisorPipelineBridge {
             .map_err(mailbox_err)?
     }
 
+
     pub async fn replica_count(&self) -> Result<usize, IoTBeeError> {
         self.addr
             .send(ReplicaCountMessage)
@@ -73,10 +74,7 @@ impl SupervisorPipelineBridge {
             .await
             .map_err(mailbox_err)?
     }
-    pub async fn update_replication_factor(
-        &self,
-        replication_factor: u32,
-    ) -> Result<(), IoTBeeError> {
+    pub async fn update_replication_factor(&self, replication_factor: u32) -> Result<(), IoTBeeError> {
         self.addr
             .send(UpdateReplicationFactorMessage::new(replication_factor))
             .await

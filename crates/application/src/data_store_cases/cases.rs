@@ -20,7 +20,6 @@ pub trait DataStoreUseCases {
         &self,
         data_store_id: &u32,
     ) -> Result<PipelineDataStoreOutputModel, IoTBeeError>;
-    async fn test_data_store(&self, data_store_id: &u32) -> Result<String, IoTBeeError>;
     async fn update_data_store_configuration(
         &self,
         data_store_id: &u32,
@@ -72,14 +71,6 @@ where
             }
             .into())
         }
-    }
-
-    async fn test_data_store(&self, data_store_id: &u32) -> Result<String, IoTBeeError> {
-        let data_store = self.get_data_store_by_id(data_store_id).await?;
-        Ok(format!(
-            "{} configuration looks valid. Writes are verified with the first pipeline record.",
-            data_store.store_type_string()
-        ))
     }
     async fn update_data_store_configuration(
         &self,

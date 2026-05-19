@@ -11,9 +11,6 @@ use crate::api::data_sources::models::{
     UpdateDataSourceRequest,
 };
 use crate::api::data_store::models::{CreateDataStoreRequest, DataStoreId, DataStoreResponse};
-use crate::api::license::models::{
-    ActivateLicenseRequest, LicenseStatusResponse, LicenseUsageResponse, PlanLimitsResponse,
-};
 use crate::api::pipeline_data::models::{
     CreatePipelineDataRequest, PipelineDataId, PipelineDataResponse,
 };
@@ -22,17 +19,11 @@ use crate::api::validation_schemas::models::{
     CreateValidationSchemaRequest, UpdateValidationSchemaRequestJson,
     UpdateValidationSchemaRequestName, ValidationSchemaByIdResponse, ValidationSchemaResponse,
 };
-//auth
-use crate::api::auth::handlers as auth_handlers;
-use crate::api::auth::models::{
-    AuthResponse, HasUsersResponse, LoginRequest, MeResponse, RegisterRequest, UserResponse,
-};
 
 //ROUTERS
 use crate::api::connection_types::routers as connection_routers;
 use crate::api::data_sources::routers as data_sources_routers;
 use crate::api::data_store::routers as data_store_routers;
-use crate::api::license::routers as license_routers;
 use crate::api::pipeline_data::routers as pipeline_data_routers;
 use crate::api::pipeline_groups::routers as pipeline_groups_routers;
 use crate::api::pipeline_lifecycle::routers as pipeline_lifecycle_routers;
@@ -94,15 +85,7 @@ use crate::api::validation_schemas::routers as validation_routers;
         pipeline_lifecycle_routers::get_pipeline_status,
         pipeline_lifecycle_routers::get_all_pipeline_status,
         pipeline_lifecycle_routers::update_pipeline_replication_factor,
-        // license
-        license_routers::get_license_status,
-        license_routers::activate_license,
-        license_routers::deactivate_license,
-        // auth
-        auth_handlers::register,
-        auth_handlers::login,
-        auth_handlers::has_users,
-        auth_handlers::me,
+
     ),
     components(
         schemas(
@@ -128,16 +111,6 @@ use crate::api::validation_schemas::routers as validation_routers;
             UpdateDataSourceNameRequest,
             ErrorResponse,
             PipelineStatusResponse,
-            ActivateLicenseRequest,
-            LicenseStatusResponse,
-            LicenseUsageResponse,
-            PlanLimitsResponse,
-            RegisterRequest,
-            LoginRequest,
-            AuthResponse,
-            UserResponse,
-            HasUsersResponse,
-            MeResponse,
         )
     ),
     tags(
@@ -147,9 +120,7 @@ use crate::api::validation_schemas::routers as validation_routers;
         (name = "Pipeline Groups", description = "CRUD operations for pipeline groups"),
         (name = "Data Stores", description = "CRUD operations for data stores"),
         (name = "Pipelines", description = "CRUD operations for pipeline data"),
-        (name = "Pipeline Lifecycle", description = "Endpoints to control the lifecycle of the pipelines"),
-        (name = "License", description = "Subscription and plan limits"),
-        (name = "Auth", description = "Login, register, and current-user endpoints"),
+        (name = "Pipeline Lifecycle", description = "Endpoints to control the lifecycle of the pipelines")
     )
 )]
 pub struct ApiDoc;

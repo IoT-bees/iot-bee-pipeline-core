@@ -51,10 +51,7 @@ impl PipelinepartsStatus {
         let statuses = [self.processor, self.consumer, self.store];
 
         // Si alguno está Degraded, el estado general es Degraded.
-        if statuses
-            .iter()
-            .any(|s| *s == ActorOperationStatus::Degraded)
-        {
+        if statuses.iter().any(|s| *s == ActorOperationStatus::Degraded) {
             return PipelineStatus::Degraded;
         }
         // Si todos están Idle, el estado general es Idle.
@@ -105,17 +102,11 @@ impl PipelineStatusReport {
             return PipelineStatus::Idle;
         }
 
-        let replica_statuses: Vec<PipelineStatus> = self
-            .pipelines
-            .values()
-            .map(|p| p.overall_status())
-            .collect();
+        let replica_statuses: Vec<PipelineStatus> =
+            self.pipelines.values().map(|p| p.overall_status()).collect();
 
         // Si alguna réplica está Degraded, el estado general es Degraded.
-        if replica_statuses
-            .iter()
-            .any(|s| *s == PipelineStatus::Degraded)
-        {
+        if replica_statuses.iter().any(|s| *s == PipelineStatus::Degraded) {
             return PipelineStatus::Degraded;
         }
         // Si todas las réplicas están Idle, el estado general es Idle.

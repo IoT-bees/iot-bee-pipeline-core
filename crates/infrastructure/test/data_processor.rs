@@ -29,16 +29,12 @@ fn record(pairs: &[(&str, f64)]) -> HashMap<String, Value> {
 
 /// Desempaqueta un ProcessingOutcome::Processed en el HashMap interno.
 /// Hace panic si el outcome es Rejected o es un error.
-fn unwrap_processed(
-    outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>,
-) -> HashMap<String, Value> {
+fn unwrap_processed(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>) -> HashMap<String, Value> {
     match outcome {
         Ok(ProcessingOutcome::Processed(output)) => output,
         Ok(ProcessingOutcome::Rejected(reason)) => {
-            panic!(
-                "Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}",
-                reason.field_name, reason.reason
-            );
+            panic!("Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}", 
+                   reason.field_name, reason.reason);
         }
         Err(e) => panic!("Se esperaba Processed pero se obtuvo error: {}", e),
     }
@@ -58,18 +54,14 @@ fn assert_rejected(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError
 
 /// Desempaqueta un ProcessingOutcome::Processed y lo convierte a JSON string.
 /// Hace panic si el outcome es Rejected o es un error.
-fn unwrap_processed_to_json(
-    outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>,
-) -> String {
+fn unwrap_processed_to_json(outcome: Result<ProcessingOutcome, domain::error::IoTBeeError>) -> String {
     match outcome {
         Ok(ProcessingOutcome::Processed(output)) => {
             serde_json::to_string(&output).expect("Failed to serialize output")
         }
         Ok(ProcessingOutcome::Rejected(reason)) => {
-            panic!(
-                "Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}",
-                reason.field_name, reason.reason
-            );
+            panic!("Se esperaba Processed pero se obtuvo Rejected: campo='{}', razón={:?}", 
+                   reason.field_name, reason.reason);
         }
         Err(e) => panic!("Se esperaba Processed pero se obtuvo error: {}", e),
     }
@@ -615,7 +607,8 @@ fn process_validacion_en_limite_exacto_es_valido() {
 fn process_campos_extra_en_registro_son_ignorados() {
     // El schema solo define "temperatura"; "presion" no existe en el schema.
     let p = PipelineDataProcessorCore::new(SCHEMA_TEMP).unwrap();
-    let out = unwrap_processed(p.process(&record(&[("temperatura", 10.0), ("presion", 9999.0)])));
+    let out = unwrap_processed(p
+        .process(&record(&[("temperatura", 10.0), ("presion", 9999.0)])));
     assert!(out.contains_key("temperatura"));
     assert!(!out.contains_key("presion"));
 }
@@ -623,7 +616,8 @@ fn process_campos_extra_en_registro_son_ignorados() {
 #[test]
 fn process_schema_vacio_siempre_produce_salida_vacia() {
     let p = PipelineDataProcessorCore::new("{}").unwrap();
-    let out = unwrap_processed(p.process(&record(&[("cualquier", 42.0), ("otro", 1.0)])));
+    let out = unwrap_processed(p
+        .process(&record(&[("cualquier", 42.0), ("otro", 1.0)])));
     assert!(out.is_empty());
 }
 
@@ -874,11 +868,12 @@ const SCHEMA_MULTI: &str = r#"{
 #[test]
 fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = unwrap_processed(p.process(&record(&[
-        ("temperatura", 25.0),
-        ("humedad", 60.0),
-        ("presion", 1000.0),
-    ])));
+    let out = unwrap_processed(p
+        .process(&record(&[
+            ("temperatura", 25.0),
+            ("humedad", 60.0),
+            ("presion", 1000.0),
+        ])));
 
     assert!(out.contains_key("temperatura"));
     assert!(out.contains_key("humedad"));
@@ -888,11 +883,12 @@ fn process_multivariable_resultado_contiene_todos_los_campos_del_schema() {
 #[test]
 fn process_multivariable_cada_campo_se_procesa_independientemente() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = unwrap_processed(p.process(&record(&[
-        ("temperatura", 0.0), // 0 * 1.8 + 32 = 32
-        ("humedad", 65.0),    // con operación ×2 → 130
-        ("presion", 950.0),   // sin operación → 950
-    ])));
+    let out = unwrap_processed(p
+        .process(&record(&[
+            ("temperatura", 0.0), // 0 * 1.8 + 32 = 32
+            ("humedad", 65.0),    // con operación ×2 → 130
+            ("presion", 950.0),   // sin operación → 950
+        ])));
 
     assert!(approx(
         out.get("temperatura").unwrap().as_f64().unwrap(),
@@ -906,7 +902,8 @@ fn process_multivariable_cada_campo_se_procesa_independientemente() {
 fn process_multivariable_campo_opcional_ausente_usa_default() {
     // "presion" no viene en el registro → debe usar 1013.25
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
-    let out = unwrap_processed(p.process(&record(&[("temperatura", 20.0), ("humedad", 50.0)])));
+    let out = unwrap_processed(p
+        .process(&record(&[("temperatura", 20.0), ("humedad", 50.0)])));
 
     assert_eq!(out.get("presion").unwrap().as_f64().unwrap(), 1013.25);
 }
@@ -916,9 +913,13 @@ fn process_multivariable_falla_si_falta_cualquier_campo_requerido() {
     let p = PipelineDataProcessorCore::new(SCHEMA_MULTI).unwrap();
 
     // falta temperatura
-    assert_rejected(p.process(&record(&[("humedad", 50.0), ("presion", 1000.0)])));
+    assert_rejected(
+        p.process(&record(&[("humedad", 50.0), ("presion", 1000.0)]))
+    );
     // falta humedad
-    assert_rejected(p.process(&record(&[("temperatura", 20.0), ("presion", 1000.0)])));
+    assert_rejected(
+        p.process(&record(&[("temperatura", 20.0), ("presion", 1000.0)]))
+    );
 }
 
 #[test]

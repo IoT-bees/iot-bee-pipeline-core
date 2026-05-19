@@ -70,7 +70,7 @@ impl DataProcessorActions for FakeDataProcessor {
                     reason: format!("JSON inválido: {}", e),
                 }
             })?;
-
+        
         Ok(ProcessingOutcome::Processed(record))
     }
 }

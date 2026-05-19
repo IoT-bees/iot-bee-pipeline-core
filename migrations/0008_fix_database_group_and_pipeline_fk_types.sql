@@ -5,7 +5,6 @@
 -- 3) pipelines.id como INTEGER y FKs alineadas a INTEGER para group_id y db_id
 
 -- Rebuild de databases para garantizar estructura final.
-DROP TABLE IF EXISTS databases_snapshot;
 CREATE TEMP TABLE databases_snapshot AS
 SELECT
     ROW_NUMBER() OVER (ORDER BY rowid) AS seq,
@@ -33,7 +32,6 @@ SELECT
 FROM databases_snapshot
 ORDER BY seq;
 
-DROP TABLE IF EXISTS db_id_map;
 CREATE TEMP TABLE db_id_map (
     old_id TEXT PRIMARY KEY,
     new_id INTEGER NOT NULL UNIQUE
@@ -50,7 +48,6 @@ ALTER TABLE databases RENAME TO databases_old;
 ALTER TABLE databases_new RENAME TO databases;
 
 -- Rebuild de pipeline_groups para garantizar id INTEGER.
-DROP TABLE IF EXISTS pipeline_groups_snapshot;
 CREATE TEMP TABLE pipeline_groups_snapshot AS
 SELECT
     ROW_NUMBER() OVER (ORDER BY rowid) AS seq,
@@ -78,7 +75,6 @@ SELECT
 FROM pipeline_groups_snapshot
 ORDER BY seq;
 
-DROP TABLE IF EXISTS pipeline_group_id_map;
 CREATE TEMP TABLE pipeline_group_id_map (
     old_id TEXT PRIMARY KEY,
     new_id INTEGER NOT NULL UNIQUE
