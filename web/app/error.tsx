@@ -2,12 +2,7 @@
 
 import { ErrorView } from "@/components/error/ErrorView";
 
-export default function Error({
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function Error() {
   return (
     <ErrorView
       code="500"

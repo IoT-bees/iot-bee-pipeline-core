@@ -23,10 +23,6 @@ import {
   useUpdatePipelineStore,
 } from "@/lib/hooks/usePipelines";
 import { usePipelineStatusAll } from "@/lib/hooks/usePipelineStatusAll";
-import { useSources } from "@/lib/hooks/useSources";
-import { useStores } from "@/lib/hooks/useStores";
-import { useSchemas } from "@/lib/hooks/useSchemas";
-import { useGroups } from "@/lib/hooks/useGroups";
 import { fmtId, timeAgo } from "@/lib/fmt";
 import { toPillState } from "@/lib/status";
 
@@ -39,10 +35,6 @@ export default function PipelineDetailPage({
   const pid = Number(id);
   const { data: p } = usePipeline(pid);
   const { data: allStatus } = usePipelineStatusAll();
-  const sources = useSources();
-  const stores = useStores();
-  const schemas = useSchemas();
-  const groups = useGroups();
 
   const updateSource = useUpdatePipelineSource(pid);
   const updateStore = useUpdatePipelineStore(pid);

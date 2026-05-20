@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
 import { useCreatePlan, usePatchPlan } from "@/lib/hooks/usePlans";
 import type { Plan } from "@/lib/api/types";
