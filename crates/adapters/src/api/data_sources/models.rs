@@ -1,0 +1,117 @@
+use super::config::DataSourceConfig;
+use chrono::{DateTime, Utc};
+use domain::entities::data_source::{
+    PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
+};
+use domain::error::IoTBeeError;
+use domain::value_objects::data_source_values::PipelineDataSourceConfig;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+use validator::Validate;
+
+pub type DataSourceId = u32;
+
+#[derive(Deserialize, Validate, ToSchema)]
+pub struct CreateDataSourceRequest {
+    #[serde(rename = "name")]
+    #[validate(length(min = 1, max = 30))]
+    pub name: String,
+    #[serde(rename = "dataSourceConfiguration")]
+    #[validate(nested)]
+    pub data_source_configuration: DataSourceConfig,
+    #[serde(rename = "dataSourceDescription")]
+    #[validate(length(min = 1, max = 255))]
+    pub data_source_description: String,
+}
+
+impl TryFrom<CreateDataSourceRequest> for PipelineDataSourceInputModel {
+    type Error = IoTBeeError;
+
+    fn try_from(request: CreateDataSourceRequest) -> Result<Self, Self::Error> {
+        let config = PipelineDataSourceConfig::try_from(request.data_source_configuration)?;
+        PipelineDataSourceInputModel::new(request.name, config, request.data_source_description)
+    }
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct DataSourceResponse {
+    #[serde(rename = "id")]
+    pub id: u32,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "dataSourceConfiguration")]
+    pub data_source_configuration: String,
+    #[serde(rename = "sourceType")]
+    pub source_type: String,
+    #[serde(rename = "dataSourceDescription")]
+    pub data_source_description: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
+}
+
+impl TryFrom<PipelineDataSourceOutputModel> for DataSourceResponse {
+    type Error = IoTBeeError;
+
+    fn try_from(output_model: PipelineDataSourceOutputModel) -> Result<Self, Self::Error> {
+        let config_json =
+            serde_json::to_string(output_model.data_source_configuration()).map_err(|e| {
+                domain::error::DomainValidationError::DataFormatError {
+                    reason: format!("Failed to serialize data source configuration: {}", e),
+                }
+            })?;
+        Ok(DataSourceResponse {
+            id: output_model.id(),
+            name: output_model.name().to_string(),
+            data_source_configuration: config_json,
+            source_type: String::from(output_model.source_type()),
+            data_source_description: output_model.description().to_string(),
+            created_at: output_model.created_at(),
+            updated_at: output_model.updated_at(),
+        })
+    }
+}
+
+#[derive(Deserialize, Validate, ToSchema)]
+pub struct UpdateDataSourceRequest {
+    #[serde(rename = "dataSourceState")]
+    pub data_source_state: Option<String>,
+    #[serde(rename = "dataSourceConfiguration")]
+    #[validate(nested)]
+    pub data_source_configuration: Option<DataSourceConfig>,
+    #[serde(rename = "dataSourceDescription")]
+    pub data_source_description: Option<String>,
+}
+impl TryFrom<UpdateDataSourceRequest> for PipelineDataSourceUpdateModel {
+    type Error = IoTBeeError;
+
+    fn try_from(request: UpdateDataSourceRequest) -> Result<Self, Self::Error> {
+        let (config_json, source_type) = match request.data_source_configuration {
+            Some(dto) => {
+                let config = PipelineDataSourceConfig::try_from(dto)?;
+                let source_type: String = config.source_type().into();
+                let json = serde_json::to_string(&config).map_err(|e| {
+                    domain::error::DomainValidationError::DataFormatError {
+                        reason: format!("Failed to serialize data source configuration: {}", e),
+                    }
+                })?;
+                (Some(json), Some(source_type))
+            }
+            None => (None, None),
+        };
+        PipelineDataSourceUpdateModel::new(
+            request.data_source_state,
+            config_json,
+            source_type,
+            request.data_source_description,
+        )
+    }
+}
+
+#[derive(Deserialize, Validate, ToSchema)]
+pub struct UpdateDataSourceNameRequest {
+    #[serde(rename = "name")]
+    #[validate(length(min = 1, max = 30))]
+    pub name: String,
+}

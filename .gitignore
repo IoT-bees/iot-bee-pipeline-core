@@ -1,0 +1,66 @@
+/target
+:# Rust
+/target/
+**/*.rs.bk
+*.pdb
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+web/.env.local
+web/.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data
+data/
+*.pid
+
+# Docker
+*.pid
+
+# Test artifacts
+*.test
+*.bench
+
+# Generated files
+docs/generated/
+docs/index.html
+
+# AI assistant artifacts (Claude / Cursor / Copilot / Gemini / Codex / agents)
+.claude/
+**/.claude/
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
+GEMINI.md
+**/GEMINI.md
+.cursor/
+.cursorrules
+.github/copilot-instructions.md
+.github/agents/
+.aider*
+.codeium/
+.continue/
+
+# Superpowers (brainstorm/visual companion sessions + plans/specs)
+.superpowers/
+docs/superpowers/
