@@ -80,7 +80,7 @@ export function OrgDeleteButton({
       <div className="flex justify-end gap-2">
         <Button
           type="button"
-          variant="secondary"
+          variant="ghost"
           onClick={() => {
             setOpen(false);
             setTyped("");

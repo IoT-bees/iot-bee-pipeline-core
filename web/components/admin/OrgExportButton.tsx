@@ -38,7 +38,7 @@ export function OrgExportButton({ orgId }: { orgId: number | string }) {
     <div className="space-y-2">
       <Button
         type="button"
-        variant="secondary"
+        variant="ghost"
         onClick={download}
         disabled={busy}
       >
