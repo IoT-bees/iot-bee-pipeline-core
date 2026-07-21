@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iot bees — evaluación de producto y negocio</title>
+  <style>
+    :root { --ink:#17222d; --muted:#596777; --line:#dbe3e9; --paper:#fff; --wash:#f6f9fb; --bee:#e9a91a; --green:#087f5b; --red:#c43c35; --blue:#1769aa; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#edf2f5; color:var(--ink); font:16px/1.58 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { max-width:1040px; margin:36px auto; background:var(--paper); padding:52px 64px 72px; box-shadow:0 8px 28px #18243218; }
+    header { border-bottom:4px solid var(--bee); padding-bottom:30px; }
+    .brand { color:#8a5e00; font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:14px; }
+    h1 { font-size:38px; line-height:1.12; letter-spacing:-.04em; margin:10px 0 12px; max-width:800px; }
+    h2 { font-size:23px; line-height:1.25; margin:48px 0 15px; letter-spacing:-.02em; }
+    h3 { font-size:16px; margin:22px 0 8px; }
+    p { margin:0 0 13px; }
+    a { color:var(--blue); }
+    .lede { color:var(--muted); font-size:19px; max-width:810px; }
+    .meta { margin-top:22px; color:var(--muted); font-size:13px; }
+    .verdict { display:grid; grid-template-columns:auto 1fr; gap:16px; background:#fff8e7; border:1px solid #f2d587; border-radius:10px; padding:21px 23px; margin-top:28px; }
+    .verdict b { color:#715000; display:block; margin-bottom:3px; }
+    .mark { width:34px; height:34px; border-radius:50%; background:var(--bee); color:#fff; display:grid; place-items:center; font-weight:900; }
+    .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:18px 0; }
+    .card { border:1px solid var(--line); border-radius:9px; padding:17px; }
+    .card strong { display:block; margin-bottom:5px; }
+    .card p { color:var(--muted); font-size:14px; margin:0; }
+    .tag { display:inline-block; border-radius:999px; padding:3px 8px; font-weight:750; font-size:11px; letter-spacing:.03em; }
+    .ready { color:var(--green); background:#e5f6ee; }
+    .partial { color:#8a5e00; background:#fff2ca; }
+    .gap { color:var(--red); background:#fce8e7; }
+    table { width:100%; border-collapse:collapse; margin:15px 0; font-size:14px; }
+    th { text-align:left; background:var(--wash); font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+    th, td { padding:11px 10px; vertical-align:top; border-bottom:1px solid var(--line); }
+    ul, ol { padding-left:22px; margin:10px 0 14px; }
+    li { margin:7px 0; }
+    .flow { display:flex; align-items:stretch; gap:8px; margin:20px 0; }
+    .flow div { flex:1; padding:16px; border:1px solid var(--line); border-radius:8px; background:var(--wash); text-align:center; font-size:14px; }
+    .flow b { display:block; margin-bottom:4px; }
+    .flow span { align-self:center; color:#a57000; font-weight:800; font-size:20px; }
+    .callout { border-left:4px solid var(--blue); padding:13px 17px; background:#f0f7fc; margin:18px 0; }
+    .danger { border-left-color:var(--red); background:#fff4f3; }
+    .steps { counter-reset:step; list-style:none; padding:0; }
+    .steps li { display:grid; grid-template-columns:30px 1fr; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+    .steps li::before { counter-increment:step; content:counter(step); display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:var(--ink); color:#fff; font-size:12px; font-weight:800; }
+    .small { color:var(--muted); font-size:13px; }
+    footer { margin-top:45px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:13px; }
+    @media (max-width:720px) { main { margin:0; padding:30px 20px 48px; } h1 { font-size:31px; } .grid { grid-template-columns:1fr; } .flow { flex-direction:column; } .flow span { transform:rotate(90deg); } table { font-size:12px; } th,td { padding:8px 6px; } }
+    @media print { body { background:#fff; } main { box-shadow:none; margin:0; max-width:none; } a { color:inherit; text-decoration:none; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">iot bees · memo de decisión</div>
+    <h1>¿Qué es este proyecto y puede convertirse en una empresa con clientes reales?</h1>
+    <p class="lede">iot bees es un <strong>control plane para tuberías de datos IoT</strong>: configura de dónde entra la telemetría, la valida y transforma, y la entrega a un destino. Su oportunidad no es ser “otra plataforma IoT completa”, sino resolver la parte incómoda para integradores de hardware: entregar datos confiables al sistema del cliente final.</p>
+    <p class="meta">Evaluación basada en el código y las migraciones del repositorio, más contraste puntual con competidores públicos. Fecha: 20 de julio de 2026.</p>
+    <div class="verdict"><div class="mark">!</div><div><b>Veredicto: GO condicionado a un piloto pagado, no a escalar todavía.</b>Hay un producto base serio y una tesis comercial razonable. Sin embargo, la promesa que mejor encaja con el primer mercado —MQTT/LoRaWAN hacia la base de datos del cliente— aún no está implementada extremo a extremo. La empresa es viable si primero se vende y entrega un caso de uso estrecho, en vez de lanzar un SaaS genérico.</div></div>
+  </header>
+
+  <h2>1. Qué problema resuelve y para quién</h2>
+  <p>Un sensor suele publicar datos en un broker. El comprador final necesita que esa información llegue limpia, consistente y con continuidad a su base de datos, ERP, analítica o aplicación. Hoy un integrador de hardware suele resolverlo con desarrollo a medida y después queda obligado a mantenerlo.</p>
+  <div class="flow"><div><b>Integrador IoT</b>vende e instala sensores, gateways y conectividad.</div><span>→</span><div><b>iot bees</b>configura y opera la ruta de datos reusable.</div><span>→</span><div><b>Cliente final</b>recibe datos en su sistema y paga el proyecto/servicio.</div></div>
+  <p><strong>Cliente inicial recomendado:</strong> integradores y distribuidores de hardware de tamaño pequeño o mediano en Colombia/LATAM que ya venden proyectos de monitoreo (frío, energía, agro, activos, industria). Venderles una capa operada, con soporte local, es más defendible que intentar vender directamente a cualquier empresa que tenga sensores.</p>
+
+  <h2>2. Cómo está construido</h2>
+  <table>
+    <thead><tr><th>Capa</th><th>Responsabilidad</th><th>Tecnología/evidencia</th></tr></thead>
+    <tbody>
+      <tr><td>Control plane</td><td>Usuarios, organizaciones, fuentes, destinos, esquemas, grupos, pipelines, planes y administración.</td><td>API REST en Rust/Actix-web; PostgreSQL con SQLx; JWT; auditoría y rate limiting.</td></tr>
+      <tr><td>Motor de datos</td><td>Consume mensajes, valida JSON y ejecuta transformaciones antes de persistir o entregar.</td><td>Rust con Actix actors; esquema compilado a AST/VM; réplicas por pipeline.</td></tr>
+      <tr><td>Interfaz</td><td>Panel de operación, wizard/canvas de pipelines, administración y billing.</td><td>Next.js 15 + React 19; patrón BFF: el navegador no expone el JWT al backend.</td></tr>
+      <tr><td>Operación</td><td>Health, métricas Prometheus, logs y despliegue local con Docker.</td><td>Existe endpoint de métricas, aunque las métricas de mailbox aún emiten ceros y no hay medición de mensajes para facturar.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Arquitectura adecuada para crecer:</strong> el código separa dominio, casos de uso, infraestructura y adaptadores. Esa estructura reduce el costo de añadir conectores sin mezclar reglas comerciales con el motor de procesamiento.</div>
+
+  <h2>3. Estado real del producto: qué se puede vender hoy</h2>
+  <p>Esta tabla distingue intencionalmente la capacidad que aparece en la UI/modelos de la que efectivamente ejecuta código de producción.</p>
+  <table>
+    <thead><tr><th>Capacidad</th><th>Estado</th><th>Lectura comercial</th></tr></thead>
+    <tbody>
+      <tr><td>RabbitMQ → validación/transformación → InfluxDB</td><td><span class="tag ready">Implementado</span></td><td>Es el mejor camino para un piloto técnico controlado.</td></tr>
+      <tr><td>Destino webhook HTTP(S), con timeout y reintentos</td><td><span class="tag ready">Implementado</span></td><td>Permite integrar con una API del cliente sin construir primero un writer por base de datos.</td></tr>
+      <tr><td>Usuarios, roles, organizaciones, planes, Stripe, auditoría</td><td><span class="tag partial">Avanzado</span></td><td>Buen control plane para un piloto; requiere prueba completa de cobro, soporte y recuperación antes de depender de ello.</td></tr>
+      <tr><td>MQTT</td><td><span class="tag gap">No implementado</span></td><td>El adaptador actual devuelve explícitamente “not yet implemented”. No debe aparecer en una propuesta comercial como disponible.</td></tr>
+      <tr><td>Kafka</td><td><span class="tag gap">No implementado</span></td><td>El adaptador devuelve “not supported”. Es una capacidad futura, no una característica actual.</td></tr>
+      <tr><td>Postgres y almacenamiento local como destino</td><td><span class="tag gap">No disponible</span></td><td>Hoy el factory permite InfluxDB y webhook; LocalLog retorna error. Para Postgres se necesita un nuevo destino.</td></tr>
+      <tr><td>Facturación por uso</td><td><span class="tag gap">No disponible</span></td><td>Los planes limitan pipelines/réplicas, pero no se cuenta volumen de mensajes, dispositivos, almacenamiento ni consumo.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Modelo de negocio que recomiendo validar</h2>
+  <div class="grid">
+    <div class="card"><strong>Canal primero</strong><p>El integrador configura y revende. Cada nuevo proyecto de ese canal baja su costo de adquisición y aumenta el valor de la relación.</p></div>
+    <div class="card"><strong>Suscripción por proyecto activo</strong><p>Una tarifa mensual simple por instalación/cliente final, con límites técnicos claros; no cobrar por “usuarios” al comienzo.</p></div>
+    <div class="card"><strong>Setup pagado y reutilizable</strong><p>Si el cliente requiere un conector/destino nuevo, cobra implementación. El componente queda en el producto, no como desarrollo exclusivo.</p></div>
+  </div>
+  <p>Como hipótesis inicial —no como lista definitiva— puede haber un sandbox limitado, una tarifa por proyecto pequeño/mediano/grande y descuento por volumen para el canal. El precio debe incluir el margen del integrador y ser superior al precio de canal en venta directa. El detalle ya propuesto en <a href="modelo-de-negocio.html">modelo-de-negocio.html</a> sirve como punto de partida, pero debe validarse en conversaciones de compra, no en una hoja de cálculo.</p>
+  <p>La diferenciación debe ser concreta: <strong>“conectamos y operamos la entrega de la telemetría al sistema que ya usa tu cliente”</strong>, no “tenemos dashboards”. El mercado tiene plataformas maduras: por ejemplo, <a href="https://thingsboard.io/pricing/?product=thingsboard-cloud&amp;section=thingsboard-pe-options">ThingsBoard Cloud</a> publica desde un plan gratuito hasta US$749/mes, y <a href="https://ubidots.com/pricing">Ubidots</a> publica US$99/mes para 50 dispositivos. Compiten por el presupuesto del comprador, aunque su alcance es más amplio.</p>
+
+  <h2>5. Riesgos que sí pueden matar el negocio</h2>
+  <table>
+    <thead><tr><th>Riesgo</th><th>Por qué importa</th><th>Mitigación antes de escalar</th></tr></thead>
+    <tbody>
+      <tr><td>Vender una integración que no existe</td><td>MQTT/LoRaWAN y Postgres encajan con el nicho, pero no están listos.</td><td>Elegir un piloto RabbitMQ o presupuestar el desarrollo MQTT + destino requerido como primer entregable contractual.</td></tr>
+      <tr><td>Confiabilidad de datos</td><td>Un dato perdido puede dañar una operación de frío, energía o industria y destruir la confianza.</td><td>Definir explícitamente semántica de entrega, DLQ/reproceso, idempotencia, alertas, pruebas de caída y runbook antes de SLA.</td></tr>
+      <tr><td>Seguridad de credenciales</td><td>Las configuraciones de fuentes/destinos se serializan en PostgreSQL; allí pueden vivir tokens y claves.</td><td>Cifrado de secretos en reposo, rotación, permisos mínimos, backups cifrados y revisión de acceso antes de producción multicliente.</td></tr>
+      <tr><td>Margen ficticio</td><td>El cómputo puede ser barato, pero soporte, integración, incidentes y ventas B2B no lo son.</td><td>Registrar horas por piloto y cobrar setup; no asumir que un conector nuevo es costo marginal cero.</td></tr>
+      <tr><td>Billing local y cumplimiento</td><td>El código integra Stripe, pero la operación requiere empresa, impuestos, facturación y un medio de recaudo compatible con el cliente objetivo.</td><td>Validar con contador/abogado y proveedor de pagos antes de publicar precios; el producto de cobro no sustituye la operación legal.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Decisión de empresa: condiciones de GO / NO-GO</h2>
+  <div class="grid">
+    <div class="card"><strong class="tag ready">GO</strong><p>Un integrador confirma por escrito un piloto pagado, aporta acceso a datos reales y acepta un alcance de 6–8 semanas con un caso de éxito publicable.</p></div>
+    <div class="card"><strong class="tag ready">GO</strong><p>Se puede cobrar setup por el conector/destino faltante y un MRR posterior; el proyecto no depende de regalar desarrollo a medida.</p></div>
+    <div class="card"><strong class="tag gap">NO-GO / pausa</strong><p>El prospecto solo quiere que se construya un backend exclusivo, no acepta una tarifa recurrente o no da acceso a un flujo real de telemetría.</p></div>
+  </div>
+  <div class="callout danger"><strong>No construir aún:</strong> un catálogo amplio de conectores, dashboards, IA, marketplace o una infraestructura “enterprise”. Ninguno valida que alguien pague por el núcleo de entrega de datos.</div>
+
+  <h2>7. Plan práctico de 90 días</h2>
+  <ol class="steps">
+    <li><div><strong>Entrevistar 10 integradores, 3 semanas.</strong><br>Confirmar dolor, flujo de compra, quién firma, cuánto cuesta hoy resolver una integración y si pagarían setup + mensualidad. Buscar compromisos, no opiniones.</div></li>
+    <li><div><strong>Cerrar un design partner pagado, semana 3–4.</strong><br>Contrato con alcance, datos de prueba, responsable del lado del cliente, criterios de aceptación, propiedad intelectual y precio fundador por tiempo definido.</div></li>
+    <li><div><strong>Entregar solo el camino crítico, semanas 4–8.</strong><br>Implementar el conector y destino que usa ese cliente, manejar fallas observables, y construir un runbook. Si se puede elegir, empezar con RabbitMQ + webhook/InfluxDB para reducir riesgo.</div></li>
+    <li><div><strong>Operar y medir, semanas 8–12.</strong><br>Medir mensajes, tasa de error, latencia, horas de soporte y costo por proyecto. Con esos datos definir los límites y precio reales; no antes.</div></li>
+    <li><div><strong>Decidir con evidencia.</strong><br>Continuar si el piloto pasa a suscripción, el canal trae una segunda oportunidad y el costo de soporte permite margen. Pausar o cambiar de nicho si no ocurre.</div></li>
+  </ol>
+
+  <h2>Conclusión</h2>
+  <p>iot bees <strong>no es solamente una idea</strong>: tiene un backend modular, un motor de pipeline y una interfaz de gestión que hacen plausible una empresa. Aún no es una plataforma IoT generalista lista para clientes exigentes. La jugada inteligente es convertir la base existente en un producto operativo para un integrador específico, cobrar por esa implementación y por la operación mensual, y usar el aprendizaje para decidir qué conectores merecen producto.</p>
+  <p class="small">Lectura complementaria del repositorio: <a href="viabilidad-iot-bee.html">estudio de viabilidad</a> y <a href="modelo-de-negocio.html">modelo de negocio</a>. Las referencias competitivas son externas y cambian con el tiempo; fueron consultadas el 20-jul-2026.</p>
+  <footer>Documento de análisis, no asesoría legal, tributaria ni financiera. La evidencia de capacidades se deriva del código actual, no de una certificación de producción.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iot bee — Modelo de Negocio</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --amber: #f5b82e;
+    --amber-dim: #b78514;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    font-size: 16px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 28px 96px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 32px; margin-bottom: 40px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .hex {
+    width: 34px; height: 34px; background: var(--amber);
+    clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+  }
+  .brand span { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  h1 { font-size: 34px; letter-spacing: -0.8px; line-height: 1.2; margin-bottom: 10px; }
+  .subtitle { color: var(--muted); font-size: 17px; max-width: 640px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  h2 {
+    font-size: 22px; margin: 56px 0 16px; padding-top: 28px;
+    border-top: 1px solid var(--border); letter-spacing: -0.4px;
+  }
+  h2 .num { color: var(--amber); font-weight: 800; margin-right: 8px; }
+  h3 { font-size: 16px; margin: 26px 0 8px; color: var(--amber); }
+  p { margin-bottom: 14px; color: #cdd3de; }
+  strong { color: var(--text); }
+  ul, ol { margin: 0 0 16px 22px; color: #cdd3de; }
+  li { margin-bottom: 7px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px; margin: 18px 0;
+  }
+  .card.accent { border-left: 4px solid var(--amber); }
+  .card.warn { border-left: 4px solid var(--red); }
+  .card.ok { border-left: 4px solid var(--green); }
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  .decision {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .decision .q { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .decision .a { font-weight: 700; font-size: 15px; color: var(--amber); }
+  .decision .why { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14.5px; }
+  th { text-align: left; padding: 10px 12px; background: var(--surface-2); color: var(--amber); font-weight: 600; border-bottom: 2px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: #cdd3de; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .price { font-size: 20px; font-weight: 800; color: var(--text); }
+  .price small { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .pill {
+    display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 10px;
+    border-radius: 99px; text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .pill.ok { background: rgba(74,222,128,.12); color: var(--green); }
+  .pill.miss { background: rgba(248,113,113,.12); color: var(--red); }
+  .pill.part { background: rgba(245,184,46,.12); color: var(--amber); }
+  .flow {
+    display: flex; align-items: stretch; gap: 0; margin: 22px 0; flex-wrap: wrap;
+  }
+  .flow .node {
+    flex: 1; min-width: 150px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; text-align: center;
+  }
+  .flow .node .t { font-weight: 700; font-size: 14px; }
+  .flow .node .d { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .flow .arrow { display: flex; align-items: center; padding: 0 10px; color: var(--amber); font-size: 20px; font-weight: 700; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13.5px; }
+  .bar-label { width: 220px; color: var(--muted); flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--surface-2); border-radius: 6px; height: 22px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 11.5px; font-weight: 700; color: #0f1115; white-space: nowrap; }
+  .roadmap { margin: 20px 0; }
+  .phase { display: flex; gap: 18px; margin-bottom: 0; position: relative; padding-bottom: 26px; }
+  .phase::before {
+    content: ""; position: absolute; left: 17px; top: 36px; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .phase:last-child::before { display: none; }
+  .phase .dot {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2);
+    border: 2px solid var(--amber); color: var(--amber); font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+  }
+  .phase .body h4 { font-size: 15.5px; margin-bottom: 4px; }
+  .phase .body .when { font-size: 12px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; }
+  .phase .body p { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+  .footnote { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+  .kpi .v { font-size: 26px; font-weight: 800; color: var(--amber); }
+  .kpi .l { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  @media (max-width: 640px) {
+    .decision-grid, .kpis { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow .arrow { transform: rotate(90deg); justify-content: center; padding: 4px 0; }
+    .bar-label { width: 130px; }
+  }
+  @media print {
+    body { background: #fff; color: #111; }
+    :root { --bg:#fff; --surface:#f7f7f8; --surface-2:#efeff1; --border:#ddd; --text:#111; --muted:#555; }
+    .wrap { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><div class="hex"></div><span>iot bee</span></div>
+  <h1>Modelo de Negocio</h1>
+  <p class="subtitle">El core de datos IoT para integradores de hardware: del sensor a la base de datos del cliente, sin que el integrador tenga que construir un backend.</p>
+  <p class="meta">Borrador de trabajo · 9 de junio de 2026 · Ovidio &amp; Mane · Barranquilla, Colombia</p>
+</header>
+
+<h2><span class="num">1.</span>Resumen ejecutivo</h2>
+<p><strong>iot bee se vende como SaaS recurrente a integradores y distribuidores de hardware IoT</strong> (y en segundo plano a empresas finales), cobrando <strong>una mensualidad por cada proyecto activo</strong> que el integrador tenga en la plataforma. No se vende desarrollo a la medida: cada peso que entra es recurrente o financia producto reutilizable.</p>
+<div class="card accent">
+  <p style="margin:0"><strong>La tesis:</strong> los distribuidores de hardware (Milesight, Dragino, etc.) en LATAM pierden negocios porque venden el sensor pero no tienen cómo entregar los datos al sistema de su cliente. iot bee es ese eslabón: conectores de entrada (MQTT, LoRaWAN, RabbitMQ) → validación de esquemas → la base de datos que el cliente final ya tiene (Postgres, InfluxDB). El integrador revende el servicio con margen y ustedes cobran por cada proyecto que él monte.</p>
+</div>
+
+<h3>Las cuatro decisiones que definen el modelo</h3>
+<div class="decision-grid">
+  <div class="decision">
+    <div class="q">¿Quién paga?</div>
+    <div class="a">Integradores (canal) + empresas finales (directo)</div>
+    <div class="why">El integrador es el comprador principal; la venta directa es secundaria y a precio de lista para no canibalizar el canal.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Cómo se entrega?</div>
+    <div class="a">Cloud multi-tenant compartido</div>
+    <div class="why">Una sola plataforma hospedada por ustedes. Implica terminar el aislamiento por organización en el control plane PostgreSQL antes de escalar.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Cuál es el nicho de entrada?</div>
+    <div class="a">Integradores/distribuidores de hardware IoT</div>
+    <div class="why">Ya hay un prospecto real (distribuidor Milesight, plataforma ting.com.co). Cada integrador trae N proyectos repetibles.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Por qué se cobra?</div>
+    <div class="a">Por proyecto activo del integrador</div>
+    <div class="why">Mensualidad por proyecto/cliente final vivo, escalonada por tamaño. Crecen automáticamente cuando al integrador le va bien.</div>
+  </div>
+</div>
+
+<h2><span class="num">2.</span>El cliente y su dolor</h2>
+<h3>Cliente primario: el integrador de hardware IoT</h3>
+<p>Empresas que distribuyen e instalan sensores (Milesight, Dragino, RAK, etc.) en Colombia y LATAM. Su negocio es el hardware y la instalación; <strong>su dolor es el software</strong>: cada cliente final les pide "que los datos lleguen a mi sistema / mi base de datos", y hoy eso significa contratar un desarrollo a la medida por proyecto — caro, lento y sin garantía de soporte.</p>
+<ul>
+  <li><strong>Qué compran:</strong> una plataforma donde configuran la ruta sensor → validación → base de datos del cliente final en horas, no en meses de desarrollo.</li>
+  <li><strong>Qué revenden:</strong> "servicio de datos" empaquetado en su cotización, con su margen (típicamente 1.5–2x el costo de iot bee).</li>
+  <li><strong>Por qué se quedan:</strong> cada proyecto nuevo es más rápido que el anterior; migrar N proyectos andando a otra plataforma es doloroso (retención estructural).</li>
+</ul>
+<h3>Cliente secundario: la empresa final</h3>
+<p>Empresas con dispositivos ya comprados (agro, cadena de frío, industria) que llegan directo. Se les vende a <strong>precio de lista</strong>, siempre superior al precio de canal, para que el integrador nunca compita contra ustedes.</p>
+
+<h3>Posicionamiento frente a las alternativas</h3>
+<table>
+  <tr><th>Alternativa</th><th>Qué es</th><th>Por qué iot bee gana en este nicho</th></tr>
+  <tr><td><strong>Ubidots / Datacake</strong></td><td>Plataformas dashboard-first (cobran por dispositivo)</td><td>Son el destino final de los datos. iot bee no compite por el dashboard: entrega los datos <em>al sistema que el cliente ya tiene</em>. El cliente de Ting es la prueba: ya tienen plataforma y base de datos, les falta el core de ingestión.</td></tr>
+  <tr><td><strong>ThingsBoard open-source</strong></td><td>Plataforma autogestionada gratis</td><td>"Gratis" significa que el integrador se vuelve administrador de servidores. iot bee vende exactamente lo contrario: cero operación para el integrador.</td></tr>
+  <tr><td><strong>Desarrollo a la medida</strong></td><td>Contratar un dev por proyecto</td><td>USD $3–10k por proyecto + mantenimiento eterno vs. una mensualidad predecible con soporte incluido.</td></tr>
+</table>
+
+<h2><span class="num">3.</span>Cómo fluye la plata</h2>
+<div class="flow">
+  <div class="node"><div class="t">Cliente final</div><div class="d">paga al integrador el servicio de datos (con margen)</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="t">Integrador</div><div class="d">paga a iot bee por cada proyecto activo</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="t">iot bee</div><div class="d">cubre infra fija y crece con cada proyecto nuevo del canal</div></div>
+</div>
+<p>El integrador entra <strong>gratis</strong> (sandbox con 1 proyecto de prueba) — la barrera de entrada al canal debe ser cero. Empieza a pagar cuando un proyecto pasa a producción, que es exactamente cuando él empieza a cobrarle a su cliente.</p>
+
+<h2><span class="num">4.</span>Precios propuestos (hipótesis a validar)</h2>
+<p>Estos números son <strong>punto de partida para validar con el primer integrador</strong>, no precios finales. La referencia: un desarrollo a la medida equivalente cuesta USD $3–10k + mantenimiento; el proyecto típico de un distribuidor Milesight mueve decenas de dispositivos, no miles.</p>
+<table>
+  <tr><th>Tamaño de proyecto</th><th>Límites de referencia</th><th>Precio canal /mes</th><th>Precio de lista /mes (venta directa)</th></tr>
+  <tr>
+    <td><strong>Sandbox</strong></td>
+    <td>1 proyecto de prueba, datos limitados, 14–30 días</td>
+    <td><span class="price">$0</span></td>
+    <td>$0</td>
+  </tr>
+  <tr>
+    <td><strong>Proyecto S</strong></td>
+    <td>hasta ~25 dispositivos · ~500k mensajes/mes</td>
+    <td><span class="price">$29 <small>USD</small></span></td>
+    <td>$49</td>
+  </tr>
+  <tr>
+    <td><strong>Proyecto M</strong></td>
+    <td>hasta ~100 dispositivos · ~2M mensajes/mes</td>
+    <td><span class="price">$79 <small>USD</small></span></td>
+    <td>$129</td>
+  </tr>
+  <tr>
+    <td><strong>Proyecto L</strong></td>
+    <td>hasta ~500 dispositivos · ~10M mensajes/mes</td>
+    <td><span class="price">$199 <small>USD</small></span></td>
+    <td>$329</td>
+  </tr>
+</table>
+<ul>
+  <li><strong>Descuento por volumen del canal:</strong> 10+ proyectos activos → −15%; 25+ → −25%. Premia al integrador que escala con ustedes.</li>
+  <li><strong>Fee de integración (una sola vez):</strong> cuando un proyecto necesita un conector o destino que no existe todavía, se cobra un setup fee (USD $500–3.000 según alcance). Esto financia el roadmap con plata del cliente y <strong>el conector queda como propiedad de iot bee</strong> — nunca desarrollo regalado ni exclusivo.</li>
+  <li><strong>Anual prepagado:</strong> −2 meses (16%). Mejora caja y reduce churn.</li>
+</ul>
+<div class="card warn">
+  <p style="margin:0"><strong>Regla de oro del canal:</strong> el precio de lista (directo) siempre es visiblemente mayor que el precio de canal. Si una empresa final les llega directo y resulta estar en la zona de un integrador aliado, se la pasan al integrador. Un canal que confía vende por ustedes; un canal traicionado los quema en el gremio.</p>
+</div>
+
+<h2><span class="num">5.</span>Economía unitaria</h2>
+<div class="kpis">
+  <div class="kpi"><div class="v">~$60</div><div class="l">USD/mes costos fijos iniciales (VPS + DNS + dominio + backups)</div></div>
+  <div class="kpi"><div class="v">1 × M</div><div class="l">proyecto mediano cubre los costos fijos del mes</div></div>
+  <div class="kpi"><div class="v">~$1.580</div><div class="l">USD MRR con 1 integrador maduro (20 proyectos mixtos)</div></div>
+</div>
+<p>Escenario de referencia con un solo integrador que madura a 20 proyectos (12 S + 6 M + 2 L, con descuento de canal −15%):</p>
+<div class="bar-row"><div class="bar-label">Costos fijos infra</div><div class="bar-track"><div class="bar-fill" style="width:6%; background:var(--red)">$60</div></div></div>
+<div class="bar-row"><div class="bar-label">MRR con 5 proyectos</div><div class="bar-track"><div class="bar-fill" style="width:22%; background:var(--amber)">~$245</div></div></div>
+<div class="bar-row"><div class="bar-label">MRR con 20 proyectos</div><div class="bar-track"><div class="bar-fill" style="width:88%; background:var(--green)">~$1.580</div></div></div>
+<p class="footnote">El costo marginal de un proyecto nuevo es casi cero (cómputo compartido), así que el margen bruto pasa del 90% rápidamente. El riesgo no son los costos fijos: es regalar desarrollo. De ahí la regla del setup fee.</p>
+
+<h2><span class="num">6.</span>Primer cliente: el distribuidor Milesight (caso Ting)</h2>
+<p>Es el <strong>design partner</strong> perfecto: ya tiene los equipos comprados (1 LoRaWAN + 1 sensor 4G por MQTT), ya tiene plataforma y base de datos, y ya hay relación de confianza con Mane. La estructura del trato:</p>
+<ol>
+  <li><strong>Setup fee único</strong> (USD $1.500–3.000): financia los conectores MQTT + LoRaWAN y el destino Postgres. Es menos de lo que les costaría pagarle a Mane por horas para construir lo mismo, y a ustedes les deja producto reutilizable.</li>
+  <li><strong>Suscripción mensual</strong> por sus proyectos activos según la tabla de precios de canal.</li>
+  <li><strong>El IP es de iot bee.</strong> El contrato es entre su empresa y la de ustedes — suscripción + servicio de integración. <em>No</em> es work-for-hire de Mane: si Mane firma eso a título personal, el conector LoRaWAN queda siendo de ellos. Esto se define antes de la primera reunión formal.</li>
+  <li><strong>A cambio de precio fundador:</strong> caso de estudio público y referencia ante otros distribuidores del gremio. Descuento sí, gratis no.</li>
+</ol>
+<div class="card ok">
+  <p style="margin:0"><strong>Dato técnico que reduce el riesgo de la demo:</strong> los gateways LoRaWAN de Milesight (serie UG6x) traen network server embebido y publican los payloads decodificados por MQTT. Implementando bien el consumer MQTT se cubren probablemente <em>los dos</em> equipos del cliente. El trabajo real de la demo es: consumer MQTT (con TLS/auth) + writer Postgres — el resto de la tubería (validación, actores, supervisión) ya existe y funciona.</p>
+</div>
+
+<h2><span class="num">7.</span>Lo que el modelo le exige al producto</h2>
+<p>Estado real del código hoy frente a lo que este modelo necesita:</p>
+<table>
+  <tr><th>Capacidad</th><th>Estado hoy</th><th>Para qué la exige el modelo</th></tr>
+  <tr><td>Pipeline RabbitMQ → validación → InfluxDB</td><td><span class="pill ok">Funciona</span></td><td>Base técnica probada de extremo a extremo</td></tr>
+  <tr><td>Billing Stripe end-to-end + activación manual de licencias</td><td><span class="pill ok">Funciona</span></td><td>Cobro recurrente; licencia manual para pilotos sin tarjeta</td></tr>
+  <tr><td>Consumer MQTT (TLS + auth)</td><td><span class="pill miss">Stub</span></td><td>Demo con el sensor 4G y el gateway Milesight — camino crítico #1</td></tr>
+  <tr><td>Destino Postgres</td><td><span class="pill miss">No existe</span></td><td>Los clientes finales tienen Postgres; el trait <code>DataExternalStore</code> ya está diseñado para extenderse</td></tr>
+  <tr><td>LoRaWAN directo (ChirpStack/TTN/webhook)</td><td><span class="pill miss">No existe</span></td><td>Fase 2 — el MQTT del gateway cubre el corto plazo</td></tr>
+  <tr><td>Noción de "proyecto" + conteo de dispositivos/mensajes por proyecto</td><td><span class="pill miss">No existe</span></td><td>Es la métrica de cobro: sin medición por proyecto no se puede facturar S/M/L ni aplicar topes</td></tr>
+  <tr><td>Aislamiento multi-tenant por organización</td><td><span class="pill part">Parcial</span></td><td>Decisión de entrega elegida: instancia compartida. Hay que endurecer el aislamiento del control plane PostgreSQL antes de escalar</td></tr>
+  <tr><td>Backups + TLS documentado</td><td><span class="pill miss">No existe</span></td><td>Requisito mínimo antes de datos de un cliente que paga (1–2 días de trabajo)</td></tr>
+  <tr><td>White-label para integradores (su logo/dominio)</td><td><span class="pill miss">No existe</span></td><td>Palanca de retención del canal — fase 3, cobrable como add-on</td></tr>
+</table>
+<p class="footnote">Los planes actuales en código ($0/$19/$99/$499 por # de pipelines) se reemplazan por la estructura por proyecto. El catálogo de planes en base de datos (migración 0022) ya soporta planes custom por organización, así que el cambio es de configuración + medición, no de rediseño del billing.</p>
+
+<h2><span class="num">8.</span>Plan de 90 días</h2>
+<div class="roadmap">
+  <div class="phase">
+    <div class="dot">1</div>
+    <div class="body">
+      <div class="when">Días 1–30 · La demo que vende</div>
+      <h4>Consumer MQTT + writer Postgres + demo con hardware real</h4>
+      <p>Implementar MQTT (TLS/auth) y el destino Postgres. Montar la demo con los equipos reales del distribuidor: sensor publicando → validación → tabla Postgres de ellos. Backups y TLS del servidor. En paralelo: definir el acuerdo (setup fee + suscripción + IP de iot bee) antes de la reunión formal.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot">2</div>
+    <div class="body">
+      <div class="when">Días 31–60 · Primer contrato firmado</div>
+      <h4>Cerrar al distribuidor como design partner pagando</h4>
+      <p>Piloto en producción con sus 3 equipos. Activación con licencia manual (ya existe) mientras se ajusta el billing por proyecto. Validar con ellos los precios S/M/L: ¿cuánto le cobrarían a su cliente final? El precio de ellos define el techo del de ustedes.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot">3</div>
+    <div class="body">
+      <div class="when">Días 61–90 · Repetibilidad</div>
+      <h4>Medición por proyecto + endurecer multi-tenant + segundo integrador</h4>
+      <p>Construir la noción de proyecto con conteo de dispositivos/mensajes (la métrica de cobro). Endurecer aislamiento por organización y planear la migración del control-plane a Postgres. Con el caso de estudio del primer cliente, salir a buscar 2–3 distribuidores más del gremio Milesight/Dragino en Colombia.</p>
+    </div>
+  </div>
+</div>
+
+<h2><span class="num">9.</span>Riesgos y preguntas abiertas</h2>
+<ul>
+  <li><strong>Concentración en un solo integrador:</strong> hasta no tener 3+ integradores, el negocio depende de uno. Mitigación: el caso de estudio es la herramienta para abrir los siguientes; el gremio de distribuidores Milesight en LATAM se conoce entre sí.</li>
+  <li><strong>El integrador quiere exclusividad:</strong> respuesta preparada — exclusividad no, precio fundador y prioridad de roadmap sí.</li>
+  <li><strong>Multi-tenant compartido:</strong> requiere endurecer el aislamiento del control plane PostgreSQL antes de escalar.</li>
+  <li><strong>Conflicto de interés de Mane:</strong> mientras le paguen como consultor de la misma empresa a la que le venden el SaaS, hay que separar contractualmente qué es trabajo de él y qué es producto de iot bee.</li>
+  <li><strong>Pregunta abierta — white-label:</strong> ¿los integradores necesitan la plataforma con su marca para revender? Validarlo con el primer cliente; si es decisivo, sube de fase 3 a fase 2 y se cobra como add-on.</li>
+  <li><strong>Pregunta abierta — moneda y facturación local:</strong> ¿cobrar en USD vía Stripe o en COP con facturación electrónica DIAN? Para empresas colombianas la factura local puede ser requisito de compras. Investigar Stripe + facturador local o Wompi/PayU como alternativa.</li>
+</ul>
+
+<h2><span class="num">10.</span>Lo que NO es el negocio</h2>
+<div class="card warn">
+  <ul style="margin-bottom:0">
+    <li><strong>No es una software factory:</strong> nunca vender horas de desarrollo. Todo desarrollo a la medida se empaqueta como setup fee de un conector que queda en el producto.</li>
+    <li><strong>No es una plataforma de dashboards:</strong> no competir con Ubidots/Datacake en visualización. iot bee entrega los datos al sistema del cliente; el dashboard es de otros (o una alianza).</li>
+    <li><strong>No es venta única de licencia:</strong> sin mensualidad no hay trato. La activación manual de licencia es para pilotos, no para ventas perpetuas.</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iot bee — Plan de Negocio &amp; Viabilidad</title>
+<style>
+  :root {
+    --bg:#0f1115; --surface:#171a21; --surface-2:#1e222b;
+    --border:#2a2f3a; --text:#e8eaf0; --muted:#9aa3b2;
+    --amber:#f5b82e; --green:#4ade80; --red:#f87171;
+    --blue:#60a5fa; --purple:#c084fc;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.65;font-size:16px;}
+  .wrap{max-width:940px;margin:0 auto;padding:48px 28px 96px;}
+
+  nav{position:sticky;top:0;background:rgba(15,17,21,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:40px;z-index:100;}
+  nav ul{display:flex;gap:4px;flex-wrap:wrap;list-style:none;}
+  nav a{font-size:12px;color:var(--muted);text-decoration:none;padding:4px 9px;border-radius:6px;white-space:nowrap;}
+  nav a:hover{background:var(--surface-2);color:var(--text);}
+
+  header{border-bottom:1px solid var(--border);padding-bottom:32px;margin-bottom:0;}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .hex{width:34px;height:34px;background:var(--amber);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0% 50%);}
+  .brand span{font-size:22px;font-weight:700;}
+  h1{font-size:34px;letter-spacing:-.8px;line-height:1.2;margin-bottom:10px;}
+  .subtitle{color:var(--muted);font-size:17px;max-width:700px;}
+  .meta{color:var(--muted);font-size:13px;margin-top:18px;text-transform:uppercase;letter-spacing:1px;}
+
+  h2{font-size:22px;margin:56px 0 16px;padding-top:28px;border-top:1px solid var(--border);letter-spacing:-.4px;}
+  h2 .num{color:var(--amber);font-weight:800;margin-right:8px;}
+  h3{font-size:16px;margin:26px 0 8px;color:var(--amber);}
+  p{margin-bottom:14px;color:#cdd3de;}
+  strong{color:var(--text);}
+  ul,ol{margin:0 0 16px 22px;color:#cdd3de;}
+  li{margin-bottom:7px;}
+  a{color:var(--blue);text-decoration:none;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin:18px 0;}
+  .card.accent{border-left:4px solid var(--amber);}
+  .card.warn{border-left:4px solid var(--red);}
+  .card.ok{border-left:4px solid var(--green);}
+
+  .verdict{display:flex;gap:18px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-left:5px solid var(--amber);border-radius:12px;padding:24px;margin:24px 0;}
+  .verdict .light{font-size:40px;line-height:1;flex-shrink:0;}
+
+  .decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0;}
+  .decision{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+  .decision .q{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;}
+  .decision .a{font-weight:700;font-size:15px;color:var(--amber);}
+  .decision .why{font-size:13.5px;color:var(--muted);margin-top:6px;}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0;}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+  .kpi .v{font-size:21px;font-weight:800;color:var(--amber);white-space:nowrap;}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px;}
+  th{text-align:left;padding:10px 12px;background:var(--surface-2);color:var(--amber);font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap;}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);color:#cdd3de;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;}
+  tr.total td{background:var(--surface-2);font-weight:700;color:var(--text);}
+
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.6px;}
+  .pill.ok{background:rgba(74,222,128,.12);color:var(--green);}
+  .pill.miss{background:rgba(248,113,113,.12);color:var(--red);}
+  .pill.part{background:rgba(245,184,46,.12);color:var(--amber);}
+  .pill.info{background:rgba(96,165,250,.12);color:var(--blue);}
+
+  .flow{display:flex;align-items:stretch;gap:0;margin:22px 0;flex-wrap:wrap;}
+  .flow .node{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+  .flow .node .t{font-weight:700;font-size:14px;}
+  .flow .node .d{font-size:12.5px;color:var(--muted);margin-top:4px;}
+  .flow .arrow{display:flex;align-items:center;padding:0 10px;color:var(--amber);font-size:20px;font-weight:700;}
+
+  .chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:20px 0;}
+  .chart-box h4{font-size:14px;color:var(--muted);margin-bottom:18px;font-weight:600;}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--muted);margin-top:12px;}
+  .legend span::before{content:"●";margin-right:5px;}
+  .legend .opt::before{color:var(--green);}
+  .legend .base::before{color:var(--amber);}
+  .legend .pes::before{color:var(--red);}
+  .legend .infra::before{color:var(--blue);}
+  .legend .sueldos::before{color:var(--purple);}
+
+  /* Pricing cards */
+  .plan-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0;}
+  .plan-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 16px;text-align:center;position:relative;overflow:hidden;}
+  .plan-card.highlight{border-color:var(--amber);background:linear-gradient(160deg,#1e1a0d 0%,var(--surface) 60%);}
+  .plan-card.highlight::before{content:"★ Popular";position:absolute;top:0;right:0;background:var(--amber);color:#0f1115;font-size:10px;font-weight:800;padding:3px 10px;border-radius:0 14px 0 8px;letter-spacing:.5px;}
+  .plan-card .plan-name{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+  .plan-card .plan-price{font-size:30px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:4px;}
+  .plan-card .plan-price small{font-size:13px;font-weight:400;color:var(--muted);}
+  .plan-card .plan-price.free{color:var(--green);}
+  .plan-card .plan-list{list-style:none;margin:14px 0 0;padding:0;text-align:left;}
+  .plan-card .plan-list li{font-size:12.5px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+  .plan-card .plan-list li:last-child{border-bottom:none;}
+  .plan-card .plan-list li::before{content:"→";color:var(--amber);font-size:11px;flex-shrink:0;}
+
+  /* Break-even milestones */
+  .milestones{display:flex;gap:0;margin:24px 0;position:relative;}
+  .milestones::before{content:"";position:absolute;top:28px;left:0;right:0;height:3px;background:var(--border);}
+  .milestone{flex:1;text-align:center;position:relative;padding-top:0;}
+  .milestone .dot{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin:0 auto 10px;border:3px solid var(--border);background:var(--surface);position:relative;z-index:1;}
+  .milestone.done .dot{background:var(--amber);border-color:var(--amber);color:#0f1115;}
+  .milestone.reach .dot{background:var(--surface-2);border-color:var(--blue);color:var(--blue);}
+  .milestone.goal .dot{background:var(--surface-2);border-color:var(--purple);color:var(--purple);}
+  .milestone .label{font-size:12px;font-weight:700;color:var(--text);}
+  .milestone .sub{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;}
+
+  /* Margin visualization */
+  .margin-vis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0;}
+  .margin-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;overflow:hidden;}
+  .margin-card .mc-title{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;}
+  .margin-bar{height:140px;display:flex;flex-direction:column;border-radius:8px;overflow:hidden;}
+  .margin-bar .seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;transition:flex .3s;}
+  .margin-bar .seg.profit{background:var(--green);color:#0f1115;flex:92;}
+  .margin-bar .seg.gateway{background:#f59e0b;color:#0f1115;flex:4;}
+  .margin-bar .seg.infra{background:#e11d48;color:#fff;flex:4;}
+  .margin-legend{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .margin-legend span{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+  .margin-legend span i{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+  .mc-amount{font-size:20px;font-weight:800;color:var(--amber);margin-bottom:2px;}
+  .mc-pct{font-size:13px;color:var(--green);font-weight:700;}
+
+  /* Infra vs MRR */
+  .infra-scale{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0;}
+  .infra-col{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+  .infra-col .stage-name{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;}
+  .infra-col .cost-bar-wrap{height:120px;display:flex;align-items:flex-end;justify-content:center;gap:10px;}
+  .infra-col .bar-unit{width:36px;border-radius:6px 6px 0 0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:4px;}
+  .infra-col .bar-unit .val{font-size:10px;font-weight:800;color:#0f1115;writing-mode:horizontal-tb;}
+  .infra-col .bar-label-b{font-size:11px;color:var(--muted);margin-top:5px;}
+
+  .roadmap{margin:20px 0;}
+  .phase{display:flex;gap:18px;position:relative;padding-bottom:26px;}
+  .phase::before{content:"";position:absolute;left:17px;top:36px;bottom:0;width:2px;background:var(--border);}
+  .phase:last-child::before{display:none;}
+  .phase .dot{width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:2px solid var(--amber);color:var(--amber);font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+  .phase .body h4{font-size:15.5px;margin-bottom:4px;}
+  .phase .body .when{font-size:12px;color:var(--amber);text-transform:uppercase;letter-spacing:1px;}
+  .phase .body p{font-size:14px;color:var(--muted);margin:6px 0 0;}
+
+  .footnote{color:var(--muted);font-size:13px;margin-top:8px;}
+  .check{color:var(--green);font-weight:700;}
+  .cross{color:var(--red);font-weight:700;}
+  svg text{font-family:inherit;}
+
+  .sprint{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:20px 0;}
+  .sprint-weeks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;}
+  .sprint-week{background:var(--surface-2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);border-top:3px solid var(--amber);}
+  .sprint-week .wn{font-size:10px;color:var(--amber);font-weight:800;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+  .hire-trigger{display:inline-block;background:rgba(245,184,46,.1);border:1px solid rgba(245,184,46,.3);border-radius:6px;font-size:12px;font-weight:700;color:var(--amber);padding:2px 8px;}
+
+  @media(max-width:720px){
+    .kpis,.plan-cards,.margin-vis,.infra-scale{grid-template-columns:1fr 1fr;}
+    .decision-grid{grid-template-columns:1fr;}
+    .flow{flex-direction:column;}
+    .flow .arrow{transform:rotate(90deg);justify-content:center;padding:4px 0;}
+    .milestones{flex-direction:column;align-items:flex-start;gap:16px;}
+    .milestones::before{display:none;}
+    nav a{font-size:11px;padding:3px 6px;}
+    table{font-size:12px;}
+  }
+  @media print{
+    nav{display:none;}
+    body{background:#fff;color:#111;}
+    :root{--bg:#fff;--surface:#f7f7f8;--surface-2:#efeff1;--border:#ddd;--text:#111;--muted:#555;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><div class="hex"></div><span>iot bee</span></div>
+  <h1>Plan de Negocio &amp; Viabilidad</h1>
+  <p class="subtitle">Modelo de negocio, análisis del mercado colombiano, competidores, costos, escenarios de crecimiento y criterios de corte. Todos los valores en pesos colombianos.</p>
+  <p class="meta">10 de junio de 2026 · TRM oficial $3.588,09 COP/USD · EUR ≈ $4.160 COP · Precios antes de IVA · Ovidio &amp; Mane · Barranquilla, Colombia</p>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#s1">1. Veredicto</a></li>
+    <li><a href="#s2">2. Tesis &amp; modelo</a></li>
+    <li><a href="#s3">3. El cliente</a></li>
+    <li><a href="#s4">4. Flujo de plata</a></li>
+    <li><a href="#s5">5. Mercado CO</a></li>
+    <li><a href="#s6">6. Competidores</a></li>
+    <li><a href="#s7">7. Precios</a></li>
+    <li><a href="#s8">8. Margen 92%</a></li>
+    <li><a href="#s9">9. Pagos &amp; DIAN</a></li>
+    <li><a href="#s10">10. Infraestructura</a></li>
+    <li><a href="#s11">11. Escenarios</a></li>
+    <li><a href="#s12">12. Producto</a></li>
+    <li><a href="#s13">13. Plan 90 días</a></li>
+    <li><a href="#s14">14. Cronograma</a></li>
+    <li><a href="#s15">15. GO / NO-GO</a></li>
+    <li><a href="#s16">16. Límites</a></li>
+    <li><a href="#s17">17. Fuentes</a></li>
+  </ul>
+</nav>
+
+<!-- ─── 1. VEREDICTO ─── -->
+<h2 id="s1"><span class="num">1.</span>Veredicto</h2>
+<div class="verdict">
+  <div class="light">🟡</div>
+  <div>
+    <p style="margin-bottom:8px"><strong>VIABLE como negocio — NO viable (todavía) como reemplazo de salario.</strong></p>
+    <p style="margin-bottom:0">Los números cierran: arrancar cuesta <strong>~$107.000 COP/mes</strong> (menos que un plan de Alegra), el margen bruto supera el 90%, y los competidores internacionales cobran 2–4× más en COP sin canal local ni factura DIAN. El punto de equilibrio de infraestructura se cruza con <strong>2 proyectos vendidos</strong>. Para pagar dos sueldos de $5M COP c/u más infraestructura se necesitan <strong>~52 proyectos activos</strong> (a $213.000 promedio de la mezcla típica), lo que en el escenario base toma 18–30 meses. Conclusión: <strong>móntenlo como negocio paralelo financiado por el primer cliente, con criterios claros de corte a los 6 y 12 meses.</strong></p>
+  </div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">$107.000</div><div class="l">COP/mes costos fijos para arrancar</div></div>
+  <div class="kpi"><div class="v">2 proyectos</div><div class="l">punto de equilibrio de infraestructura</div></div>
+  <div class="kpi"><div class="v">&gt;90%</div><div class="l">margen bruto por proyecto activo</div></div>
+  <div class="kpi"><div class="v">~52 proyectos</div><div class="l">para pagar 2 sueldos de $5M COP + infra</div></div>
+</div>
+
+<!-- ─── 2. TESIS Y MODELO ─── -->
+<h2 id="s2"><span class="num">2.</span>La tesis y las cuatro decisiones del modelo</h2>
+<div class="card accent">
+  <p style="margin:0"><strong>La tesis:</strong> los distribuidores de hardware IoT (Milesight, Dragino, etc.) en LATAM pierden negocios porque venden el sensor pero no tienen cómo entregar los datos al sistema de su cliente. iot bee es ese eslabón: conectores de entrada (MQTT, LoRaWAN, RabbitMQ) → validación de esquemas → la base de datos que el cliente final ya tiene (Postgres, InfluxDB). El integrador revende el servicio con margen y ustedes cobran mensualidad por cada proyecto que él monte. Cada peso que entra es recurrente o financia producto reutilizable.</p>
+</div>
+<div class="decision-grid">
+  <div class="decision">
+    <div class="q">¿Quién paga?</div>
+    <div class="a">Integradores (canal) + empresas finales (directo)</div>
+    <div class="why">El integrador es el comprador principal; la venta directa es secundaria y siempre a precio de lista para no canibalizar el canal.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Cómo se entrega?</div>
+    <div class="a">Cloud multi-tenant compartido</div>
+    <div class="why">Una sola plataforma hospedada por ustedes. Requiere endurecer el aislamiento por organización sobre el control plane PostgreSQL antes de escalar.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Cuál es el nicho de entrada?</div>
+    <div class="a">Integradores/distribuidores de hardware IoT en Colombia</div>
+    <div class="why">Ya hay un prospecto real (distribuidor Milesight, ting.com.co). Cada integrador trae N proyectos repetibles con un solo ciclo de venta.</div>
+  </div>
+  <div class="decision">
+    <div class="q">¿Por qué métrica se cobra?</div>
+    <div class="a">Por proyecto activo del integrador</div>
+    <div class="why">Mensualidad por proyecto/cliente final vivo, escalonada por tamaño. Crecen automáticamente cuando al integrador le va bien.</div>
+  </div>
+</div>
+
+<!-- ─── 3. EL CLIENTE ─── -->
+<h2 id="s3"><span class="num">3.</span>El cliente y su dolor</h2>
+<h3>Cliente primario: el integrador de hardware IoT</h3>
+<p>Empresas que distribuyen e instalan sensores (Milesight, Dragino, RAK, etc.) en Colombia y LATAM. Su negocio es el hardware y la instalación; <strong>su dolor es el software</strong>: cada cliente final les pide que los datos lleguen a su sistema, y hoy eso significa contratar un desarrollo a la medida por proyecto — caro, lento, sin soporte garantizado.</p>
+<ul>
+  <li><strong>Qué compran:</strong> una plataforma donde configuran la ruta sensor → validación → base de datos del cliente final en horas, no meses.</li>
+  <li><strong>Qué revenden:</strong> "servicio de datos" en su cotización con margen (típicamente 1,5–2× el costo de iot bee).</li>
+  <li><strong>Por qué se quedan:</strong> cada proyecto nuevo es más rápido que el anterior; migrar N proyectos andando a otra plataforma es costoso (retención estructural).</li>
+</ul>
+<h3>Cliente secundario: la empresa final</h3>
+<p>Empresas con sensores ya comprados (agro, cadena de frío, industria) que llegan directo. Se les vende siempre a <strong>precio de lista</strong> para que el integrador nunca compita contra ustedes en precio.</p>
+
+<!-- ─── 4. FLUJO DE PLATA ─── -->
+<h2 id="s4"><span class="num">4.</span>Cómo fluye la plata</h2>
+<div class="flow">
+  <div class="node"><div class="t">Cliente final</div><div class="d">paga al integrador el servicio de datos (con margen)</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="t">Integrador</div><div class="d">paga a iot bee por cada proyecto activo en producción</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="t">iot bee</div><div class="d">cubre infra fija y escala con cada proyecto nuevo del canal</div></div>
+</div>
+<p>El integrador entra <strong>gratis</strong> (sandbox, 30 días, 1 proyecto de prueba). Empieza a pagar cuando el proyecto pasa a producción — exactamente cuando él empieza a cobrarle a su cliente.</p>
+<ul>
+  <li><strong>Regla de oro del canal:</strong> precio de lista siempre mayor que precio de canal. Un canal que confía vende por ustedes; uno traicionado los quema en el gremio.</li>
+  <li><strong>Regla del IP:</strong> todo conector o destino nuevo que se construya queda en iot bee. Nunca work-for-hire. El contrato es entre la empresa de ustedes y la del cliente.</li>
+  <li><strong>Setup fee (una vez):</strong> conector nuevo → $5,4–10,8M COP. Financia el roadmap con plata del cliente; el conector queda disponible para todos.</li>
+</ul>
+
+<!-- ─── 5. MERCADO ─── -->
+<h2 id="s5"><span class="num">5.</span>El mercado colombiano</h2>
+<h3>Señales a favor</h3>
+<ul>
+  <li><strong>El segmento comprador existe:</strong> en Colombia el modelo predominante de LoRaWAN es de <em>redes privadas</em> — cada integrador monta su propia red. Hay distribuidores Milesight activos (SIOT Ingeniería, etc.) y proyectos documentados en agro, apicultura y ciudades (CIDEI).</li>
+  <li><strong>Precedente de éxito local:</strong> Ubidots —nacida en Medellín— vende su plataforma IoT al mundo. El modelo está probado en Colombia; ustedes atacan un nicho diferente (ingestión hacia la BD del cliente, no dashboards).</li>
+  <li><strong>Cliente cero ya identificado:</strong> el distribuidor Milesight (contacto de Mane, ting.com.co) tiene equipos comprados, plataforma propia y presupuesto para el core de datos.</li>
+  <li><strong>Precio creíble para el mercado local:</strong> las pymes colombianas pagan $55.000–$320.000 COP/mes por SaaS (Alegra, Loggro). Los precios de iot bee caen dentro de esa banda.</li>
+</ul>
+<h3>Señales en contra</h3>
+<ul>
+  <li>Mercado IoT colombiano <strong>pequeño y de maduración lenta</strong>: los proyectos se deciden por relación, no por marketing digital. Crecimiento lento pero también barato (CAC bajo por canal).</li>
+  <li>ThingsBoard Community Edition (gratis, Apache 2.0) es la opción del integrador técnico tacaño. La defensa: cero operación de servidores, soporte en español, factura DIAN.</li>
+</ul>
+
+<!-- ─── 6. COMPETIDORES ─── -->
+<h2 id="s6"><span class="num">6.</span>Competidores: precios en COP verificados</h2>
+<p>Precios verificados 10-jun-2026. Ninguno tiene facturación colombiana ni soporte local en español — esa es la brecha de iot bee. <em>Nota: Datacake, Ubidots y TagoIO venden dashboards; iot bee vende entrega de datos al sistema del cliente. No son sustitutos perfectos, pero son el ancla mental de precio del comprador.</em></p>
+
+<div class="chart-box">
+  <h4>¿Cuánto cobra cada competidor por su plan de entrada pago? (COP/mes) — iot bee es el más barato con factura local</h4>
+  <svg viewBox="0 0 720 310" width="100%" style="max-width:720px">
+    <!-- grid lines -->
+    <line x1="160" y1="10" x2="160" y2="270" stroke="#2a2f3a" stroke-width="1"/>
+    <line x1="280" y1="10" x2="280" y2="270" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="400" y1="10" x2="400" y2="270" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="520" y1="10" x2="520" y2="270" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="640" y1="10" x2="640" y2="270" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <!-- axis labels -->
+    <text x="160" y="286" fill="#9aa3b2" font-size="10" text-anchor="middle">$0</text>
+    <text x="280" y="286" fill="#9aa3b2" font-size="10" text-anchor="middle">$100K</text>
+    <text x="400" y="286" fill="#9aa3b2" font-size="10" text-anchor="middle">$200K</text>
+    <text x="520" y="286" fill="#9aa3b2" font-size="10" text-anchor="middle">$300K</text>
+    <text x="640" y="286" fill="#9aa3b2" font-size="10" text-anchor="middle">$400K</text>
+
+    <!-- iot bee S canal — amber highlight -->
+    <rect x="160" y="14" width="35" height="28" rx="4" fill="#f5b82e"/>
+    <text x="155" y="32" fill="#e8eaf0" font-size="11" text-anchor="end" font-weight="700">iot bee S canal</text>
+    <text x="200" y="32" fill="#0f1115" font-size="11" font-weight="800">$99.000</text>
+    <text x="200" y="44" fill="#f5b82e" font-size="10">→ precio de canal, con factura DIAN</text>
+
+    <!-- Datacake Hobby -->
+    <rect x="160" y="56" width="37" height="26" rx="4" fill="#3a4150"/>
+    <text x="155" y="72" fill="#9aa3b2" font-size="11" text-anchor="end">Datacake Hobby</text>
+    <text x="202" y="72" fill="#cdd3de" font-size="11">$104.000</text>
+    <text x="202" y="83" fill="#6b7280" font-size="10">25 disp. · sin factura local · €25/mes</text>
+
+    <!-- TB Prototype -->
+    <rect x="160" y="98" width="63" height="26" rx="4" fill="#3a4150"/>
+    <text x="155" y="114" fill="#9aa3b2" font-size="11" text-anchor="end">ThingsBoard Prototype</text>
+    <text x="228" y="114" fill="#cdd3de" font-size="11">$176.000</text>
+    <text x="228" y="125" fill="#6b7280" font-size="10">50 disp. · US$49/mes</text>
+
+    <!-- TagoIO Starter -->
+    <rect x="160" y="138" width="63" height="26" rx="4" fill="#3a4150"/>
+    <text x="155" y="154" fill="#9aa3b2" font-size="11" text-anchor="end">TagoIO Starter</text>
+    <text x="228" y="154" fill="#cdd3de" font-size="11">$176.000</text>
+    <text x="228" y="165" fill="#6b7280" font-size="10">100 disp. · US$49/mes</text>
+
+    <!-- Ubidots Professional -->
+    <rect x="160" y="178" width="128" height="26" rx="4" fill="#3a4150"/>
+    <text x="155" y="194" fill="#9aa3b2" font-size="11" text-anchor="end">Ubidots Professional</text>
+    <text x="293" y="194" fill="#cdd3de" font-size="11">$355.000</text>
+    <text x="293" y="205" fill="#6b7280" font-size="10">50 disp. · US$99/mes</text>
+
+    <!-- Datacake Light -->
+    <rect x="160" y="218" width="238" height="26" rx="4" fill="#3a4150"/>
+    <text x="155" y="234" fill="#9aa3b2" font-size="11" text-anchor="end">Datacake Light</text>
+    <text x="403" y="234" fill="#cdd3de" font-size="11">$661.000</text>
+    <text x="403" y="245" fill="#6b7280" font-size="10">50 disp. + white label · €159/mes</text>
+  </svg>
+  <p class="footnote">iot bee es el único con facturación DIAN, soporte en español y precio en COP. Los competidores de mayor precio (Ubidots, Datacake) son plataformas de dashboards — no hacen lo mismo.</p>
+</div>
+
+<!-- ─── 7. PRECIOS ─── -->
+<h2 id="s7"><span class="num">7.</span>Precios iot bee en COP — estructura por franja</h2>
+<p>Calibrados para que el integrador revenda con ~2× de margen. <strong>Todos antes de IVA (19%)</strong>. Validar con el primer integrador antes de fijarlos en el producto.</p>
+
+<div class="plan-cards">
+  <div class="plan-card">
+    <div class="plan-name">Sandbox</div>
+    <div class="plan-price free">$0</div>
+    <ul class="plan-list">
+      <li>1 proyecto de prueba</li>
+      <li>30 días</li>
+      <li>5 dispositivos · 50k msgs</li>
+      <li>Sin tarjeta de crédito</li>
+    </ul>
+  </div>
+  <div class="plan-card">
+    <div class="plan-name">Proyecto S</div>
+    <div class="plan-price">$99.000<small>/mes canal</small></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Lista: $169.000</div>
+    <ul class="plan-list">
+      <li>~25 dispositivos</li>
+      <li>500k msgs/mes</li>
+      <li>Soporte básico</li>
+    </ul>
+  </div>
+  <div class="plan-card highlight">
+    <div class="plan-name">Proyecto M</div>
+    <div class="plan-price">$279.000<small>/mes canal</small></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Lista: $449.000</div>
+    <ul class="plan-list">
+      <li>~100 dispositivos</li>
+      <li>2M msgs/mes</li>
+      <li>Soporte prioritario</li>
+    </ul>
+  </div>
+  <div class="plan-card">
+    <div class="plan-name">Proyecto L</div>
+    <div class="plan-price">$699.000<small>/mes canal</small></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Lista: $1.149.000</div>
+    <ul class="plan-list">
+      <li>~500 dispositivos</li>
+      <li>10M msgs/mes</li>
+      <li>Soporte dedicado</li>
+    </ul>
+  </div>
+</div>
+<ul>
+  <li><strong>Qué es un "proyecto activo":</strong> pipeline desplegado en producción = factura mensual, independiente de si el integrador ya le cobró a su cliente final (ver criterio NO-GO en §15).</li>
+  <li><strong>Excedentes:</strong> superar los dispositivos o mensajes del plan 2 meses seguidos → upgrade automático a la franja siguiente, con aviso previo (nunca sorpresa en la factura). Requiere la medición por proyecto de §12.</li>
+  <li><strong>Descuento volumen canal:</strong> 10+ proyectos −15% · 25+ proyectos −25%.</li>
+  <li><strong>Anual prepagado:</strong> paga 10 meses, recibe 12 (mejora caja, baja churn).</li>
+  <li><strong>Los descuentos no se acumulan:</strong> aplica el mayor entre volumen y anual prepagado, nunca ambos (combinados llevarían el Proyecto S a ~$62.000 — 37% por debajo de lista de canal).</li>
+  <li><strong>Ajuste anual de precios:</strong> pactar en contrato indexación por IPC Colombia o variación de TRM (el mayor) — la infraestructura se paga en USD.</li>
+  <li><strong>Setup fee (una vez):</strong> $5,4–10,8M COP por conector nuevo. Queda en el producto.</li>
+  <li><strong>Chequeo de sanidad:</strong> el integrador revende Proyecto M a ~$500.000–700.000/mes. Más barato que ThingsBoard Pilot ($535.000) sin que el integrador opere servidores, y con margen ~2× para él.</li>
+</ul>
+
+<!-- ─── 8. MARGEN 92% ─── -->
+<h2 id="s8"><span class="num">8.</span>El margen del 92% — por qué este negocio es tan eficiente</h2>
+<p>El costo marginal de servir un proyecto nuevo es casi cero: el pipeline Rust ya está corriendo, el servidor ya está pagado, el proyecto extra solo usa unos milisegundos más de CPU. Así queda el desglose de cada peso que entra:</p>
+
+<div class="margin-vis">
+  <div class="margin-card">
+    <div class="mc-title">Proyecto S</div>
+    <div class="mc-amount">$90.600 netos</div>
+    <div class="mc-pct">de cada $99.000</div>
+    <div class="margin-bar" style="margin-top:12px">
+      <div class="seg profit" style="flex:90">92%</div>
+      <div class="seg gateway" style="flex:3">4%</div>
+      <div class="seg infra" style="flex:3">4%</div>
+    </div>
+    <div class="margin-legend">
+      <span><i style="background:var(--green)"></i>Ganancia $90.600</span>
+      <span><i style="background:#f59e0b"></i>Wompi $3.400</span>
+      <span><i style="background:#e11d48"></i>Infra $5.000</span>
+    </div>
+  </div>
+  <div class="margin-card">
+    <div class="mc-title">Proyecto M</div>
+    <div class="mc-amount">$257.400 netos</div>
+    <div class="mc-pct">de cada $279.000</div>
+    <div class="margin-bar" style="margin-top:12px">
+      <div class="seg profit" style="flex:92">92%</div>
+      <div class="seg gateway" style="flex:4">3%</div>
+      <div class="seg infra" style="flex:4">4%</div>
+    </div>
+    <div class="margin-legend">
+      <span><i style="background:var(--green)"></i>Ganancia $257.400</span>
+      <span><i style="background:#f59e0b"></i>Wompi $9.600</span>
+      <span><i style="background:#e11d48"></i>Infra $12.000</span>
+    </div>
+  </div>
+  <div class="margin-card">
+    <div class="mc-title">Proyecto L</div>
+    <div class="mc-amount">$640.000 netos</div>
+    <div class="mc-pct">de cada $699.000</div>
+    <div class="margin-bar" style="margin-top:12px">
+      <div class="seg profit" style="flex:92">92%</div>
+      <div class="seg gateway" style="flex:4">3%</div>
+      <div class="seg infra" style="flex:4">5%</div>
+    </div>
+    <div class="margin-legend">
+      <span><i style="background:var(--green)"></i>Ganancia $640.000</span>
+      <span><i style="background:#f59e0b"></i>Wompi $24.000</span>
+      <span><i style="background:#e11d48"></i>Infra $35.000</span>
+    </div>
+  </div>
+</div>
+<div class="card accent">
+  <p style="margin:0">Para comparación: un negocio de construcción tiene márgenes del 10–15%, un restaurante del 5–10%. Software SaaS con margen del 90%+ es el estándar de los mejores negocios del mundo. <strong>Cada proyecto adicional que entra es casi 100% ganancia</strong> — el desafío es conseguir los proyectos, no el costo de servirlos.</p>
+</div>
+
+<!-- ─── 9. PAGOS Y DIAN ─── -->
+<h2 id="s9"><span class="num">9.</span>Pagos y facturación en Colombia</h2>
+<table>
+  <tr><th>Opción</th><th>Costo</th><th>Uso para iot bee</th></tr>
+  <tr><td><strong>Wompi</strong> (Bancolombia)</td><td>2,65% + $700 + IVA/transacción · sin fijo mensual</td><td><span class="pill ok">Recomendado</span> para cobros en COP a clientes locales · ≈3,4% efectivo</td></tr>
+  <tr><td><strong>PayU</strong></td><td>~3,49% por transacción exitosa</td><td>Alternativa con cobros recurrentes automáticos nativos</td></tr>
+  <tr><td><strong>Stripe</strong> (ya implementado)</td><td>No opera para personas jurídicas colombianas. Requiere LLC en EE.UU. vía Stripe Atlas (~US$500 una vez)</td><td><span class="pill part">Mantener</span> para clientes que paguen en USD (LATAM / multinacionales)</td></tr>
+  <tr><td><strong>Facturación DIAN</strong></td><td><strong>$0</strong> — "Facturación Gratuita DIAN", documentos ilimitados</td><td>Obligatoria para persona jurídica que vende servicios. Costo ≈ cero</td></tr>
+</table>
+<div class="card warn">
+  <p style="margin:0">El primer cliente colombiano se cobra con Wompi/PayU + factura DIAN. La activación manual de licencias (ya existe en la plataforma) permite arrancar facturando manualmente mientras se integra la pasarela local. Los precios se cotizan <strong>+ IVA 19%</strong>. En B2B aplica retención en la fuente — consultar con contador antes de la primera factura, afecta el flujo de caja.</p>
+</div>
+
+<!-- ─── 10. INFRAESTRUCTURA ─── -->
+<h2 id="s10"><span class="num">10.</span>Costos de infraestructura — por qué son casi invisibles</h2>
+<p>Base: DigitalOcean. Hetzner es ~30–40% más barato con latencia similar para Colombia. Valores en COP a TRM $3.588.</p>
+
+<div class="infra-scale">
+  <div class="infra-col">
+    <div class="stage-name">Etapa 0 · Piloto<br><span style="font-size:11px;color:var(--amber)">1–10 proyectos</span></div>
+    <div class="cost-bar-wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:20px;background:#3b82f6;width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;">
+          <span style="font-size:9px;color:#fff;font-weight:800">$107K</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">Costo</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:75px;background:var(--amber);width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;">
+          <span style="font-size:9px;color:#0f1115;font-weight:800">$396K</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">4 × Proy. S</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:0;text-align:center">4 proyectos S o 2 M cubren todos los costos fijos</p>
+  </div>
+  <div class="infra-col">
+    <div class="stage-name">Etapa 1 · Crecimiento<br><span style="font-size:11px;color:var(--amber)">10–40 proyectos</span></div>
+    <div class="cost-bar-wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:30px;background:#3b82f6;width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;">
+          <span style="font-size:9px;color:#fff;font-weight:800">$390K</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">Costo</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:120px;background:var(--amber);width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;">
+          <span style="font-size:9px;color:#0f1115;font-weight:800">$3,1M</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">12 × Proy. M</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:0;text-align:center">12 proyectos M cubren la infra con Postgres gestionado</p>
+  </div>
+  <div class="infra-col">
+    <div class="stage-name">Etapa 2 · Escala<br><span style="font-size:11px;color:var(--amber)">40–150 proyectos</span></div>
+    <div class="cost-bar-wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:55px;background:#3b82f6;width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;">
+          <span style="font-size:9px;color:#fff;font-weight:800">$962K</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">Costo</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="bar-unit" style="height:120px;background:var(--amber);width:44px;border-radius:6px 6px 0 0;justify-content:center;align-items:center;display:flex;padding:0 4px;">
+          <span style="font-size:9px;color:#0f1115;font-weight:800;text-align:center">$8,5M+</span>
+        </div>
+        <div class="bar-label-b" style="margin-top:4px;font-size:11px;color:var(--muted)">40 proyectos</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:0;text-align:center">Con 40 proyectos (mezcla típica), la infra HA representa ~11% del MRR</p>
+  </div>
+</div>
+
+<h3>Desglose mensual — Etapa 0 (Piloto)</h3>
+<table>
+  <tr><th>Rubro</th><th>Detalle</th><th class="r">USD</th><th class="r">COP/mes</th></tr>
+  <tr><td>VPS aplicación</td><td>2 vCPU / 4 GB / 80 GB SSD</td><td class="r">$24,00</td><td class="r">$86.100</td></tr>
+  <tr><td>Backups/snapshots diarios</td><td>20% del droplet</td><td class="r">$4,80</td><td class="r">$17.200</td></tr>
+  <tr><td>Dominio .com</td><td>~US$13/año prorrateado</td><td class="r">$1,10</td><td class="r">$3.900</td></tr>
+  <tr><td>DNS + CDN + TLS</td><td>Cloudflare plan gratuito</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr><td>Email transaccional</td><td>Resend/Brevo tier gratuito (&lt;3.000 correos)</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr><td>Monitoreo / alertas</td><td>UptimeRobot + endpoint /metrics ya existente</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr class="total"><td colspan="2">Total mensual etapa piloto</td><td class="r">~$30</td><td class="r">~$107.000</td></tr>
+</table>
+
+<!-- ─── 11. ESCENARIOS ─── -->
+<h2 id="s11"><span class="num">11.</span>Escenarios de crecimiento y punto de equilibrio</h2>
+
+<h3>El camino a los hitos clave</h3>
+<div class="milestones">
+  <div class="milestone done">
+    <div class="dot">2</div>
+    <div class="label">2 proyectos</div>
+    <div class="sub">Infra cubierta<br>Mes 2–4</div>
+  </div>
+  <div class="milestone reach">
+    <div class="dot">25</div>
+    <div class="label">25 proyectos</div>
+    <div class="sub">1 sueldo de $5M<br>Mes 22–26 (base)</div>
+  </div>
+  <div class="milestone goal">
+    <div class="dot">52</div>
+    <div class="label">~52 proyectos</div>
+    <div class="sub">2 sueldos de $5M + infra<br>Mes 30+ (base)<br>Mes ~20 (optimista)</div>
+  </div>
+</div>
+<p class="footnote">Mezcla típica 60% S / 30% M / 10% L = $213.000 COP promedio por proyecto a precio de canal, antes de descuentos por volumen (con −25% baja a ~$160.000 y corre los hitos). Los setup fees ($5,4–10,8M por conector) no están en estos números y adelantan los hitos significativamente.</p>
+
+<h3>Tres escenarios a 24 meses</h3>
+<table>
+  <tr><th>Escenario</th><th>Supuesto</th><th class="r">Proyectos mes 24</th><th class="r">MRR mes 24</th></tr>
+  <tr><td>🔴 <strong>Pesimista</strong></td><td>Solo el distribuidor Milesight, crece a 6 proyectos (4S + 2M)</td><td class="r">6</td><td class="r">$954.000</td></tr>
+  <tr><td>🟡 <strong>Base</strong></td><td>3 integradores + 1 directo; 24 proyectos (14S + 8M + 2L)</td><td class="r">24</td><td class="r">$5.000.000</td></tr>
+  <tr><td>🟢 <strong>Optimista</strong></td><td>6 integradores + 3 directos; 60 proyectos (30S + 22M + 8L)</td><td class="r">60</td><td class="r">$14.700.000</td></tr>
+</table>
+
+<div class="chart-box">
+  <h4>MRR proyectado a 24 meses vs. líneas de referencia (millones COP/mes)</h4>
+  <svg viewBox="0 0 800 340" width="100%" style="max-width:800px">
+    <!-- grid horizontals -->
+    <line x1="40" y1="290" x2="760" y2="290" stroke="#2a2f3a" stroke-width="1"/>
+    <line x1="40" y1="203" x2="760" y2="203" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="40" y1="117" x2="760" y2="117" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="40" y1="30" x2="760" y2="30" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <!-- labels Y -->
+    <text x="34" y="294" fill="#9aa3b2" font-size="11" text-anchor="end">$0</text>
+    <text x="34" y="207" fill="#9aa3b2" font-size="11" text-anchor="end">$5M</text>
+    <text x="34" y="121" fill="#9aa3b2" font-size="11" text-anchor="end">$10M</text>
+    <text x="34" y="34" fill="#9aa3b2" font-size="11" text-anchor="end">$15M</text>
+    <!-- labels X -->
+    <text x="40" y="312" fill="#9aa3b2" font-size="11">mes 0</text>
+    <text x="220" y="312" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 6</text>
+    <text x="400" y="312" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 12</text>
+    <text x="580" y="312" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 18</text>
+    <text x="760" y="312" fill="#9aa3b2" font-size="11" text-anchor="end">mes 24</text>
+    <!-- reference lines -->
+    <line x1="40" y1="99" x2="760" y2="99" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="6,5"/>
+    <text x="755" y="92" fill="#c084fc" font-size="11" text-anchor="end">2 sueldos + infra ≈ $11M</text>
+    <line x1="40" y1="203" x2="760" y2="203" stroke="#60a5fa" stroke-width="1" stroke-dasharray="3,5" opacity="0.4"/>
+    <text x="755" y="196" fill="#60a5fa" font-size="11" text-anchor="end" opacity="0.7">1 sueldo + infra ≈ $5,5M</text>
+    <!-- infra cost line -->
+    <polyline points="40,289 200,289 200,287 450,287 450,284 760,284" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6,5"/>
+    <!-- scenario lines -->
+    <polyline points="40,290 130,285 220,281 400,278 580,275 760,273" fill="none" stroke="#f87171" stroke-width="2.5"/>
+    <polyline points="40,290 130,281 220,269 400,247 580,224 760,203" fill="none" stroke="#f5b82e" stroke-width="2.5"/>
+    <polyline points="40,290 130,276 220,255 400,195 580,125 760,35" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+    <!-- end dots -->
+    <circle cx="760" cy="273" r="5" fill="#f87171"/>
+    <circle cx="760" cy="203" r="5" fill="#f5b82e"/>
+    <circle cx="760" cy="35" r="5" fill="#4ade80"/>
+    <!-- end labels -->
+    <text x="756" y="270" fill="#f87171" font-size="10" text-anchor="end">Pesimista: $0,95M</text>
+    <text x="756" y="218" fill="#f5b82e" font-size="10" text-anchor="end">Base: $5M</text>
+    <text x="756" y="49" fill="#4ade80" font-size="10" text-anchor="end">Optimista: $14,7M</text>
+  </svg>
+  <div class="legend">
+    <span class="opt">Optimista</span>
+    <span class="base">Base</span>
+    <span class="pes">Pesimista</span>
+    <span class="infra">Infraestructura (escalonada)</span>
+    <span class="sueldos">2 sueldos + infra</span>
+  </div>
+  <p class="footnote">En los tres escenarios el MRR cruza la línea de infraestructura antes del mes 6. La clave: los setup fees ($5,4–10,8M por conector vendido) no aparecen aquí — cada conector nuevo adelanta los hitos de sueldo varios meses.</p>
+</div>
+
+<div class="card accent">
+  <p style="margin:0"><strong>La implicación honesta:</strong> este negocio no exige renunciar a nada para arrancar, y tampoco da para vivir de él antes del año 2. El camino racional: mantener ingresos actuales, financiar el arranque con el setup fee del primer cliente. <strong>La decisión de dedicación full-time la dispara una métrica: cuando el MRR sostenga 6 meses seguidos por encima de $5,5M, uno de los dos se pasa de tiempo completo.</strong></p>
+</div>
+
+<!-- ─── 12. ESTADO DEL PRODUCTO ─── -->
+<h2 id="s12"><span class="num">12.</span>Lo que el modelo le exige al producto</h2>
+<p>Estado real del código auditado directamente en el repositorio:</p>
+<table>
+  <tr><th>Capacidad</th><th>Estado hoy</th><th>Por qué la exige el modelo</th></tr>
+  <tr><td>Pipeline RabbitMQ → validación → InfluxDB</td><td><span class="pill ok">Funciona</span></td><td>Base técnica probada de extremo a extremo</td></tr>
+  <tr><td>Billing Stripe + activación manual de licencias</td><td><span class="pill ok">Funciona</span></td><td>Cobro recurrente; licencia manual para pilotos mientras no se integra Wompi</td></tr>
+  <tr style="background:rgba(248,113,113,.05)"><td><strong>Consumer MQTT (TLS + auth)</strong></td><td><span class="pill miss">Stub</span></td><td>Demo con sensor 4G y gateway Milesight — <strong>camino crítico #1</strong></td></tr>
+  <tr style="background:rgba(248,113,113,.05)"><td><strong>Destino Postgres</strong></td><td><span class="pill miss">No existe</span></td><td>Los clientes finales tienen Postgres; el trait ya está diseñado para extenderse</td></tr>
+  <tr><td>Noción de "proyecto" + conteo dispositivos/msgs</td><td><span class="pill miss">No existe</span></td><td>Es la métrica de cobro S/M/L — sin medición no se puede facturar ni aplicar topes</td></tr>
+  <tr><td>Aislamiento multi-tenant por organización</td><td><span class="pill part">Parcial</span></td><td>Instancia compartida: endurecer el control plane PostgreSQL antes de escalar</td></tr>
+  <tr><td>Backups + TLS documentado</td><td><span class="pill miss">No existe</span></td><td>Requisito mínimo antes de datos de un cliente que paga (1–2 días de trabajo)</td></tr>
+  <tr><td>Pasarela Wompi/PayU</td><td><span class="pill miss">No existe</span></td><td>Para cobros en COP; arrancar con activación manual mientras tanto</td></tr>
+  <tr><td>LoRaWAN directo (ChirpStack/TTN/webhook HTTP)</td><td><span class="pill miss">No existe</span></td><td>Fase 2 — el MQTT del gateway Milesight cubre el corto plazo</td></tr>
+  <tr><td>White-label (logo/dominio del integrador)</td><td><span class="pill miss">No existe</span></td><td>Palanca de retención del canal — fase 3, cobrable como add-on</td></tr>
+</table>
+<div class="card ok">
+  <p style="margin:0"><strong>Dato técnico que reduce el riesgo de la demo:</strong> los gateways LoRaWAN de Milesight (serie UG6x) publican los payloads decodificados vía MQTT. Implementando el consumer MQTT se cubren los dos equipos del cliente. La demo concreta es: consumer MQTT + writer Postgres — el resto de la tubería (validación, actores, supervisión, réplicas) ya existe y funciona.</p>
+</div>
+
+<!-- ─── 13. PLAN 90 DÍAS ─── -->
+<h2 id="s13"><span class="num">13.</span>Plan de 90 días</h2>
+<div class="roadmap">
+  <div class="phase">
+    <div class="dot">1</div>
+    <div class="body">
+      <div class="when">Días 1–30 · La demo que vende</div>
+      <h4>Consumer MQTT + writer Postgres + demo con hardware real del cliente</h4>
+      <p>Implementar MQTT (TLS/auth) y el destino Postgres. Demo en vivo: sensor publicando → validación → tabla Postgres del cliente. Activar backups y TLS en el servidor. En paralelo: definir el acuerdo (setup fee + suscripción + IP de iot bee) antes de la reunión formal.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot">2</div>
+    <div class="body">
+      <div class="when">Días 31–60 · Primer contrato firmado</div>
+      <h4>Cerrar al distribuidor como design partner pagando</h4>
+      <p>Piloto en producción con los 3 equipos. Activación con licencia manual (ya existe en la plataforma) mientras se configura el billing por proyecto. Validar con ellos los precios S/M/L: ¿cuánto le cobran al cliente final? El precio de ellos define el techo del de ustedes.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot">3</div>
+    <div class="body">
+      <div class="when">Días 61–90 · Repetibilidad</div>
+      <h4>Entidad "proyecto" + endurecer multi-tenant + segundo integrador</h4>
+      <p>Construir la noción de proyecto con conteo de dispositivos y mensajes (la métrica de cobro S/M/L). Planear migración del control-plane a Postgres. Con el caso de estudio del primer cliente, salir a buscar 2–3 distribuidores del gremio Milesight/Dragino — el primer cliente puede dar referencias como parte del precio fundador.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 14. CRONOGRAMA ─── -->
+<h2 id="s14"><span class="num">14.</span>Cronograma: lanzamiento, contrataciones y salida de empresa</h2>
+<p>Fecha ancla: <strong>20 de julio de 2026</strong> — 40 días para tener MQTT + Postgres listos y la primera demo en producción con hardware Milesight. Los hitos de contratación no tienen fecha fija: se disparan cuando el MRR alcanza un umbral sostenido.</p>
+
+<h3>Sprint de lanzamiento — 40 días (10 jun → 20 jul 2026)</h3>
+<div class="sprint">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+    <strong>🚀 Lanzamiento: 20 de julio de 2026</strong>
+    <span style="color:var(--amber);font-weight:700;font-size:14px;">40 días · camino crítico</span>
+  </div>
+  <div class="sprint-weeks">
+    <div class="sprint-week">
+      <div class="wn">Sem 1–2 · 10–23 jun</div>
+      Consumer MQTT con TLS + autenticación — el bloqueador principal para la demo
+    </div>
+    <div class="sprint-week">
+      <div class="wn">Sem 3 · 24–30 jun</div>
+      Writer Postgres + hardening básico de aislamiento multi-tenant por organización
+    </div>
+    <div class="sprint-week">
+      <div class="wn">Sem 4–5 · 1–14 jul</div>
+      Integración con hardware Milesight real + corrección de issues + backups + TLS en servidor
+    </div>
+    <div class="sprint-week">
+      <div class="wn">Sem 6 · 15–20 jul</div>
+      Deploy producción · reunión/demo con distribuidor · propuesta formal con precios S/M/L y setup fee
+    </div>
+  </div>
+</div>
+
+<h3>Hitos post-lanzamiento</h3>
+<div class="roadmap">
+  <div class="phase">
+    <div class="dot" style="background:var(--amber);border-color:var(--amber);color:#0f1115;">★</div>
+    <div class="body">
+      <div class="when">20 de julio de 2026 — Mes 0</div>
+      <h4>Lanzamiento oficial + primera propuesta formal</h4>
+      <p>Demo en vivo: sensor Milesight → MQTT → validación de esquema → Postgres del cliente. Deploy en VPS piloto ($107.000/mes). Contrato con setup fee $5,4–10,8M + suscripción mensual S/M/L.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot" style="border-color:var(--green);color:var(--green);">1</div>
+    <div class="body">
+      <div class="when">Agosto – Septiembre 2026 — Mes 1–2</div>
+      <h4>Primer contrato firmado + setup fee cobrado</h4>
+      <p>El distribuidor Milesight firma. Setup fee cobrado antes de empezar a configurar. Licencia activada manualmente (ya existe en la plataforma) mientras se integra Wompi. Este ingreso único de $5,4–10,8M financia los meses siguientes de desarrollo.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot" style="border-color:var(--blue);color:var(--blue);">5+</div>
+    <div class="body">
+      <div class="when">Diciembre 2026 – Enero 2027 — Mes 5–7</div>
+      <h4>🧑‍💼 Primer vendedor — comisión pura sin sueldo base</h4>
+      <p>Disparador: <span class="hire-trigger">≥5 proyectos activos</span>. Perfil: alguien del gremio con relaciones reales en distribuidores Milesight/Dragino en Colombia. <em>No un SDR universitario recién egresado.</em></p>
+      <p>Estructura de pago: <strong>20% del primer año de MRR</strong> que cierren. Si cierra 5 proyectos M en el año 1 → la empresa le paga $279.000 × 5 × 12 × 20% = <strong>$3,3M COP en total</strong>. Costo para iot bee si no vende nada: <strong>$0</strong>.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot" style="border-color:var(--purple);color:var(--purple);">12</div>
+    <div class="body">
+      <div class="when">Julio 2027 — Mes 12 · Corte GO/NO-GO</div>
+      <h4>Evaluación de continuidad del negocio</h4>
+      <p>¿MRR ≥ $1.500.000? ¿Segundo integrador pagando? ¿Churn &lt;5%/mes? Si las tres respuestas son no, evaluar pivote o congelamiento. No regalar otro año de desarrollo sin evidencia de tracción. Si sí: acelerar.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot" style="border-color:var(--blue);color:var(--blue);">$3M</div>
+    <div class="body">
+      <div class="when">Q2–Q3 2027 — Mes 9–15</div>
+      <h4>🧑‍💻 Dev fullstack prestación de servicios — $3,5M–5M COP/mes</h4>
+      <p>Disparador: <span class="hire-trigger">MRR ≥ $3M sostenido 2 meses</span> y el cuello de botella es desarrollo de features (no ventas ni soporte). Perfil: mid-senior, <strong>Next.js + REST APIs</strong>. No buscar un Rustacean para el core — eso es dominio de Ovidio por ahora y el riesgo de pasar el conocimiento es alto.</p>
+      <p>Modo: <strong>prestación de servicios</strong> (sin contrato laboral, sin prestaciones, sin liquidación). Pago por entregables mensuales acordados. Rango realista en Colombia 2026: <strong>$3,5M–5M COP/mes</strong> para alguien decente con portfolio. Buscar en comunidades React/Next.js, Platzi, Devmakers CO, LinkedIn Colombia.</p>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="dot" style="border-color:var(--green);color:var(--green);">👤</div>
+    <div class="body">
+      <div class="when">H1 2028 — Mes 20–24 (escenario base)</div>
+      <h4>Primero de los dos sale de la empresa actual — full-time iot bee</h4>
+      <p>Disparador: <span class="hire-trigger">MRR ≥ $11M por 3 meses consecutivos</span>. A esa cifra la empresa cubre cómodamente: infra ~$960K + dev prestación ~$4M + sueldo ~$5M + overhead ~10% ≈ $10,9M/mes total. Queda margen para reinvertir.</p>
+      <p>¿Quién va primero? El que tenga menos ingresos externos estabilizados en ese momento — no tiene que ser el mismo que "lidera" el proyecto.</p>
+    </div>
+  </div>
+  <div class="phase" style="padding-bottom:0;">
+    <div class="dot" style="border-color:var(--amber);color:var(--amber);">👥</div>
+    <div class="body">
+      <div class="when">2029 — Mes 30–36 (escenario base) · Mes 18–22 (optimista)</div>
+      <h4>Ambos full-time — iot bee es el trabajo principal</h4>
+      <p>Disparador: <span class="hire-trigger">MRR ≥ $16M por 3 meses consecutivos</span>. A esa cifra la empresa paga 2 sueldos de $5M + dev + overhead sin apretarse. En el escenario optimista (60 proyectos a mes 24) esto pasa 12–18 meses antes.</p>
+    </div>
+  </div>
+</div>
+
+<h3>Referencia de contrataciones: disparador, modo y pago</h3>
+<table>
+  <tr><th>Rol</th><th>Disparador</th><th>Modo</th><th class="r">Pago COP/mes</th><th>Nota clave</th></tr>
+  <tr>
+    <td><strong>Vendedor / conector de canal</strong></td>
+    <td>≥5 proyectos activos</td>
+    <td>Comisión pura</td>
+    <td class="r">20% año 1 del MRR que cierren</td>
+    <td>No SDR. Relaciones reales en el gremio IoT. Costo $0 si no cierra.</td>
+  </tr>
+  <tr>
+    <td><strong>Dev fullstack prestación</strong></td>
+    <td>MRR ≥ $3M · 2 meses</td>
+    <td>Prestación</td>
+    <td class="r">$3,5M – $5M</td>
+    <td>Next.js + REST. No el core Rust. Entregables mensuales, sin prestaciones legales.</td>
+  </tr>
+  <tr>
+    <td><strong>Primero full-time (socio)</strong></td>
+    <td>MRR ≥ $11M · 3 meses</td>
+    <td>Sueldo de empresa</td>
+    <td class="r">$5M + prestaciones</td>
+    <td>~Mes 20–24 escenario base. Quien tenga menos ingresos externos va primero.</td>
+  </tr>
+  <tr>
+    <td><strong>Segundo full-time (socio)</strong></td>
+    <td>MRR ≥ $16M · 3 meses</td>
+    <td>Sueldo de empresa</td>
+    <td class="r">$5M + prestaciones</td>
+    <td>~Mes 30–36 base. Mes 18–22 optimista. El negocio ya paga 2 sueldos con margen.</td>
+  </tr>
+  <tr>
+    <td><strong>Vendedor base + comisión</strong></td>
+    <td>MRR ≥ $20M · 6 meses</td>
+    <td>Contrato laboral</td>
+    <td class="r">$3M base + 10–15%</td>
+    <td>Cuando hay playbook de ventas probado y el canal supera lo que el comisionista cubre.</td>
+  </tr>
+</table>
+<div class="card accent">
+  <p style="margin:0"><strong>Regla de oro:</strong> nunca contratar anticipando MRR futuro. Solo cuando el umbral ya está sostenido y el cuello de botella que resuelve esa contratación está claro. La primera contratación que se paga con deuda mata el negocio antes de que despegue.</p>
+</div>
+
+<!-- ─── 15. GO / NO-GO ─── -->
+<h2 id="s15"><span class="num">15.</span>GO / NO-GO y riesgos principales</h2>
+<h3>Checklist GO (si esto se cumple, el negocio es viable)</h3>
+<ul>
+  <li><span class="check">✓</span> <strong>Mes 0–2:</strong> el distribuidor Milesight firma el piloto a ≥$99.000 COP/proyecto + setup fee ≥$5,4M. Si no paga el cliente con la necesidad más urgente y la relación más cercana, el precio o la propuesta están mal.</li>
+  <li><span class="check">✓</span> <strong>Mes 6:</strong> piloto en producción y el integrador cotizó iot bee en al menos 2 propuestas a sus clientes finales.</li>
+  <li><span class="check">✓</span> <strong>Mes 9:</strong> segundo integrador pagando (el modelo no depende de una relación personal).</li>
+  <li><span class="check">✓</span> <strong>Mes 12:</strong> MRR ≥ $1.500.000 COP (≈7 proyectos) y churn &lt;5%/mes.</li>
+</ul>
+<h3>Criterios de corte (NO-GO honesto)</h3>
+<ul>
+  <li><span class="cross">✗</span> A los <strong>6 meses</strong> el primer cliente no paga → parar y repensar, no regalar meses adicionales.</li>
+  <li><span class="cross">✗</span> A los <strong>12 meses</strong> no hay segundo integrador pagando → el canal no escala; pivotar a venta directa en cadena de frío portuaria (vertical natural en Barranquilla) o congelar.</li>
+  <li><span class="cross">✗</span> Los integradores solo pagan cuando su cliente les paga → exigir desde el inicio: proyecto desplegado = factura mensual, independiente del cobro del integrador.</li>
+</ul>
+<h3>Riesgos principales</h3>
+<table>
+  <tr><th>Riesgo</th><th>Prob.</th><th>Mitigación</th></tr>
+  <tr><td>Dependencia de un solo integrador los primeros meses</td><td><span class="pill part">Alta</span></td><td>Caso de estudio público desde el día 1; pedir 2 referidos al precio fundador</td></tr>
+  <tr><td>Trabajo gratis disfrazado ("hazme este conector…")</td><td><span class="pill miss">Alta</span></td><td>Regla inquebrantable: conector nuevo = setup fee. Sin excepciones, ni con amigos</td></tr>
+  <tr><td>Multi-tenant compartido sin aislamiento reforzado</td><td><span class="pill miss">Alta si se ignora</span></td><td>Endurecimiento del control plane PostgreSQL antes de escalar</td></tr>
+  <tr><td>ThingsBoard gratis como alternativa del integrador técnico</td><td><span class="pill part">Media</span></td><td>Vender lo que TB gratis no da: cero operación de servidores, soporte en español, factura DIAN</td></tr>
+  <tr><td>Conflicto de interés de Mane (consultor del mismo cliente)</td><td><span class="pill part">Media</span></td><td>Contrato de iot bee como empresa; IP siempre de iot bee, nunca de Mane a título personal</td></tr>
+  <tr><td>Devaluación del COP encarece la infra (cobrada en USD)</td><td><span class="pill info">Media</span></td><td>La infra es &lt;8% del MRR en régimen — incluso TRM a $4.500 no rompe el margen</td></tr>
+</table>
+
+<!-- ─── 15. LÍMITES ─── -->
+<h2 id="s16"><span class="num">16.</span>Lo que NO es este negocio</h2>
+<div class="card warn">
+  <ul style="margin-bottom:0">
+    <li><strong>No es una software factory:</strong> nunca vender horas de desarrollo. Todo trabajo a la medida se empaqueta como setup fee de un conector que queda en el producto.</li>
+    <li><strong>No es una plataforma de dashboards:</strong> no competir con Ubidots/Datacake en visualización. iot bee entrega los datos al sistema del cliente.</li>
+    <li><strong>No es venta única de licencia:</strong> sin mensualidad no hay trato. La activación manual de licencia es para pilotos, no para ventas perpetuas sin renta recurrente.</li>
+    <li><strong>No exige renunciar a nada para arrancar</strong> — pero tampoco se convierte en negocio principal antes del año 2. La disciplina es operar por métricas, no por entusiasmo.</li>
+  </ul>
+</div>
+
+<!-- ─── 16. FUENTES ─── -->
+<h2 id="s17"><span class="num">17.</span>Fuentes y confiabilidad de los datos</h2>
+<ul style="font-size:13.5px">
+  <li><span class="pill ok">Verificado 10-jun-2026</span> <a href="https://ubidots.com/pricing">Ubidots — Pricing</a> · <a href="https://thingsboard.io/pricing/">ThingsBoard — Pricing</a> · <a href="https://datacake.co/pricing">Datacake — Pricing</a> · <a href="https://tago.io/pricing">TagoIO — Pricing</a></li>
+  <li><span class="pill ok">Verificado 10-jun-2026</span> <a href="https://www.noticiascaracol.com/economia/precio-del-dolar-en-colombia-hoy-martes-9-de-junio-de-2026-trm-se-mantiene-en-3-588-09-so35">TRM $3.588,09 (Superfinanciera vía Noticias Caracol)</a> · <a href="https://www.banrep.gov.co/es/glosario/tasa-cambio-trm">Banco de la República</a></li>
+  <li><span class="pill ok">Verificado 10-jun-2026</span> <a href="https://wompi.com/es/co/planes-tarifas/">Wompi — Tarifas (2,65% + $700 + IVA)</a></li>
+  <li><span class="pill part">Primaria, sin re-verificar</span> <a href="https://www.dian.gov.co/impuestos/factura-electronica/como-hacerlo/Paginas/ser-facturador-electronico.aspx">DIAN — Facturación gratuita</a> · <a href="https://www.alegra.com/colombia/contabilidad/precios/">Alegra — Precios</a> · <a href="https://loggro.com/pymes/planes/">Loggro — Planes pymes</a> · <a href="https://betterstack.com/community/guides/web-servers/digitalocean-vs-hetzner/">VPS DigitalOcean vs Hetzner</a></li>
+  <li><span class="pill info">Contexto</span> <a href="https://bismark.net.co/como-avanzan-redes-lpwan/">Redes LPWAN en Colombia</a> · <a href="https://cidei.net/soluciones-iot-con-lorawan-agro-apicultura-ciudades/">CIDEI — Proyectos LoRaWAN Colombia</a> · <a href="https://stripe.com/global">Stripe — Disponibilidad global</a> · <a href="https://cristiantala.com/pasarelas-de-pago-en-latam-2026-la-guia-que-necesitas-antes-de-cobrar-tu-primer-dolar/">Pasarelas de pago LATAM 2026</a></li>
+  <li><span class="pill miss">Fuente débil</span> CAC B2B LATAM ~US$702 — blogs sin metodología. Usar solo como orden de magnitud.</li>
+</ul>
+
+</div>
+</body>
+</html>

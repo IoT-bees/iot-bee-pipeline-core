@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: iot-bee-api
+    runtime: docker
+    rootDir: app
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: iot-bee-postgres
+          property: connectionString
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: RUST_LOG
+        value: info
+      - key: JWT_EXPIRES_IN_HOURS
+        value: "24"
+      - key: AUDIT_RETENTION_DAYS
+        value: "90"
+      # Se definen en Render al crear el servicio. No se guardan en Git.
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+
+databases:
+  - name: iot-bee-postgres
+    databaseName: iot_bee
+    user: iot_bee

@@ -1,0 +1,41 @@
+[package]
+name = "infrastructure"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+domain      = { path = "../domain" }
+logging    = { path = "../logging" }
+sqlx        = { workspace = true }
+tokio       = { workspace = true }
+lapin       = { workspace = true }
+futures-util = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+thiserror   = { workspace = true }
+async-trait = { workspace = true }
+influxdb   = { workspace = true }
+argon2     = { workspace = true }
+jsonwebtoken = { workspace = true }
+reqwest    = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+[dev-dependencies]
+actix-rt = { workspace = true }
+actix-web = { workspace = true }
+chrono = { workspace = true }
+wiremock = "0.6"
+tokio = { workspace = true }
+
+[[test]]
+name = "data_processor"
+path = "test/data_processor.rs"
+
+[[test]]
+name = "influxdb_persistence"
+path = "test/influxdb_persistence.rs"
+
+[[test]]
+name = "webhook_persistence"
+path = "test/webhook_persistence.rs"

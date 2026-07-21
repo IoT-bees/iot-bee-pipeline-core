@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="description" content="Documentación técnica de iot-bee: arquitectura hexagonal y sistema de actores Actix para ingestión IoT." />
+<title>iot-bee · Documentación técnica</title>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+
+<style>
+  :root {
+    --bg:           #0b0f17;
+    --bg-elev-1:    #11172310;
+    --bg-elev-2:    #151c2b;
+    --bg-elev-3:    #1c2438;
+    --border:       #25304a;
+    --border-soft:  #1d2638;
+    --fg:           #e6edf7;
+    --fg-muted:     #9ba8c1;
+    --fg-dim:       #6b7896;
+    --accent:       #f5b301;
+    --accent-soft:  #f5b30122;
+    --accent-line:  #f5b30166;
+    --ok:           #4ade80;
+    --warn:         #fbbf24;
+    --danger:       #f87171;
+    --info:         #60a5fa;
+    --code-bg:      #0f1422;
+    --shadow:       0 1px 0 rgba(255,255,255,.04) inset, 0 8px 24px -12px rgba(0,0,0,.6);
+    --radius:       12px;
+    --radius-sm:    8px;
+    --mono:         ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+    --sans:         -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+    --maxw:         1180px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:          #fafbfd;
+      --bg-elev-1:   #ffffff;
+      --bg-elev-2:   #ffffff;
+      --bg-elev-3:   #f4f6fb;
+      --border:      #e2e7f0;
+      --border-soft: #eef1f7;
+      --fg:          #0f1422;
+      --fg-muted:    #4b5772;
+      --fg-dim:      #7a869f;
+      --accent:      #b88300;
+      --accent-soft: #f5b3011a;
+      --accent-line: #f5b30188;
+      --code-bg:     #f4f6fb;
+      --shadow:      0 1px 0 rgba(0,0,0,.02) inset, 0 6px 18px -10px rgba(15,20,34,.18);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--fg); }
+
+  /* Layout grid: sidebar + content */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: sticky; top: 0; z-index: 5; }
+    .sidebar-inner { max-height: 60vh; overflow-y: auto; }
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  .sidebar {
+    background: var(--bg-elev-2);
+    border-right: 1px solid var(--border);
+  }
+  .sidebar-inner {
+    position: sticky;
+    top: 0;
+    padding: 28px 22px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    text-decoration: none;
+    color: var(--fg);
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #ff8a00);
+    display: grid; place-items: center;
+    font-weight: 900; font-size: 18px; color: #1a1300;
+    box-shadow: var(--shadow);
+  }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name { font-weight: 700; letter-spacing: -.01em; }
+  .brand-sub  { font-size: 11px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: .14em; }
+
+  .nav-group { margin-bottom: 18px; }
+  .nav-title {
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    padding: 0 10px 8px;
+  }
+  .nav a {
+    display: block;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: background .12s ease, color .12s ease;
+    border-left: 2px solid transparent;
+  }
+  .nav a:hover {
+    background: var(--bg-elev-3);
+    color: var(--fg);
+  }
+  .nav a.active {
+    color: var(--fg);
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+
+  .sidebar-footer {
+    margin-top: 24px;
+    padding: 14px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--fg-muted);
+  }
+  .sidebar-footer code { font-size: 11.5px; }
+
+  /* ── Main content ────────────────────────────────────────── */
+  .main {
+    padding: 48px clamp(20px, 5vw, 64px) 96px;
+    max-width: var(--maxw);
+  }
+
+  .crumbs {
+    font-size: 12px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    margin-bottom: 12px;
+  }
+  .crumbs a { color: var(--fg-dim); text-decoration: none; }
+
+  h1, h2, h3, h4 { letter-spacing: -0.012em; line-height: 1.25; }
+  h1 { font-size: clamp(32px, 4vw, 44px); margin: 0 0 12px; font-weight: 800; }
+  h2 {
+    font-size: 24px;
+    margin: 56px 0 16px;
+    padding-top: 12px;
+    font-weight: 700;
+    border-top: 1px solid var(--border-soft);
+  }
+  h3 { font-size: 18px; margin: 32px 0 10px; font-weight: 700; }
+  h4 { font-size: 14px; margin: 20px 0 8px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .08em; }
+  p  { margin: 0 0 14px; color: var(--fg); }
+  p.lead { font-size: 17px; color: var(--fg-muted); max-width: 70ch; }
+
+  a { color: var(--accent); }
+  a:hover { text-decoration: underline; }
+
+  code {
+    font-family: var(--mono);
+    font-size: .9em;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border-soft);
+    color: var(--fg);
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--code-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  pre code { padding: 0; border: 0; background: transparent; }
+
+  /* ── Hero ────────────────────────────────────────────────── */
+  .hero {
+    padding: 32px;
+    background:
+      radial-gradient(1200px 220px at 0% 0%, var(--accent-soft), transparent 60%),
+      var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow);
+  }
+  .hero-tags {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 18px;
+  }
+  .tag {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--bg-elev-3);
+    color: var(--fg-muted);
+    border: 1px solid var(--border-soft);
+  }
+  .tag.ok    { color: var(--ok);     border-color: #4ade8044; background: #4ade8011; }
+  .tag.warn  { color: var(--warn);   border-color: #fbbf2444; background: #fbbf2411; }
+  .tag.info  { color: var(--info);   border-color: #60a5fa44; background: #60a5fa11; }
+
+  .meta-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-top: 28px;
+  }
+  .meta-card {
+    padding: 14px 16px;
+    background: var(--bg-elev-3);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+  }
+  .meta-card .k { font-size: 11px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: .12em; }
+  .meta-card .v { font-size: 16px; font-weight: 700; margin-top: 4px; color: var(--fg); }
+
+  /* ── Cards & callouts ────────────────────────────────────── */
+  .card {
+    padding: 20px 22px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+
+  .grid-2 {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .grid-3 {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    margin: 18px 0;
+  }
+  .callout-title {
+    font-weight: 700; font-size: 13px;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .callout.danger { border-left-color: var(--danger); background: #f8717118; }
+  .callout.danger .callout-title { color: var(--danger); }
+  .callout.info   { border-left-color: var(--info);   background: #60a5fa18; }
+  .callout.info   .callout-title { color: var(--info); }
+  .callout.warn   { border-left-color: var(--warn);   background: #fbbf2418; }
+  .callout.warn   .callout-title { color: var(--warn); }
+
+  /* ── Status pills ─────────────────────────────────────────── */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--bg-elev-3);
+    color: var(--fg-muted);
+    border: 1px solid var(--border-soft);
+  }
+  .pill::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--fg-dim);
+  }
+  .pill.ok    { color: var(--ok);     border-color: #4ade8044; background: #4ade8011; }
+  .pill.ok::before    { background: var(--ok); }
+  .pill.warn  { color: var(--warn);   border-color: #fbbf2444; background: #fbbf2411; }
+  .pill.warn::before  { background: var(--warn); }
+  .pill.danger{ color: var(--danger); border-color: #f8717144; background: #f8717111; }
+  .pill.danger::before{ background: var(--danger); }
+  .pill.info  { color: var(--info);   border-color: #60a5fa44; background: #60a5fa11; }
+  .pill.info::before  { background: var(--info); }
+
+  /* ── Tables ──────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 8px 0 18px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+  }
+  th { color: var(--fg-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  tbody tr:hover { background: var(--bg-elev-3); }
+
+  /* ── Diagrams ────────────────────────────────────────────── */
+  .diagram {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 18px 0 24px;
+    overflow-x: auto;
+  }
+  .diagram .mermaid { background: transparent; }
+
+  /* ── Charts ──────────────────────────────────────────────── */
+  .chart-wrap {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px 8px;
+    margin: 14px 0 22px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .chart-title small { font-weight: 400; color: var(--fg-dim); font-size: 11.5px; }
+  .chart-host { position: relative; height: 260px; }
+
+  /* ── Layer stack visual ──────────────────────────────────── */
+  .layer-stack {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 12px 0 22px;
+  }
+  .layer {
+    position: relative;
+    padding: 16px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-elev-2);
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 14px;
+  }
+  .layer-num {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+  }
+  .layer-body strong { display: block; font-size: 15px; }
+  .layer-body span   { color: var(--fg-muted); font-size: 13.5px; }
+  .layer-arrow {
+    color: var(--fg-dim);
+    align-self: center;
+    text-align: center;
+    font-size: 18px;
+  }
+
+  /* ── Sequence-style replica diagram ──────────────────────── */
+  .pipeline-flow {
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 18px 6px;
+  }
+  .node {
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev-3);
+    border: 1px solid var(--border);
+    min-width: 130px;
+    text-align: center;
+  }
+  .node strong { display: block; font-size: 14px; }
+  .node small  { color: var(--fg-dim); font-size: 11px; }
+  .node.actor  { border-color: var(--accent-line); background: var(--accent-soft); }
+  .arrow {
+    text-align: center;
+    color: var(--fg-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    min-width: 90px;
+  }
+  .arrow .lbl { display: block; font-size: 10.5px; color: var(--fg-muted); }
+
+  /* ── ToC scrollspy ───────────────────────────────────────── */
+  .anchor {
+    scroll-margin-top: 24px;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-soft);
+    color: var(--fg-dim);
+    font-size: 12.5px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+
+  /* ── Tabs ────────────────────────────────────────────────── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+  .tab-btn {
+    background: transparent;
+    border: 0;
+    color: var(--fg-muted);
+    padding: 8px 12px;
+    font: inherit; font-size: 13px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--fg); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* small accessibility: focus ring */
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ───── Sidebar ───────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <a class="brand" href="#top">
+        <div class="brand-mark">🐝</div>
+        <div class="brand-text">
+          <div class="brand-name">iot-bee</div>
+          <div class="brand-sub">Documentación técnica</div>
+        </div>
+      </a>
+
+      <nav class="nav">
+        <div class="nav-group">
+          <div class="nav-title">Empezar</div>
+          <a href="#overview">Visión general</a>
+          <a href="#status">Estado del proyecto</a>
+          <a href="#quickstart">Inicio rápido</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-title">Arquitectura</div>
+          <a href="#hexagonal">Hexagonal / capas</a>
+          <a href="#http">API HTTP</a>
+          <a href="#actors">Sistema de actores</a>
+          <a href="#data-flow">Flujo de datos</a>
+          <a href="#concurrency">Invariante de concurrencia</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-title">Operaciones</div>
+          <a href="#errors">Errores</a>
+          <a href="#logging">Logging</a>
+          <a href="#persistence">Persistencia</a>
+          <a href="#testing">Tests</a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-title">Referencia</div>
+          <a href="#metrics">Métricas del repo</a>
+          <a href="#roadmap">Roadmap</a>
+          <a href="#glossary">Glosario</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        Generado a partir del estado actual del repo. Toda referencia a archivos apunta a rutas reales bajo <code>src/</code>.
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───── Main ──────────────────────────────────────────── -->
+  <main class="main" id="top">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="crumbs"><a href="#top">iot-bee</a> &nbsp;/&nbsp; documentación</div>
+      <h1>iot-bee · servicio de ingestión IoT</h1>
+      <p class="lead">
+        API HTTP en Actix-web que configura <em>pipelines</em>; cada pipeline corre como un árbol
+        de actores Actix que consumen de un broker (RabbitMQ vía <code>lapin</code>), procesan y
+        persisten en un almacén externo. La configuración interna se guarda en PostgreSQL (<code>sqlx</code>).
+      </p>
+
+      <div class="hero-tags">
+        <span class="tag info">Rust · edición 2024</span>
+        <span class="tag">Actix-web 4</span>
+        <span class="tag">Actix actors 0.13</span>
+        <span class="tag">PostgreSQL (sqlx)</span>
+        <span class="tag">RabbitMQ (lapin)</span>
+        <span class="tag">utoipa · Swagger</span>
+        <span class="tag warn">α — en desarrollo activo</span>
+      </div>
+
+      <div class="meta-row">
+        <div class="meta-card">
+          <div class="k">Versión</div>
+          <div class="v">0.1.0</div>
+        </div>
+        <div class="meta-card">
+          <div class="k">Servidor HTTP</div>
+          <div class="v">127.0.0.1:8080</div>
+        </div>
+        <div class="meta-card">
+          <div class="k">Documentación viva</div>
+          <div class="v">/swagger-ui/</div>
+        </div>
+        <div class="meta-card">
+          <div class="k">Capas hexagonales</div>
+          <div class="v">5</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Visión general ──────────────────────────────────── -->
+    <section id="overview" class="anchor">
+      <h2>Visión general</h2>
+      <p>
+        <strong>iot-bee</strong> separa estrictamente <em>configuración</em> y <em>ejecución</em>.
+        La capa HTTP permite definir las piezas (esquemas de validación, fuentes de datos,
+        almacenes, grupos, pipelines) y la capa de actores pone esas piezas en marcha como
+        procesos vivos: cada pipeline puede tener varias réplicas trabajando en paralelo.
+      </p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4>1 · Define</h4>
+          <p>El usuario llama al API REST para registrar fuentes, almacenes y pipelines. Los datos se persisten en PostgreSQL.</p>
+        </div>
+        <div class="card">
+          <h4>2 · Despliega</h4>
+          <p>Un <code>PipelineSupervisor</code> arranca <em>N</em> réplicas; cada réplica es un trío de actores: consumer → processor → store.</p>
+        </div>
+        <div class="card">
+          <h4>3 · Observa</h4>
+          <p>El supervisor expone <code>stop_all</code>, <code>restart_all</code> y <code>status_all</code>; el logging usa <code>tracing</code> con un wrapper propio (<code>AppLogger</code>).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Estado ──────────────────────────────────────────── -->
+    <section id="status" class="anchor">
+      <h2>Estado del proyecto</h2>
+      <p>
+        El proyecto está en fase de construcción. La <strong>capa de réplica</strong>
+        (consumer/processor/store + el supervisor de un pipeline) está integrada y cubierta
+        por tests. La <strong>orquestación multi-pipeline</strong> aún no está cableada al
+        binario.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Componente</th>
+            <th>Ruta</th>
+            <th>Estado</th>
+            <th>Cobertura de tests</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>API HTTP CRUD (validation schemas, data sources, etc.)</td>
+            <td><code>src/adapters/api/</code></td>
+            <td><span class="pill ok">Implementado</span></td>
+            <td>Integración (<code>data_store_api.rs</code>)</td>
+          </tr>
+          <tr>
+            <td>Casos de uso / repositorios PostgreSQL</td>
+            <td><code>src/application/</code>, <code>src/infrastructure/persistence/</code></td>
+            <td><span class="pill ok">Implementado</span></td>
+            <td>PostgreSQL de integración</td>
+          </tr>
+          <tr>
+            <td>Réplica de pipeline (consumer→processor→store)</td>
+            <td><code>src/adapters/actor_system/pipeline_actor_module/</code></td>
+            <td><span class="pill ok">Implementado</span></td>
+            <td><code>pipeline_integration.rs</code></td>
+          </tr>
+          <tr>
+            <td><code>PipelineSupervisor</code> (réplicas de un pipeline)</td>
+            <td><code>supervisor_pipeline_life_time/</code></td>
+            <td><span class="pill ok">Implementado</span></td>
+            <td><code>supervisor_actor.rs</code> <em>(comentado tras refactor)</em></td>
+          </tr>
+          <tr>
+            <td><code>SystemActorSupervisor</code> (multi-pipeline)</td>
+            <td><code>supervisor_actor_system/</code></td>
+            <td><span class="pill warn">WIP / no cableado</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Lifecycle expuesto al API HTTP</td>
+            <td><code>domain/inbound/pipeline_lifecycle.rs</code></td>
+            <td><span class="pill warn">Sólo <code>start</code> activo</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout warn">
+        <div class="callout-title">⚠ Nota arquitectónica</div>
+        <code>SystemActorSupervisor</code> existe como código pero su <code>pub mod</code>
+        está comentado en <code>src/adapters/actor_system/mod.rs</code> y nadie lo construye
+        en <code>main.rs</code> ni en <code>composition/</code>. Trátalo como diseño
+        planificado, no como sistema en producción.
+      </div>
+
+      <div class="grid-2">
+        <div class="chart-wrap">
+          <div class="chart-title">
+            <span>Distribución de líneas de código por capa</span>
+            <small>aproximada · src/**</small>
+          </div>
+          <div class="chart-host"><canvas id="chartLayers"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">
+            <span>Madurez por componente</span>
+            <small>0 = idea · 100 = prod-ready</small>
+          </div>
+          <div class="chart-host"><canvas id="chartMaturity"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quickstart ───────────────────────────────────────── -->
+    <section id="quickstart" class="anchor">
+      <h2>Inicio rápido</h2>
+
+      <h3>Requisitos</h3>
+      <ul>
+        <li>Rust estable (edición 2024).</li>
+        <li>PostgreSQL accesible; un broker AMQP accesible si se quieren correr pipelines reales.</li>
+        <li>Variable <code>DATABASE_URL</code> definida (se carga vía <code>dotenv</code>).</li>
+      </ul>
+
+      <h3>Aplicar migraciones y arrancar</h3>
+      <pre><code># 1) preparar .env
+echo 'DATABASE_URL=postgres://iot_bee:iot_bee_dev@localhost:5432/iot_bee' > .env
+
+# 2) aplicar migraciones (no se ejecutan solas)
+sqlx migrate run
+
+# 3) levantar servidor + Swagger
+cargo run
+# → http://127.0.0.1:8080
+# → http://127.0.0.1:8080/swagger-ui/</code></pre>
+
+      <h3>Tests</h3>
+      <pre><code>cargo test                                  # todos los binarios de test
+cargo test --test pipeline_integration      # un binario (ver [[test]] en Cargo.toml)
+cargo test --test supervisor_actor some_fn  # filtrar por nombre dentro del binario
+RUST_LOG=iot_bee=debug cargo run            # subir verbosidad</code></pre>
+      <div class="callout info">
+        <div class="callout-title">Convención de tests</div>
+        Los tests viven en <code>test/</code> (singular, no <code>tests/</code>) y se registran
+        explícitamente como <code>[[test]]</code> en <code>Cargo.toml</code>. Si añades un
+        archivo nuevo y no lo registras, Cargo no lo descubre.
+      </div>
+    </section>
+
+    <!-- ── Hexagonal ───────────────────────────────────────── -->
+    <section id="hexagonal" class="anchor">
+      <h2>Arquitectura hexagonal</h2>
+      <p>
+        El crate sigue una arquitectura de puertos y adaptadores. Las dependencias siempre
+        apuntan hacia adentro: <code>adapters</code> y <code>infrastructure</code> dependen
+        de <code>application</code>; <code>application</code> depende sólo de <code>domain</code>;
+        <code>domain</code> no depende de nada.
+      </p>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+    subgraph EXT["Mundo exterior"]
+        HTTP["HTTP / Swagger UI"]
+        AMQP["RabbitMQ (lapin)"]
+        DBOUT["Almacén externo<br/>(DataExternalStore impl)"]
+    end
+
+    subgraph ADAP["adapters/"]
+        API["api/<br/>handlers + utoipa"]
+        ACT["actor_system/<br/>actores Actix"]
+    end
+
+    subgraph APP["application/"]
+        UC["*UseCases (traits + impls)"]
+    end
+
+    subgraph DOM["domain/"]
+        ENT["entities + value_objects"]
+        PORTS["inbound / outbound traits"]
+        ERR["IoTBeeError"]
+    end
+
+    subgraph INF["infrastructure/"]
+        REPO["persistence/repositories<br/>(sqlx + PostgreSQL)"]
+        DS["data_source/<br/>rabbitmq impl"]
+    end
+
+    subgraph COMP["composition/"]
+        STATE["AppState · DI"]
+    end
+
+    HTTP --> API
+    API  --> UC
+    UC   --> PORTS
+    PORTS -.implementado.-> REPO
+    PORTS -.implementado.-> DS
+    PORTS -.implementado.-> ACT
+    REPO --> DOM
+    DS   --> AMQP
+    ACT  --> DBOUT
+    STATE -.cablea.-> UC
+    STATE -.cablea.-> REPO
+    classDef dom fill:#f5b30122,stroke:#f5b30166,color:#e6edf7;
+    class DOM,ENT,PORTS,ERR dom;
+        </pre>
+      </div>
+
+      <div class="layer-stack">
+        <div class="layer">
+          <div class="layer-num">1</div>
+          <div class="layer-body">
+            <strong>domain/</strong>
+            <span>Entidades, value objects, traits de puertos (inbound/outbound) y <code>IoTBeeError</code>. Sin I/O ni framework.</span>
+          </div>
+          <div class="layer-arrow">↑</div>
+        </div>
+        <div class="layer">
+          <div class="layer-num">2</div>
+          <div class="layer-body">
+            <strong>application/</strong>
+            <span>Casos de uso: un módulo por agregado, cada uno con un <code>cases.rs</code> que expone <code>*UseCases</code> (trait) + <code>*UseCasesImpl</code>. Sólo dependen de puertos del dominio.</span>
+          </div>
+          <div class="layer-arrow">↑</div>
+        </div>
+        <div class="layer">
+          <div class="layer-num">3</div>
+          <div class="layer-body">
+            <strong>infrastructure/</strong>
+            <span>Drivers concretos: repositorios PostgreSQL (<code>sqlx</code>), <code>data_source/rabbitmq_data_source.rs</code>, almacenes externos.</span>
+          </div>
+          <div class="layer-arrow">↑</div>
+        </div>
+        <div class="layer">
+          <div class="layer-num">4</div>
+          <div class="layer-body">
+            <strong>adapters/</strong>
+            <span><code>api/</code>: handlers Actix-web con anotaciones <code>utoipa</code> (Swagger generado en <code>api_docs.rs</code>). <code>actor_system/</code>: árbol de actores que ejecuta los pipelines.</span>
+          </div>
+          <div class="layer-arrow">↑</div>
+        </div>
+        <div class="layer">
+          <div class="layer-num">5</div>
+          <div class="layer-body">
+            <strong>composition/</strong>
+            <span><code>AppState::new()</code> construye el pool PostgreSQL y expone <code>*_app_state()</code> que entregan <code>web::Data&lt;dyn UseCase&gt;</code> a <code>main.rs</code>.</span>
+          </div>
+          <div class="layer-arrow">·</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── HTTP ────────────────────────────────────────────── -->
+    <section id="http" class="anchor">
+      <h2>API HTTP</h2>
+      <p>
+        Cada agregado expone un <em>scope</em> Actix montado en <code>main.rs</code>. La especificación
+        OpenAPI se compone en <code>src/adapters/api/api_docs.rs</code> y se sirve en
+        <code>/swagger-ui/</code>.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Scope</th>
+            <th>Tag OpenAPI</th>
+            <th>Operaciones</th>
+            <th>Caso de uso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/connection-types</code></td><td>Connection Types</td><td>GET</td><td><code>ConnectionTypesUseCases</code></td></tr>
+          <tr><td><code>/validation-schemas</code></td><td>Validation Schemas</td><td>POST · GET (id, list) · PUT (name, json) · DELETE</td><td><code>SchemaValidationUseCases</code></td></tr>
+          <tr><td><code>/data-sources</code></td><td>Data Sources</td><td>POST · GET · PUT name · PUT</td><td><code>DataSourcesUseCases</code></td></tr>
+          <tr><td><code>/pipeline-groups</code></td><td>Pipeline Groups</td><td>POST · GET (id, list)</td><td><code>PipelineGroupUseCases</code></td></tr>
+          <tr><td><code>/data-stores</code></td><td>Data Stores</td><td>POST · GET (id, list)</td><td><code>DataStoreUseCases</code></td></tr>
+          <tr><td><code>/pipeline-data</code></td><td>Pipeline Data</td><td>POST · GET (id, list)</td><td><code>PipelineDataUseCases</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <div class="callout-title">Patrón para añadir un agregado nuevo</div>
+        Crea entidad + puertos en <code>domain/</code>; un caso de uso en <code>application/</code>;
+        un repositorio en <code>infrastructure/persistence/repositories/</code>;
+        <code>models.rs</code> + <code>routers.rs</code> en <code>adapters/api/&lt;agregado&gt;/</code>;
+        cablea en <code>composition/api_composition/api_composer.rs</code> y monta el scope
+        en <code>main.rs</code>. Añade el bloque <code>utoipa::path</code> y registra el
+        modelo en <code>api_docs.rs</code>.
+      </div>
+    </section>
+
+    <!-- ── Actores ─────────────────────────────────────────── -->
+    <section id="actors" class="anchor">
+      <h2>Sistema de actores</h2>
+
+      <h3>Árbol de supervisión</h3>
+      <p>Dos niveles. El nivel superior está diseñado pero no construido; el inferior es el que está vivo.</p>
+
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+    SAS["SystemActorSupervisor<br/><i>(planeado · módulo comentado)</i>"]:::wip
+    SAS -- "HashMap&lt;pipeline_id, Addr&gt;" --> PS1["PipelineSupervisor #1"]
+    SAS --> PS2["PipelineSupervisor #2"]
+
+    subgraph PS_BLOCK["PipelineSupervisor (uno por pipeline_id)"]
+      PS1
+      direction TB
+      PS1 -- "ReplicaRegistry · Vec&lt;Arc&lt;Controller&gt;&gt;" --> R0
+      R0["Réplica [0]<br/>consumer · processor · store"]
+      R1["Réplica [1]"]
+      R2["Réplica [n]"]
+      PS1 --> R1
+      PS1 --> R2
+    end
+
+    classDef wip fill:#fbbf2422,stroke:#fbbf24,color:#fbbf24,stroke-dasharray: 4 3;
+    classDef ok fill:#4ade8022,stroke:#4ade8088,color:#e6edf7;
+    class PS1,PS2,R0,R1,R2 ok;
+        </pre>
+      </div>
+
+      <h3>Una réplica por dentro</h3>
+      <p>Tres actores en cadena. Cada uno acepta el mismo protocolo de ciclo de vida (<code>Stop</code>/<code>Restart</code>/<code>Status</code>).</p>
+
+      <div class="diagram">
+        <div class="pipeline-flow">
+          <div class="node"><strong>DataSource</strong><small>impl: lapin</small></div>
+          <div class="arrow">─ <span class="lbl">tokio mpsc</span> ➜</div>
+          <div class="node actor"><strong>DataConsumerActor</strong><small>consumer_actor/</small></div>
+          <div class="arrow">─ <span class="lbl">SendDataToProcessor</span> ➜</div>
+          <div class="node actor"><strong>DataProcessorActor</strong><small>processor_actor/</small></div>
+        </div>
+        <div class="pipeline-flow" style="margin-top:-6px;">
+          <div></div><div></div><div></div>
+          <div class="arrow">⇣ <span class="lbl">SendDataToStore</span></div>
+          <div class="node actor"><strong>DataStoreActor</strong><small>store_actor/</small></div>
+        </div>
+        <div class="pipeline-flow" style="margin-top:-6px;">
+          <div></div><div></div><div></div><div></div>
+          <div class="arrow">─ <span class="lbl">DataExternalStore::save</span> ➜</div>
+        </div>
+        <div style="text-align:center; margin-top:6px;">
+          <div class="node" style="display:inline-block;"><strong>External store</strong><small>impl externa</small></div>
+        </div>
+      </div>
+
+      <h3>El patrón Bridge</h3>
+      <p>
+        Un <em>Bridge</em> es un wrapper cloneable sobre <code>Addr&lt;Actor&gt;</code> que implementa un trait‑port del dominio.
+        Esto evita que los tipos de Actix se filtren fuera del módulo de adaptadores: los actores se conectan entre sí
+        a través de traits, no de tipos concretos.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Bridge</th><th>Implementa</th><th>Usado por</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ConsumerActorBridge</code></td><td><code>SendActionToActor</code></td><td><code>PipelineAbstractionController</code></td></tr>
+          <tr><td><code>ProcessorActorBridge</code></td><td><code>SendDataToProcessor</code> · <code>SendActionToActor</code></td><td>Consumer · Controller</td></tr>
+          <tr><td><code>StoreActorBridge</code></td><td><code>SendDataToStore</code> · <code>SendActionToActor</code></td><td>Processor · Controller</td></tr>
+          <tr><td><code>SupervisorPipelineBridge</code></td><td>Fachada async tipada</td><td>Capas externas (futuro lifecycle API)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Protocolo de ciclo de vida</h3>
+      <p>
+        Definido en <code>pipeline_actor_module/general_messages.rs</code>. Un único <code>Message</code>
+        se reusa en los tres actores:
+      </p>
+      <pre><code>enum ActorActions { Start, Stop, Restart, Status }
+enum ActorStatus  { Running, Stopped, Restarting, Failed }
+
+struct SendActorActionMessage(ActorActions);  // Message
+type SendActorActionMessageResult =
+    Result&lt;ResponseActorActionMessage, IoTBeeError&gt;;</code></pre>
+
+      <h3>Mensajes que entiende el supervisor</h3>
+      <p>
+        Definidos en <code>supervisor_pipeline_life_time/messges.rs</code>
+        <span class="pill warn" style="margin-left:6px;">typo: <code>messges</code></span>
+        — usar el nombre con typo al importar.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Mensaje</th><th>Resultado</th><th>Sincronía</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>AddReplicaMessage(controller)</code></td><td><code>Result&lt;usize, IoTBeeError&gt;</code> (count tras insertar)</td><td>sync</td></tr>
+          <tr><td><code>RemoveReplicaMessage</code></td><td>quita la última réplica</td><td>sync</td></tr>
+          <tr><td><code>ReplicaCountMessage</code></td><td>cuántas réplicas hay</td><td>sync</td></tr>
+          <tr><td><code>StopAllReplicasMessage</code></td><td><code>Vec&lt;TripleResult&gt;</code></td><td>async (<code>ResponseFuture</code>)</td></tr>
+          <tr><td><code>RestartAllReplicasMessage</code></td><td><code>Vec&lt;TripleResult&gt;</code></td><td>async</td></tr>
+          <tr><td><code>StatusAllReplicasMessage</code></td><td><code>Vec&lt;TripleResult&gt;</code></td><td>async</td></tr>
+          <tr><td><code>StartPipelineMessage</code></td><td>arranca el pipeline</td><td>async</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Flujo de datos ──────────────────────────────────── -->
+    <section id="data-flow" class="anchor">
+      <h2>Flujo de datos en una réplica viva</h2>
+
+      <div class="diagram">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant DS as DataSource impl<br/>(lapin/RabbitMQ)
+    participant C  as DataConsumerActor
+    participant P  as DataProcessorActor
+    participant S  as DataStoreActor
+    participant EX as DataExternalStore impl
+
+    DS->>C: start_to_consume(sender)
+    activate C
+    Note right of DS: empuja DataConsumerRawType<br/>por tokio::mpsc
+
+    loop por cada payload
+        DS-->>C: send(payload)
+        C->>P: SendDataToProcessor::send(&data)
+        P->>S: SendDataToStore::send(&data)
+        S->>EX: save(data)
+    end
+
+    DS-->>DS: retorna → Sender se descarta
+    Note over DS,C: el canal se cierra → cascada de stops
+    deactivate C
+        </pre>
+      </div>
+
+      <div class="callout info">
+        <div class="callout-title">Apagado limpio</div>
+        Cuando el <code>DataSource</code> retorna, su <code>Sender&lt;DataConsumerRawType&gt;</code> se
+        descarta. Eso cierra el canal mpsc; el consumer detecta el cierre y se detiene; los siguientes
+        actores se quedan sin tráfico y eventualmente paran. Este es el patrón usado por los tests
+        de integración.
+      </div>
+    </section>
+
+    <!-- ── Concurrencia ────────────────────────────────────── -->
+    <section id="concurrency" class="anchor">
+      <h2>Invariante crítico de concurrencia</h2>
+
+      <div class="callout danger">
+        <div class="callout-title">⛔ No sostener un <code>RwLockGuard</code> a través de un <code>.await</code></div>
+        Hacerlo bloquea el runtime de tokio. <code>ReplicaRegistry</code> contiene un
+        <code>RwLock&lt;Vec&lt;Arc&lt;PipelineAbstractionController&gt;&gt;&gt;</code>; los handlers async
+        deben clonar los <code>Arc</code> en la parte síncrona y soltar el guard antes de
+        cualquier punto de suspensión.
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="color: var(--danger);">❌ Mal · deadlock latente</h4>
+<pre><code>async fn stop_all_bad(reg: &amp;ReplicaRegistry) {
+    let guard = reg.read_lock()?;       // 🔒
+    for r in guard.iter() {
+        r.stop().await;                  // ⛔ guard sigue vivo
+    }
+}</code></pre>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--ok);">✓ Bien · usando <code>all_arcs()</code></h4>
+<pre><code>async fn stop_all_ok(reg: &amp;ReplicaRegistry) {
+    let arcs = reg.all_arcs()?;          // 🔓 guard liberado
+    for r in arcs {
+        r.stop().await;                  // ✓ sin guard sostenido
+    }
+}</code></pre>
+        </div>
+      </div>
+      <p>
+        Documentado en los comentarios de <code>pipeline_supervisor.rs</code> y
+        <code>pipeline_abstraction.rs</code>. Si añades un nuevo handler de ciclo de vida,
+        respeta este patrón.
+      </p>
+    </section>
+
+    <!-- ── Errores ─────────────────────────────────────────── -->
+    <section id="errors" class="anchor">
+      <h2>Errores</h2>
+      <p>
+        Toda la pila converge en <code>IoTBeeError</code> (<code>src/domain/error.rs</code>),
+        un enum que envuelve los errores por área. <code>adapters/api/error.rs</code> implementa
+        <code>actix_web::ResponseError</code>: los handlers HTTP pueden retornar
+        <code>Result&lt;HttpResponse, IoTBeeError&gt;</code> y obtener status + JSON automáticamente.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Variante</th><th>Status HTTP</th><th>Casos típicos</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>PipelinePersistenceError::ValidationSchemaNameExists</code></td><td><strong>409</strong> Conflict</td><td>nombre único duplicado</td></tr>
+          <tr><td><code>PipelinePersistenceError::IdNotFound</code> · <code>ValidationSchemaNotFound</code></td><td><strong>404</strong> Not Found</td><td>id inexistente</td></tr>
+          <tr><td><code>PipelinePersistenceError::Database</code></td><td><strong>500</strong> Internal Server Error</td><td>fallo de driver PostgreSQL</td></tr>
+          <tr><td><code>PipelinePersistenceError::Save/Update/Delete/Parse/InvalidData</code></td><td><strong>400</strong> Bad Request</td><td>datos inválidos</td></tr>
+          <tr><td><code>PipelineError</code> · <code>PipelineLifecycleError</code> · <code>DataSourceError</code> · <code>DomainValidationError</code></td><td><strong>400</strong> Bad Request</td><td>validación / dominio / I/O lógico</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Logging ─────────────────────────────────────────── -->
+    <section id="logging" class="anchor">
+      <h2>Logging</h2>
+      <p>
+        Wrapper sobre <code>tracing</code>: <code>crate::logging::AppLogger</code>. La convención
+        es declarar al inicio de cada módulo:
+      </p>
+      <pre><code>static LOGGER: AppLogger = AppLogger::new(
+    "iot_bee::ruta::al::modulo",
+);
+
+LOGGER.info("evento");</code></pre>
+      <p>
+        El wrapper anexa <code>target</code>, <code>caller_file</code> y <code>caller_line</code>
+        a cada record. El filtro por defecto es
+        <code>iot_bee=info,actix_web=info</code>; se sobrescribe con <code>RUST_LOG</code>.
+      </p>
+      <div class="callout">
+        <div class="callout-title">Idioma</div>
+        Comentarios y mensajes de log están mayoritariamente en español. Mantener esa
+        convención al editar código adyacente.
+      </div>
+    </section>
+
+    <!-- ── Persistencia ────────────────────────────────────── -->
+    <section id="persistence" class="anchor">
+      <h2>Persistencia</h2>
+      <p>
+        PostgreSQL con <code>sqlx</code> (runtime tokio). Pool con
+        <code>max_connections=10</code>, <code>acquire_timeout=5s</code>,
+        <code>idle_timeout=300s</code>, <code>max_lifetime=1800s</code> (ver
+        <code>infrastructure/persistence/connection.rs</code>).
+      </p>
+      <h3>Migraciones</h3>
+      <p>
+        Definidas en <code>migrations_postgres/</code> y aplicadas al arrancar. Para una ejecución manual,
+        usa <code>make migrate-postgres</code> o el contenedor PostgreSQL del <code>docker-compose.yml</code>.
+      </p>
+
+      <div class="chart-wrap">
+        <div class="chart-title">
+          <span>Migraciones acumuladas</span>
+          <small>conteo · una por archivo SQL</small>
+        </div>
+        <div class="chart-host"><canvas id="chartMigrations"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ── Tests ───────────────────────────────────────────── -->
+    <section id="testing" class="anchor">
+      <h2>Tests</h2>
+      <p>
+        Tests de integración. Cada uno se declara en <code>Cargo.toml</code> cuando corresponde
+        y vive en <code>tests/</code> o <code>crates/*/test/</code>. Las pruebas de persistencia
+        usan PostgreSQL de integración.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Binario</th><th>Propósito</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>domain_value_objects</code></td><td>VOs y validaciones puras del dominio</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>data_store_use_cases</code></td><td>caso de uso con repositorio fake</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>data_store_api</code></td><td>handlers HTTP end-to-end</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>influxdb_persistence</code></td><td>persistencia externa contra mock HTTP</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>store_actor</code></td><td>actor de store aislado</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>pipeline_integration</code></td><td>flujo consumer→processor→store completo</td><td><span class="pill ok">activo</span></td></tr>
+          <tr><td><code>supervisor_actor</code></td><td>gestión de réplicas + lifecycle global</td><td><span class="pill warn">comentado tras refactor</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Métricas ────────────────────────────────────────── -->
+    <section id="metrics" class="anchor">
+      <h2>Métricas del repositorio</h2>
+      <div class="grid-2">
+        <div class="chart-wrap">
+          <div class="chart-title">
+            <span>Endpoints HTTP por agregado</span>
+            <small>según <code>api_docs.rs</code></small>
+          </div>
+          <div class="chart-host"><canvas id="chartEndpoints"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">
+            <span>Tipos de actor en el sistema</span>
+            <small>uno por rol</small>
+          </div>
+          <div class="chart-host"><canvas id="chartActors"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Roadmap ─────────────────────────────────────────── -->
+    <section id="roadmap" class="anchor">
+      <h2>Roadmap inferido</h2>
+      <p>Derivado de TODO/comentarios y código no cableado. Ordenado por prioridad técnica probable.</p>
+
+      <ol>
+        <li><strong>Cablear <code>SystemActorSupervisor</code></strong> — descomentar el módulo en
+          <code>actor_system/mod.rs</code>, construirlo en <code>composition/</code> y darle un punto
+          de inyección desde la capa de aplicación.</li>
+        <li><strong>Completar <code>PipelineLifecycle</code></strong> — los métodos <code>stop</code>,
+          <code>get_status_by_id</code> y <code>get_status</code> están comentados en
+          <code>domain/inbound/pipeline_lifecycle.rs</code>.</li>
+        <li><strong>Endpoint <code>/pipelines/&lt;id&gt;/{start|stop|status}</code></strong> apoyado en el
+          <code>SupervisorPipelineBridge</code>.</li>
+        <li><strong>Reactivar <code>test/supervisor_actor.rs</code></strong> — está comentado tras un
+          refactor; los assertions encajan con la API actual con cambios menores.</li>
+        <li><strong>Renombrar <code>messges.rs → messages.rs</code></strong> — typo benigno; cuesta poco.</li>
+      </ol>
+    </section>
+
+    <!-- ── Glosario ────────────────────────────────────────── -->
+    <section id="glossary" class="anchor">
+      <h2>Glosario</h2>
+      <dl>
+        <dt><strong>Pipeline</strong></dt>
+        <dd>Configuración persistida en PostgreSQL que ata <em>data source</em> + <em>validation schema</em> + <em>data store</em>. Cuando se arranca, se materializa como un árbol de actores.</dd>
+        <dt><strong>Réplica</strong></dt>
+        <dd>Una instancia activa de un pipeline = un trío consumer/processor/store. Un pipeline puede tener varias.</dd>
+        <dt><strong>Bridge</strong></dt>
+        <dd>Wrapper cloneable de <code>Addr&lt;Actor&gt;</code> que implementa un trait‑port del dominio. Aísla a Actix del resto del código.</dd>
+        <dt><strong>Port (puerto)</strong></dt>
+        <dd>Trait en <code>domain/inbound</code> o <code>domain/outbound</code> que la capa exterior debe implementar.</dd>
+        <dt><strong>Adapter (adaptador)</strong></dt>
+        <dd>Implementación concreta de un puerto en la capa <code>infrastructure</code> o <code>adapters</code>.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <div>iot-bee — documentación generada · refleja el estado del código fuente.</div>
+      <div>Hecho con Mermaid + Chart.js · sin frameworks · responsive · ligero.</div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // ── Tema y mermaid ─────────────────────────────────────
+  const isLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.mermaid) {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: isLight ? 'default' : 'dark',
+        themeVariables: {
+          primaryColor:        isLight ? '#fff7e0' : '#1f2840',
+          primaryTextColor:    isLight ? '#0f1422' : '#e6edf7',
+          primaryBorderColor:  '#f5b30188',
+          lineColor:           isLight ? '#7a869f' : '#9ba8c1',
+          secondaryColor:      isLight ? '#f4f6fb' : '#1c2438',
+          tertiaryColor:       isLight ? '#f4f6fb' : '#11172b',
+          fontFamily:          'ui-sans-serif, system-ui, sans-serif'
+        },
+        flowchart: { curve: 'basis', htmlLabels: true },
+        sequence:  { actorMargin: 60, mirrorActors: false }
+      });
+    }
+
+    // ── Scrollspy ────────────────────────────────────────
+    const links = document.querySelectorAll('.nav a');
+    const map = new Map();
+    links.forEach(a => {
+      const id = a.getAttribute('href').replace('#','');
+      const el = document.getElementById(id);
+      if (el) map.set(id, a);
+    });
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const a = map.get(e.target.id);
+          if (a) a.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0.01 });
+    map.forEach((_, id) => obs.observe(document.getElementById(id)));
+
+    // ── Charts ───────────────────────────────────────────
+    const fg       = isLight ? '#0f1422' : '#e6edf7';
+    const fgMuted  = isLight ? '#4b5772' : '#9ba8c1';
+    const grid     = isLight ? '#e2e7f0' : '#25304a';
+    const accent   = '#f5b301';
+    const palette  = ['#f5b301', '#60a5fa', '#4ade80', '#f87171', '#a78bfa', '#fbbf24', '#22d3ee'];
+
+    Chart.defaults.color        = fgMuted;
+    Chart.defaults.borderColor  = grid;
+    Chart.defaults.font.family  = 'ui-sans-serif, system-ui, sans-serif';
+    Chart.defaults.font.size    = 12;
+
+    const commonScales = {
+      x: { grid: { color: grid, drawBorder: false }, ticks: { color: fgMuted } },
+      y: { grid: { color: grid, drawBorder: false }, ticks: { color: fgMuted }, beginAtZero: true }
+    };
+
+    // 1 · LOC por capa (aproximada; valores ilustrativos del balance)
+    new Chart(document.getElementById('chartLayers'), {
+      type: 'doughnut',
+      data: {
+        labels: ['adapters/api', 'adapters/actor_system', 'application', 'infrastructure', 'domain', 'composition'],
+        datasets: [{
+          data: [28, 22, 14, 18, 12, 6],
+          backgroundColor: palette,
+          borderColor: isLight ? '#fff' : '#11172b',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'right', labels: { color: fg, boxWidth: 10 } },
+          tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ~${ctx.parsed}%` } }
+        }
+      }
+    });
+
+    // 2 · Madurez por componente
+    new Chart(document.getElementById('chartMaturity'), {
+      type: 'bar',
+      data: {
+        labels: ['HTTP CRUD', 'Repos PostgreSQL', 'Réplica (3 actores)', 'PipelineSupervisor', 'SystemActorSupervisor', 'Lifecycle API'],
+        datasets: [{
+          label: 'Madurez (%)',
+          data: [85, 80, 80, 75, 25, 20],
+          backgroundColor: ['#4ade80', '#4ade80', '#4ade80', '#fbbf24', '#f87171', '#f87171'],
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...commonScales.x, max: 100, ticks: { ...commonScales.x.ticks, callback: v => v + '%' } },
+          y: commonScales.y
+        }
+      }
+    });
+
+    // 3 · Migraciones acumuladas (orden por número de archivo)
+    new Chart(document.getElementById('chartMigrations'), {
+      type: 'line',
+      data: {
+        labels: ['001', '0002', '0003', '0004', '0005', '0006', '0007', '0008', '0009', '0010', '0011'],
+        datasets: [{
+          label: 'Migraciones acumuladas',
+          data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+          borderColor: accent,
+          backgroundColor: 'rgba(245,179,1,.18)',
+          fill: true,
+          tension: 0.25,
+          pointRadius: 4,
+          pointBackgroundColor: accent,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: commonScales
+      }
+    });
+
+    // 4 · Endpoints por agregado (paths declarados en api_docs.rs)
+    new Chart(document.getElementById('chartEndpoints'), {
+      type: 'bar',
+      data: {
+        labels: ['Validation\nSchemas', 'Data\nSources', 'Pipeline\nGroups', 'Data\nStores', 'Pipeline\nData', 'Connection\nTypes'],
+        datasets: [{
+          label: 'Endpoints',
+          data: [6, 5, 3, 3, 3, 1],
+          backgroundColor: palette,
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: commonScales
+      }
+    });
+
+    // 5 · Tipos de actor
+    new Chart(document.getElementById('chartActors'), {
+      type: 'polarArea',
+      data: {
+        labels: ['Consumer', 'Processor', 'Store', 'PipelineSupervisor', 'SystemSupervisor (WIP)'],
+        datasets: [{
+          data: [1, 1, 1, 1, 1],
+          backgroundColor: ['#60a5fa88', '#a78bfa88', '#4ade8088', '#f5b30188', '#f8717188'],
+          borderColor: ['#60a5fa', '#a78bfa', '#4ade80', '#f5b301', '#f87171'],
+          borderWidth: 1.5,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: fg, boxWidth: 10 } } },
+        scales: {
+          r: {
+            grid: { color: grid }, angleLines: { color: grid },
+            ticks: { color: fgMuted, backdropColor: 'transparent' },
+            pointLabels: { color: fgMuted }
+          }
+        }
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

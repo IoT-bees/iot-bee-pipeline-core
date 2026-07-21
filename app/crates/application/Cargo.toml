@@ -1,0 +1,22 @@
+[package]
+name = "application"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+domain      = { path = "../domain" }
+logging     = { path = "../logging" }
+async-trait = { workspace = true }
+thiserror   = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+tokio       = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+
+[dev-dependencies]
+# actix ={ workspace = true }
+tokio = { workspace = true }
+actix-rt = { workspace = true }
+actix-web = { workspace = true }
+chrono = { workspace = true }

@@ -1,0 +1,266 @@
+// Domain errors imports
+use crate::error::IoTBeeError;
+// Domain entities imports
+use crate::entities::connection_type::ConnectionTypeModel;
+use crate::entities::data_source::{
+    PipelineDataSourceInputModel, PipelineDataSourceOutputModel, PipelineDataSourceUpdateModel,
+};
+use crate::entities::data_store::{PipelineDataStoreInputModel, PipelineDataStoreOutputModel};
+use crate::entities::pipeline_data::{PipelineDataInputModel, PipelineDataOutputModel};
+use crate::entities::pipeline_groups::{PipelineGroupInputModel, PipelineGroupOutputModel};
+use crate::entities::validation_schema::{
+    PipelineNewValidateSchema, PipelineValidationSchemaModel,
+};
+
+// Domain value objects imports
+use crate::value_objects::pipelines_values::{DataStoreId, FieldName};
+//general imports
+use async_trait::async_trait;
+
+// // these methods are for the data source
+#[async_trait]
+pub trait PipelineDataSourceRepository {
+    async fn save_pipeline_data_source(
+        &self,
+        org_id: i64,
+        data_source: &PipelineDataSourceInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_data_source(
+        &self,
+        org_id: i64,
+        data_source_id: &DataStoreId,
+    ) -> Result<Option<PipelineDataSourceOutputModel>, IoTBeeError>;
+    async fn list_pipeline_data_source(
+        &self,
+        org_id: i64,
+    ) -> Result<Vec<PipelineDataSourceOutputModel>, IoTBeeError>;
+
+    async fn update_pipeline_data_source(
+        &self,
+        org_id: i64,
+        data_source_id: &DataStoreId,
+        data_source: &PipelineDataSourceUpdateModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_data_source_name(
+        &self,
+        org_id: i64,
+        data_source_id: &DataStoreId,
+        name: &FieldName,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_data_source(
+        &self,
+        org_id: i64,
+        data_source_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipelines_using_data_source(
+        &self,
+        org_id: i64,
+        data_source_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
+}
+
+// // these methods are for the data store
+// #[async_trait]
+// pub trait PipelineDataStoreRepository {
+// async fn save_pipeline_data_store(&self, data_store: &String) -> Result<(), IoTBeeError>;
+// async fn delete_pipeline_data_store();
+// async fn update_pipeline_data_store();
+// async fn get_pipeline_data_store();
+// async fn list_pipeline_data_store();
+// }
+
+#[async_trait]
+pub trait PipelineGroupRepository {
+    async fn get_pipeline_group(
+        &self,
+        org_id: i64,
+    ) -> Result<Vec<PipelineGroupOutputModel>, IoTBeeError>;
+    async fn get_pipeline_group_by_id(
+        &self,
+        org_id: i64,
+        group_id: &DataStoreId,
+    ) -> Result<Option<PipelineGroupOutputModel>, IoTBeeError>;
+    async fn save_pipeline_group(
+        &self,
+        org_id: i64,
+        group: &PipelineGroupInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_group(
+        &self,
+        org_id: i64,
+        group_id: &DataStoreId,
+        group: &PipelineGroupInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_group(
+        &self,
+        org_id: i64,
+        group_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipelines_using_group(
+        &self,
+        org_id: i64,
+        group_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
+}
+
+#[async_trait]
+pub trait PipelineValidationSchemaRepository {
+    // these methods are for the validation schema
+    async fn save_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+        schema: &PipelineNewValidateSchema,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+        schema_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+        schema_id: &DataStoreId,
+        schema: &PipelineNewValidateSchema,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_validation_schema_name(
+        &self,
+        org_id: i64,
+        schema_id: &DataStoreId,
+        new_name: &str,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+        schema_id: &DataStoreId,
+    ) -> Result<Option<PipelineNewValidateSchema>, IoTBeeError>;
+    async fn list_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+    ) -> Result<Vec<PipelineValidationSchemaModel>, IoTBeeError>;
+    async fn get_pipelines_using_validation_schema(
+        &self,
+        org_id: i64,
+        schema_id: &DataStoreId,
+    ) -> Result<Vec<DataStoreId>, IoTBeeError>;
+}
+
+#[async_trait]
+pub trait PipelineConnectionTypeRepository {
+    async fn get_pipeline_connection_type(&self) -> Result<Vec<ConnectionTypeModel>, IoTBeeError>;
+}
+
+#[async_trait]
+pub trait PipelineDataStoreRepository {
+    async fn save_pipeline_data_store(
+        &self,
+        org_id: i64,
+        data_store: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_data_store(
+        &self,
+        org_id: i64,
+    ) -> Result<Vec<PipelineDataStoreOutputModel>, IoTBeeError>;
+    async fn get_pipeline_data_store_by_id(
+        &self,
+        org_id: i64,
+        data_store_id: &DataStoreId,
+    ) -> Result<Option<PipelineDataStoreOutputModel>, IoTBeeError>;
+    async fn update_pipeline_data_store_configuration(
+        &self,
+        org_id: i64,
+        data_store_id: &DataStoreId,
+        new_config: &PipelineDataStoreInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_data_store(
+        &self,
+        org_id: i64,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+}
+
+#[async_trait]
+pub trait PipelineControllerRepository {
+    async fn save_pipeline(
+        &self,
+        org_id: i64,
+        pipeline: &PipelineDataInputModel,
+    ) -> Result<(), IoTBeeError>;
+    async fn count_pipelines(&self, org_id: i64) -> Result<u32, IoTBeeError>;
+    async fn get_pipeline(&self, org_id: i64) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn get_pipeline_by_id(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+    ) -> Result<Option<PipelineDataOutputModel>, IoTBeeError>;
+    async fn get_pipeline_state_by_id(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+    ) -> Result<Option<bool>, IoTBeeError>;
+
+    async fn update_pipeline_state(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        is_active: bool,
+    ) -> Result<(), IoTBeeError>;
+    async fn delete_pipeline_by_id(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn get_pipeline_by_group_id(
+        &self,
+        org_id: i64,
+        group_id: &DataStoreId,
+    ) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    async fn update_pipeline_data_source(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        data_source_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_data_store(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        data_store_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_validation_schema(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        validation_schema_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_group(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        group_id: &DataStoreId,
+    ) -> Result<(), IoTBeeError>;
+    async fn update_pipeline_replication_factor(
+        &self,
+        org_id: i64,
+        pipeline_id: &DataStoreId,
+        replication_factor: &u32,
+    ) -> Result<(), IoTBeeError>;
+    /// System-wide enumeration used at startup before any per-request org context
+    /// exists. Returns pipelines across all organizations. Must NOT be exposed via
+    /// HTTP — used only by the lifecycle bootstrap to start what was active.
+    async fn list_all_pipelines_for_startup(
+        &self,
+    ) -> Result<Vec<PipelineDataOutputModel>, IoTBeeError>;
+    /// System-wide lookup used by pipeline_lifecycle and the actor system, which
+    /// have no JWT org context. Resolves a pipeline by id regardless of org.
+    /// Must NOT be exposed via HTTP.
+    async fn find_pipeline_by_id_for_system(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<Option<PipelineDataOutputModel>, IoTBeeError>;
+    /// Resuelve la organización de un pipeline durante el arranque, antes de
+    /// que exista un contexto JWT. No se expone por HTTP.
+    async fn organization_id_for_pipeline(
+        &self,
+        pipeline_id: &DataStoreId,
+    ) -> Result<Option<i64>, IoTBeeError>;
+}

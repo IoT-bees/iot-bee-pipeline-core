@@ -1,0 +1,44 @@
+"use client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { licenseApi } from "@/lib/api/endpoints/license";
+import { useToasts } from "@/lib/store/useToasts";
+
+export function useLicenseStatus(enabled = true) {
+  return useQuery({
+    queryKey: ["license", "status"],
+    queryFn: licenseApi.status,
+    enabled,
+    retry: 3,
+    retryDelay: 1000,
+    refetchOnMount: "always",
+    staleTime: 30_000,
+  });
+}
+
+export function useActivateLicense() {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: (licenseKey: string) => licenseApi.activate({ licenseKey }),
+    onSuccess: (status) => {
+      qc.setQueryData(["license", "status"], status);
+      qc.invalidateQueries({ queryKey: ["license"] });
+      push({ kind: "success", message: `Licencia activada: ${status.plan}` });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
+
+export function useDeactivateLicense() {
+  const qc = useQueryClient();
+  const push = useToasts((s) => s.push);
+  return useMutation({
+    mutationFn: licenseApi.deactivate,
+    onSuccess: (status) => {
+      qc.setQueryData(["license", "status"], status);
+      qc.invalidateQueries({ queryKey: ["license"] });
+      push({ kind: "success", message: "Licencia desactivada." });
+    },
+    onError: (e: Error) => push({ kind: "error", message: e.message }),
+  });
+}
