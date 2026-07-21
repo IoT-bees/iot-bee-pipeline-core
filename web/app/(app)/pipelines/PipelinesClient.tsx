@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Workflow } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
@@ -113,12 +113,14 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
             Configura, supervisa y opera tus proyectos de datos.
           </p>
         </div>
-        <Link href="/pipelines/new">
-          <Button variant="primary" className="min-h-10">
-            <Plus size={16} aria-hidden="true" className="mr-1.5" />
-            Crear proyecto
-          </Button>
-        </Link>
+        {all.length > 0 && (
+          <Link href="/pipelines/new">
+            <Button variant="primary" className="min-h-10">
+              <Plus size={16} aria-hidden="true" className="mr-1.5" />
+              Crear proyecto
+            </Button>
+          </Link>
+        )}
       </div>
       {all.length > 0 && (
         <div className="mt-8 mb-5 flex gap-3 items-center flex-wrap">
@@ -164,7 +166,23 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
             </Panel>
           )}
       {all.length === 0 ? (
-        <div className="t-mono">Aún no hay proyectos creados.</div>
+        <Panel className="mx-auto flex min-h-[260px] max-w-2xl flex-col items-center justify-center px-6 text-center">
+          <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
+            <Workflow size={22} aria-hidden="true" />
+          </div>
+          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
+            Crea tu primer proyecto
+          </h2>
+          <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
+            El editor te guía para elegir o crear una conexión, unas reglas de datos y un destino en un solo flujo.
+          </p>
+          <Link href="/pipelines/new" className="mt-5">
+            <Button variant="primary" className="min-h-11 gap-2">
+              <Plus size={16} aria-hidden="true" />
+              Crear mi primer proyecto
+            </Button>
+          </Link>
+        </Panel>
       ) : list.length === 0 ? (
         <div className="t-mono">
           No hay proyectos que coincidan{query && ` con "${query}"`}
