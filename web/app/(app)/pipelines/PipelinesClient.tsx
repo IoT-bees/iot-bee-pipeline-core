@@ -166,23 +166,25 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
             </Panel>
           )}
       {all.length === 0 ? (
-        <Panel className="mx-auto flex min-h-[260px] max-w-2xl flex-col items-center justify-center px-6 text-center">
-          <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
-            <Workflow size={22} aria-hidden="true" />
-          </div>
-          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
-            Crea tu primer proyecto
-          </h2>
-          <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
-            El editor te guía para elegir o crear una conexión, unas reglas de datos y un destino en un solo flujo.
-          </p>
-          <Link href="/pipelines/new" className="mt-5">
-            <Button variant="primary" className="min-h-11 gap-2">
-              <Plus size={16} aria-hidden="true" />
-              Crear mi primer proyecto
-            </Button>
-          </Link>
-        </Panel>
+        <div className="mt-8">
+          <Panel className="mx-auto flex min-h-[260px] max-w-2xl flex-col items-center justify-center px-6 text-center">
+            <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
+              <Workflow size={22} aria-hidden="true" />
+            </div>
+            <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
+              Crea tu primer proyecto
+            </h2>
+            <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
+              El editor te guía para elegir o crear una conexión, unas reglas de datos y un destino en un solo flujo.
+            </p>
+            <Link href="/pipelines/new" className="mt-5">
+              <Button variant="primary" className="min-h-11 gap-2">
+                <Plus size={16} aria-hidden="true" />
+                Crear mi primer proyecto
+              </Button>
+            </Link>
+          </Panel>
+        </div>
       ) : list.length === 0 ? (
         <div className="t-mono">
           No hay proyectos que coincidan{query && ` con "${query}"`}
