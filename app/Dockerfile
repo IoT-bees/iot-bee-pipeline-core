@@ -53,12 +53,17 @@ RUN cargo build --release --bin iot-bee
 # ==============================================================================
 FROM debian:bookworm-slim AS runtime
 
-# Runtime dependencies: PostgreSQL client library + TLS root certificates
+# Runtime dependencies: PostgreSQL client library + TLS root certificates.
+# El modo demo añade RabbitMQ y los dos servicios Python en el mismo contenedor;
+# se activan sólo cuando IOTBEE_DEMO_MODE=1.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpq5 \
         libssl3 \
         ca-certificates \
+        python3 \
+        rabbitmq-server \
+        tini \
         wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -78,8 +83,11 @@ COPY --from=builder /app/target/release/iot-bee /usr/local/bin/iot-bee
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Componentes internos del flujo de demo. No se exponen puertos adicionales:
+# el API, RabbitMQ y el webhook se comunican por loopback dentro del contenedor.
+COPY demo /opt/iot-bee-demo
+
 WORKDIR /app
-USER iotbee
 
 # Default environment — override at runtime via docker-compose or `docker run -e`.
 # Secrets (JWT_SECRET, ADMIN_PASSWORD) are NOT baked in; they must be provided
@@ -90,8 +98,11 @@ ENV DATABASE_URL=postgres://iot_bee:iot_bee_dev@postgres:5432/iot_bee \
     JWT_EXPIRES_IN_HOURS=24 \
     CORS_ORIGINS=http://localhost:3000 \
     ADMIN_EMAIL=admin@iot-bee.local \
-    ADMIN_NAME=Admin
+    ADMIN_NAME=Admin \
+    IOTBEE_DEMO_MODE=1
 
 EXPOSE 8080
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+# El entrypoint inicia como root exclusivamente para registrar aliases locales;
+# iot-bee y los procesos de demo se ejecutan como el usuario sin privilegios.
+ENTRYPOINT ["tini", "-g", "--", "docker-entrypoint.sh"]
