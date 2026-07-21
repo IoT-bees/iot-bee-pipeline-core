@@ -23,6 +23,9 @@ if [ "${IOTBEE_DEMO_MODE:-0}" = "1" ]; then
     export RABBITMQ_LOG_BASE=/tmp/iot-bee-rabbitmq/log
     export RABBITMQ_PID_FILE=/tmp/iot-bee-rabbitmq/rabbitmq.pid
     export RABBITMQ_ENABLED_PLUGINS_FILE=/tmp/iot-bee-rabbitmq/enabled_plugins
+    # Render Free asigna 0,1 CPU: evita que Erlang cree un scheduler por cada
+    # núcleo visible del host y permite que el broker arranque con ese límite.
+    export RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="+S 1:1 +A 5"
     mkdir -p "$RABBITMQ_MNESIA_BASE" "$RABBITMQ_LOG_BASE" /tmp/iot-bee-demo
     printf '[rabbitmq_management].\n' > "$RABBITMQ_ENABLED_PLUGINS_FILE"
     chown -R rabbitmq:rabbitmq /tmp/iot-bee-rabbitmq
@@ -35,8 +38,9 @@ if [ "${IOTBEE_DEMO_MODE:-0}" = "1" ]; then
         --user=guest --password=guest \
         http://127.0.0.1:15672/api/overview; do
         attempt=$((attempt + 1))
-        if [ "$attempt" -ge 30 ]; then
+        if [ "$attempt" -ge 240 ]; then
             echo "[iot-bee] ERROR: RabbitMQ no quedó disponible para la demo." >&2
+            find "$RABBITMQ_LOG_BASE" -maxdepth 1 -type f -exec cat {} \; 2>/dev/null || true
             exit 1
         fi
         sleep 1
