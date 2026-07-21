@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Workflow } from "lucide-react";
+import { Info, Plus, Workflow } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
@@ -161,8 +161,30 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
             </Panel>
           )}
           {(statusError || (!statusPending && status?.length === 0)) && all.length > 0 && (
-            <Panel className="mb-4">
-              <div role="status" aria-live="polite">El estado operativo no está disponible. Los proyectos se muestran, pero no podemos confirmar si están en ejecución.</div>
+            <Panel
+              className="mb-4"
+              style={{
+                borderColor: "#38bdf8",
+                backgroundColor:
+                  "color-mix(in srgb, #38bdf8 10%, var(--color-bg-panel))",
+              }}
+            >
+              <div role="status" aria-live="polite" className="flex items-start gap-3">
+                <Info
+                  size={20}
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0 text-sky-400"
+                />
+                <div>
+                  <p className="text-[14px] font-semibold text-sky-400 mb-1">
+                    Información de estado
+                  </p>
+                  <p className="text-[13px] text-[var(--color-fg-2)]">
+                    El estado operativo no está disponible. Los proyectos se
+                    muestran, pero no podemos confirmar si están en ejecución.
+                  </p>
+                </div>
+              </div>
             </Panel>
           )}
       {all.length === 0 ? (
@@ -246,6 +268,7 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
                             id={p.id}
                             name={p.name}
                             status={st}
+                            hideUnknownAction
                             onDelete={confirmDelete.ask}
                           />
                         </div>
@@ -299,6 +322,7 @@ export function PipelinesClient({ initialData }: { initialData?: Pipeline[] }) {
                       id={p.id}
                       name={p.name}
                       status={st}
+                      hideUnknownAction
                       onDelete={confirmDelete.ask}
                     />
                   </div>
