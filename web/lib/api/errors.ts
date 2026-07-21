@@ -16,6 +16,7 @@ function errorMessage(body: unknown, fallback: string): string {
 }
 
 export function friendlyMessage(status: number, _message: string): string {
+  void _message;
   if (status === 0) return "No fue posible conectar con el servicio. Inténtalo de nuevo.";
   if (status === 401) return "Tu sesión ya no es válida. Inicia sesión de nuevo.";
   if (status === 402) return "Se alcanzó el límite de tu plan.";

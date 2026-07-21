@@ -23,7 +23,7 @@ export function PipelineLockBanner({
         <div>
           <div className="t-label font-bold text-[var(--color-danger)]">Edición bloqueada</div>
           <h2 className="mt-1 text-[16px] font-semibold text-[var(--color-fg-0)]">
-            No se puede {actionLabel} este recurso
+            No se puede {actionLabel} {resourceLabel}
           </h2>
           <p className="mt-2 text-[14px] leading-6 text-[var(--color-fg-2)]">
             {pipelines.length === 1

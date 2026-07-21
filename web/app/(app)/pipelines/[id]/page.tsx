@@ -264,7 +264,6 @@ export default function PipelineDetailPage({
   const isDegraded =
     general?.toLowerCase() === "degraded" ||
     statusReady && replicas.some((r) => r.status?.toLowerCase() === "degraded");
-  const telemetry = summarizeFlowTelemetry(replicas);
 
   return (
     <div>
