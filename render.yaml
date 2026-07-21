@@ -3,9 +3,9 @@ services:
     name: iot-bee-api
     runtime: docker
     rootDir: app
-    # Render resuelve estas rutas desde la raíz del repositorio.
-    dockerfilePath: app/Dockerfile
-    dockerContext: app
+    # Con rootDir=app, Render resuelve estas rutas desde app/.
+    dockerfilePath: Dockerfile
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
