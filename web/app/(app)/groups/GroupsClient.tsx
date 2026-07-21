@@ -105,12 +105,14 @@ export function GroupsClient({ initialData }: { initialData?: PipelineGroup[] })
             Agrupa proyectos por cliente, sede o entorno.
           </p>
         </div>
-        <Link href="/groups/new" className="w-full sm:w-auto">
-          <Button variant="primary" className="min-h-10 w-full gap-2 sm:w-auto">
-            <Plus size={16} aria-hidden="true" />
-            Crear grupo
-          </Button>
-        </Link>
+        {groups.length > 0 && (
+          <Link href="/groups/new" className="w-full sm:w-auto">
+            <Button variant="primary" className="min-h-10 w-full gap-2 sm:w-auto">
+              <Plus size={16} aria-hidden="true" />
+              Crear grupo
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="mt-8">
@@ -154,10 +156,22 @@ export function GroupsClient({ initialData }: { initialData?: PipelineGroup[] })
           )}
 
           {groups.length === 0 ? (
-            <Panel className="text-center">
-              <FolderOpen className="mx-auto text-[var(--color-fg-4)]" size={28} aria-hidden="true" />
-              <h2 className="mt-3 text-[16px] font-semibold text-[var(--color-fg-0)]">Aún no hay grupos</h2>
-              <p className="mt-1 text-[14px] text-[var(--color-fg-3)]">Crea un grupo para reunir proyectos por contexto operativo.</p>
+            <Panel className="mx-auto flex min-h-[260px] max-w-2xl flex-col items-center justify-center px-6 text-center">
+              <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
+                <FolderOpen size={22} aria-hidden="true" />
+              </div>
+              <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
+                Organiza tus proyectos en grupos
+              </h2>
+              <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
+                Crea un grupo para reunir proyectos por cliente, sede o entorno.
+              </p>
+              <Link href="/groups/new" className="mt-5">
+                <Button variant="primary" className="min-h-11 gap-2">
+                  <Plus size={16} aria-hidden="true" />
+                  Crear el primer grupo
+                </Button>
+              </Link>
             </Panel>
           ) : (
             <>
