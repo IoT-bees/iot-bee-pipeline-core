@@ -26,7 +26,7 @@ export const projectTemplates: SamplePipelineConfig[] = [
       description: "Cola RabbitMQ local con telemetría mock continua",
       config: {
         sourceType: "RABBIT_MQ",
-        url: "amqp://guest:guest@rabbitmq:5672/%2f",
+        url: "amqp://guest:guest@127.0.0.1:5672/%2f",
         queue_name: "iot_bees.demo.telemetry",
         consumer_name: "iot-bees-demo",
       },
@@ -81,7 +81,7 @@ export const projectTemplates: SamplePipelineConfig[] = [
       description: "Receptor local para ver los mensajes validados de la demo",
       config: {
         persistenceType: "WEBHOOK",
-        url: "http://demo-sink:8090/events",
+        url: "http://127.0.0.1:8090/events",
         bearer_token: "",
       },
     },
