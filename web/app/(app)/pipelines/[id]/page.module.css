@@ -1,0 +1,69 @@
+@media (prefers-reduced-motion: no-preference) {
+.activityPulse {
+    animation: activity-pulse 640ms ease-out;
+  }
+
+  .hiveActivityPulse .hiveCellInner {
+    animation: hive-activity-pulse 720ms ease-out;
+  }
+}
+
+.hiveViewport {
+  overflow-x: auto;
+  padding: 20px 28px;
+}
+
+.hiveCanvas {
+  margin: 0 auto;
+  position: relative;
+}
+
+.hiveCell {
+  background: var(--color-accent);
+  border: 0;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  cursor: pointer;
+  display: grid;
+  height: 200px;
+  padding: 1px;
+  place-items: center;
+  position: absolute;
+  transition: filter 180ms ease;
+  width: 232px;
+}
+
+.hiveCell:focus-visible {
+  outline: 2px solid var(--color-fg-0);
+  outline-offset: 3px;
+}
+
+.hiveCellInner {
+  align-items: center;
+  background: var(--color-bg-panel);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px 40px;
+  text-align: center;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hiveCell:hover {
+    filter: drop-shadow(0 10px 14px color-mix(in srgb, var(--color-fg-0) 12%, transparent));
+    z-index: 2;
+  }
+}
+
+@keyframes activity-pulse {
+  0% { filter: brightness(1); transform: scale(1); }
+  45% { filter: brightness(1.18); transform: scale(1.09); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+@keyframes hive-activity-pulse {
+  0% { background: var(--color-bg-panel); }
+  45% { background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-panel)); }
+  100% { background: var(--color-bg-panel); }
+}

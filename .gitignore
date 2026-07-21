@@ -1,4 +1,5 @@
 /target
+/app/target/
 :# Rust
 /target/
 **/*.rs.bk
@@ -11,6 +12,8 @@
 .env
 .env.local
 .env.*.local
+web/.env.local
+web/.env.*.local
 
 # IDE
 .vscode/
@@ -40,3 +43,26 @@ data/
 
 # Generated files
 docs/generated/
+docs/index.html
+
+# AI assistant artifacts (Claude / Cursor / Copilot / Gemini / Codex / agents)
+.playwright-cli/
+.claude/
+**/.claude/
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
+GEMINI.md
+**/GEMINI.md
+.cursor/
+.cursorrules
+.github/copilot-instructions.md
+.github/agents/
+.aider*
+.codeium/
+.continue/
+
+# Superpowers (brainstorm/visual companion sessions + plans/specs)
+.superpowers/
+docs/superpowers/

@@ -1,0 +1,89 @@
+[workspace]
+members = [
+    "crates/domain",
+    "crates/application",
+    "crates/infrastructure",
+    "crates/adapters",
+    "crates/logging",
+]
+resolver = "2"
+
+[workspace.dependencies]
+# Async runtime
+actix = "0.13.5"
+actix-rt = "2.11.0"
+actix-web = "4.13.0"
+async-trait = "0.1.89"
+tokio = { version = "1.51.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+toml = "1.1.2"
+
+# Validation
+validator = { version = "0.20.0", features = ["derive"] }
+schemars = { version = "0.8.22"} 
+
+# Documentation
+utoipa = { version = "5", features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
+
+# Logging
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
+
+# Error handling
+thiserror = "2.0.18"
+
+# Utilities
+uuid = { version = "1.23.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
+futures-util = "0.3.31"
+dotenvy = "0.15.7"
+
+# Database
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }
+
+# Messaging
+lapin = "4.4.0"
+
+influxdb = {version = "0.8.0", features = ["chrono", "serde"] }
+
+# Auth
+argon2 = { version = "0.5.3", features = ["std"] }
+jsonwebtoken = "9.3.0"
+actix-cors = "0.7"
+
+[package]
+name = "iot-bee"
+version = "0.1.0"
+edition = "2024"
+authors = ["Manuel Manjarres Rivera"]
+
+[dependencies]
+domain      = { path = "crates/domain" }
+application = { path = "crates/application" }
+infrastructure = { path = "crates/infrastructure" }
+adapters    = { path = "crates/adapters" }
+logging     = { path = "crates/logging" }
+
+tokio       = { workspace = true }
+tracing     = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy     = { workspace = true }
+actix-web     = { workspace = true }
+utoipa         = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+actix-rt       = { workspace = true }
+async-trait     = { workspace = true }
+actix           = { workspace = true }
+sqlx            = { workspace = true }
+actix-cors      = { workspace = true }
+
+[dev-dependencies]
+serde_json  = { workspace = true }
+chrono      = { workspace = true }
+dotenvy     = { workspace = true }
+tokio       = { workspace = true }
+async-trait = { workspace = true }

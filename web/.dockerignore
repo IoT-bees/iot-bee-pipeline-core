@@ -1,0 +1,15 @@
+node_modules
+.next
+.env
+.env.local
+.env.*.local
+*.log
+coverage
+playwright-report
+test-results
+.git
+.gitignore
+Dockerfile*
+.dockerignore
+tsconfig.tsbuildinfo
+.DS_Store

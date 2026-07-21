@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iot bee — Estudio de Viabilidad · Mercado Colombiano</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e8eaf0;
+    --muted: #9aa3b2;
+    --amber: #f5b82e;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #c084fc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65; font-size: 16px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 28px 96px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 32px; margin-bottom: 40px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .hex { width: 34px; height: 34px; background: var(--amber); clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%); }
+  .brand span { font-size: 22px; font-weight: 700; }
+  h1 { font-size: 34px; letter-spacing: -0.8px; line-height: 1.2; margin-bottom: 10px; }
+  .subtitle { color: var(--muted); font-size: 17px; max-width: 680px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  h2 { font-size: 22px; margin: 56px 0 16px; padding-top: 28px; border-top: 1px solid var(--border); letter-spacing: -0.4px; }
+  h2 .num { color: var(--amber); font-weight: 800; margin-right: 8px; }
+  h3 { font-size: 16px; margin: 26px 0 8px; color: var(--amber); }
+  p { margin-bottom: 14px; color: #cdd3de; }
+  strong { color: var(--text); }
+  ul, ol { margin: 0 0 16px 22px; color: #cdd3de; }
+  li { margin-bottom: 7px; }
+  a { color: var(--blue); text-decoration: none; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin: 18px 0; }
+  .card.accent { border-left: 4px solid var(--amber); }
+  .card.warn { border-left: 4px solid var(--red); }
+  .card.ok { border-left: 4px solid var(--green); }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  th { text-align: left; padding: 10px 12px; background: var(--surface-2); color: var(--amber); font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: #cdd3de; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { background: var(--surface-2); font-weight: 700; color: var(--text); }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .pill.ok { background: rgba(74,222,128,.12); color: var(--green); }
+  .pill.miss { background: rgba(248,113,113,.12); color: var(--red); }
+  .pill.part { background: rgba(245,184,46,.12); color: var(--amber); }
+  .pill.info { background: rgba(96,165,250,.12); color: var(--blue); }
+  .verdict { display: flex; gap: 18px; align-items: flex-start; background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--amber); border-radius: 12px; padding: 24px; margin: 24px 0; }
+  .verdict .light { font-size: 40px; line-height: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 20px 0; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+  .kpi .v { font-size: 21px; font-weight: 800; color: var(--amber); white-space: nowrap; }
+  .kpi .l { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin: 7px 0; font-size: 13px; }
+  .bar-label { width: 250px; color: var(--muted); flex-shrink: 0; text-align: right; }
+  .bar-track { flex: 1; background: var(--surface-2); border-radius: 5px; height: 21px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: #0f1115; white-space: nowrap; }
+  .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+  .chart-box h4 { font-size: 14px; color: var(--muted); margin-bottom: 14px; font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .legend span::before { content: "●"; margin-right: 5px; }
+  .legend .opt::before { color: var(--green); }
+  .legend .base::before { color: var(--amber); }
+  .legend .pes::before { color: var(--red); }
+  .legend .infra::before { color: var(--blue); }
+  .legend .sueldos::before { color: var(--purple); }
+  .footnote { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--red); font-weight: 700; }
+  svg text { font-family: inherit; }
+  @media (max-width: 700px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .bar-label { width: 130px; font-size: 11px; }
+    table { font-size: 12px; }
+  }
+  @media print {
+    body { background: #fff; color: #111; }
+    :root { --bg:#fff; --surface:#f7f7f8; --surface-2:#efeff1; --border:#ddd; --text:#111; --muted:#555; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><div class="hex"></div><span>iot bee</span></div>
+  <h1>Estudio de Viabilidad — Mercado Colombiano</h1>
+  <p class="subtitle">¿Es viable montar iot bee como SaaS de ingestión de datos IoT para integradores en Colombia? Análisis con datos verificados de competidores, costos de infraestructura, pagos y escenarios de adquisición. Todos los valores en pesos colombianos.</p>
+  <p class="meta">10 de junio de 2026 · TRM oficial: $3.588,09 COP/USD · EUR ≈ $4.160 COP · Precios antes de IVA</p>
+</header>
+
+<h2><span class="num">1.</span>Veredicto</h2>
+<div class="verdict">
+  <div class="light">🟡</div>
+  <div>
+    <p style="margin-bottom:8px"><strong>VIABLE como negocio — NO viable (todavía) como reemplazo de salario.</strong></p>
+    <p style="margin-bottom:0">Los números cierran: arrancar cuesta <strong>~$110.000 COP/mes</strong> de costos fijos (menos que un plan de Alegra), el margen bruto por proyecto supera el 90%, los precios propuestos caen dentro de la banda que las pymes colombianas ya pagan por SaaS ($55.000–$320.000/mes), y los competidores internacionales cobran 2–4 veces más en COP sin canal local. El punto de equilibrio de infraestructura se cruza con <strong>2 proyectos vendidos</strong>. Pero para que les pague un sueldo digno a los dos (~$5M COP c/u) se necesitan <strong>~45 proyectos activos</strong>, lo que en el escenario base toma 18–30 meses. Conclusión: <strong>móntenlo como negocio paralelo financiado por el primer cliente, con criterios claros de corte a los 6 y 12 meses</strong> (sección 10).</p>
+  </div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">$110.000</div><div class="l">COP/mes costos fijos para arrancar (etapa piloto)</div></div>
+  <div class="kpi"><div class="v">2 proyectos</div><div class="l">punto de equilibrio de infraestructura</div></div>
+  <div class="kpi"><div class="v">&gt;90%</div><div class="l">margen bruto por proyecto activo</div></div>
+  <div class="kpi"><div class="v">~45 proyectos</div><div class="l">para pagar 2 sueldos de $5M COP</div></div>
+</div>
+
+<h2><span class="num">2.</span>Metodología y confiabilidad de los datos</h2>
+<p>Investigación con búsqueda en fuentes públicas (24 fuentes, 111 afirmaciones extraídas). Los datos críticos fueron <strong>re-verificados manualmente hoy contra la fuente original</strong>:</p>
+<ul>
+  <li><span class="pill ok">Verificado</span> Precios de Ubidots, ThingsBoard, Datacake y TagoIO (páginas de precios oficiales, consultadas 10-jun-2026).</li>
+  <li><span class="pill ok">Verificado</span> TRM oficial $3.588,09 (9-jun-2026, Superfinanciera vía prensa).</li>
+  <li><span class="pill ok">Verificado</span> Tarifas Wompi (2,65% + $700 + IVA, página oficial de tarifas).</li>
+  <li><span class="pill part">Fuente primaria, sin re-verificar</span> Precios de Alegra y Loggro (banda de disposición de pago pyme), facturación gratuita DIAN, precios VPS DigitalOcean.</li>
+  <li><span class="pill miss">Fuente débil</span> CAC B2B LATAM (~USD $702/cliente) — blogs sin metodología clara. Úsenlo solo como orden de magnitud.</li>
+</ul>
+
+<h2><span class="num">3.</span>El mercado colombiano</h2>
+<h3>Señales a favor</h3>
+<ul>
+  <li><strong>El segmento comprador existe:</strong> en Colombia el despliegue LoRaWAN predominante es de <em>redes privadas</em> — cada integrador/cliente monta su propia red en vez de depender de un operador público. Eso es exactamente el perfil que necesita un core de datos como iot bee. Hay distribuidores Milesight activos en el país (p. ej. SIOT Ingeniería publica catálogo Milesight en español) y proyectos LoRaWAN documentados en agro, apicultura y ciudades (CIDEI).</li>
+  <li><strong>Precedente de éxito local:</strong> Ubidots —nacida en Medellín— vende su plataforma IoT al mundo desde Colombia. El talento y el modelo ya están probados en el país; ustedes atacan un nicho distinto (ingestión hacia la base de datos del cliente, no dashboards).</li>
+  <li><strong>Cliente cero ya identificado:</strong> el distribuidor Milesight (contacto de Mane, plataforma ting.com.co) tiene equipos comprados, plataforma propia y presupuesto asignado para desarrollar su core de datos.</li>
+</ul>
+<h3>Señales en contra</h3>
+<ul>
+  <li>El mercado IoT colombiano es <strong>pequeño y de maduración lenta</strong>: los proyectos se deciden por relación comercial, no por marketing digital. El crecimiento dependerá de visitas, demos y referidos — es lento pero también es barato (CAC bajo por canal).</li>
+  <li>ThingsBoard self-hosted (gratis, Apache 2.0) es la alternativa del integrador técnico tacaño. La defensa de iot bee: cero operación de servidores y soporte en español con factura local.</li>
+</ul>
+
+<h2><span class="num">4.</span>Competidores: lo que cuestan hoy en COP</h2>
+<p>Precios verificados el 10-jun-2026, convertidos a TRM $3.588 (EUR ≈ $4.160). Ninguno tiene facturación local colombiana ni soporte en español con presencia en el gremio — esa es la brecha de iot bee.</p>
+<table>
+  <tr><th>Competidor / Plan</th><th>Dispositivos</th><th class="r">Precio/mes (orig.)</th><th class="r">Precio/mes COP</th></tr>
+  <tr><td><strong>Ubidots</strong> Professional (único plan publicado)</td><td>50 (+US$2 c/u extra)</td><td class="r">US$99</td><td class="r"><strong>$355.000</strong></td></tr>
+  <tr><td><strong>ThingsBoard Cloud</strong> Prototype</td><td>50</td><td class="r">US$49</td><td class="r">$176.000</td></tr>
+  <tr><td><strong>ThingsBoard Cloud</strong> Pilot</td><td>100</td><td class="r">US$149</td><td class="r">$535.000</td></tr>
+  <tr><td><strong>ThingsBoard Cloud</strong> Startup</td><td>500</td><td class="r">US$399</td><td class="r">$1.432.000</td></tr>
+  <tr><td><strong>ThingsBoard Cloud</strong> Business</td><td>1.000 (+US$0,30 c/u)</td><td class="r">US$749</td><td class="r">$2.687.000</td></tr>
+  <tr><td><strong>Datacake</strong> Hobby</td><td>25</td><td class="r">€25</td><td class="r">$104.000</td></tr>
+  <tr><td><strong>Datacake</strong> Light (1 white label)</td><td>50</td><td class="r">€159</td><td class="r">$661.000</td></tr>
+  <tr><td><strong>Datacake</strong> Standard</td><td>200</td><td class="r">€399</td><td class="r">$1.660.000</td></tr>
+  <tr><td><strong>TagoIO</strong> Starter</td><td>100/perfil</td><td class="r">US$49</td><td class="r">$176.000</td></tr>
+  <tr><td><strong>TagoIO</strong> Scale</td><td>hasta 10.000/perfil</td><td class="r">US$199</td><td class="r">$714.000</td></tr>
+  <tr><td><strong>TagoIO</strong> Deploy (instancia dedicada)</td><td>1M+</td><td class="r">US$850</td><td class="r">$3.050.000</td></tr>
+</table>
+<div class="chart-box">
+  <h4>Precio de entrada pago de cada competidor vs. iot bee Proyecto S (COP/mes)</h4>
+  <div class="bar-row"><div class="bar-label">iot bee — Proyecto S (canal)</div><div class="bar-track"><div class="bar-fill" style="width:28%; background:var(--amber)">$99.000</div></div></div>
+  <div class="bar-row"><div class="bar-label">Datacake Hobby (25 disp.)</div><div class="bar-track"><div class="bar-fill" style="width:29%; background:var(--surface-2); color:var(--text); border:1px solid var(--border)">$104.000</div></div></div>
+  <div class="bar-row"><div class="bar-label">ThingsBoard Prototype (50 disp.)</div><div class="bar-track"><div class="bar-fill" style="width:50%; background:#3a4150; color:#e8eaf0">$176.000</div></div></div>
+  <div class="bar-row"><div class="bar-label">TagoIO Starter (100 disp.)</div><div class="bar-track"><div class="bar-fill" style="width:50%; background:#3a4150; color:#e8eaf0">$176.000</div></div></div>
+  <div class="bar-row"><div class="bar-label">Ubidots Professional (50 disp.)</div><div class="bar-track"><div class="bar-fill" style="width:100%; background:#3a4150; color:#e8eaf0">$355.000</div></div></div>
+  <p class="footnote">Importante: Datacake, Ubidots y TagoIO venden <em>dashboards</em>; iot bee vende <em>entrega de datos al sistema del cliente</em>. No son sustitutos perfectos, pero son el ancla mental de precio del comprador.</p>
+</div>
+
+<h2><span class="num">5.</span>Precios iot bee en COP por franja</h2>
+<p>Ajustados a números redondos en pesos, dentro de la banda de lo que la pyme colombiana ya paga por software B2B (Alegra: $74.900–$319.900/mes; Loggro: $54.990–$292.990/mes) y por debajo del equivalente internacional. <strong>Precios antes de IVA (19%)</strong>.</p>
+<table>
+  <tr><th>Franja</th><th>Referencia de tamaño</th><th class="r">Canal (integrador)</th><th class="r">Lista (venta directa)</th><th class="r">Equivalente USD canal</th></tr>
+  <tr><td><strong>Sandbox</strong></td><td>1 proyecto de prueba, 30 días</td><td class="r">$0</td><td class="r">$0</td><td class="r">—</td></tr>
+  <tr><td><strong>Proyecto S</strong></td><td>hasta ~25 dispositivos · 500k msgs/mes</td><td class="r"><strong>$99.000</strong></td><td class="r">$169.000</td><td class="r">~US$28</td></tr>
+  <tr><td><strong>Proyecto M</strong></td><td>hasta ~100 dispositivos · 2M msgs/mes</td><td class="r"><strong>$279.000</strong></td><td class="r">$449.000</td><td class="r">~US$78</td></tr>
+  <tr><td><strong>Proyecto L</strong></td><td>hasta ~500 dispositivos · 10M msgs/mes</td><td class="r"><strong>$699.000</strong></td><td class="r">$1.149.000</td><td class="r">~US$195</td></tr>
+  <tr><td><strong>Setup fee</strong> (una vez)</td><td>conector/destino nuevo</td><td class="r" colspan="2">$5.400.000 – $10.800.000 (US$1.500–3.000)</td><td class="r"></td></tr>
+</table>
+<ul>
+  <li><strong>Descuento por volumen del canal:</strong> 10+ proyectos −15% · 25+ proyectos −25%.</li>
+  <li><strong>Anual prepagado:</strong> paga 10 meses, recibe 12 (mejora caja, baja churn).</li>
+  <li><strong>Chequeo de sanidad:</strong> el integrador revende el Proyecto M a ~$500.000–700.000 COP/mes al cliente final — sigue siendo más barato que ThingsBoard Pilot ($535.000) <em>sin</em> tener que operar nada, y el integrador gana ~2x.</li>
+</ul>
+
+<h2><span class="num">6.</span>Costos de infraestructura por etapa</h2>
+<p>Tres etapas de crecimiento. Base: DigitalOcean (precio verificable y estable; Hetzner es ~30–40% más barato pero con datacenter en EE.UU./Europa — latencia similar para Colombia). Valores mensuales en COP a TRM $3.588.</p>
+
+<h3>Etapa 0 — Piloto (1 a 10 proyectos activos)</h3>
+<table>
+  <tr><th>Rubro</th><th>Detalle</th><th class="r">USD/mes</th><th class="r">COP/mes</th></tr>
+  <tr><td>VPS aplicación</td><td>Droplet 2 vCPU / 4 GB / 80 GB SSD (corre API + actores + web)</td><td class="r">$24,00</td><td class="r">$86.100</td></tr>
+  <tr><td>Backups/snapshots</td><td>20% del droplet (snapshot diario)</td><td class="r">$4,80</td><td class="r">$17.200</td></tr>
+  <tr><td>Dominio .com</td><td>~US$13/año prorrateado</td><td class="r">$1,10</td><td class="r">$3.900</td></tr>
+  <tr><td>DNS + CDN + TLS</td><td>Cloudflare plan gratuito</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr><td>Email transaccional</td><td>Resend/Brevo tier gratuito (&lt;3.000 correos/mes)</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr><td>Monitoreo/alertas</td><td>UptimeRobot + Prometheus propio (ya existe /metrics)</td><td class="r">$0</td><td class="r">$0</td></tr>
+  <tr class="total"><td colspan="2">Total etapa piloto</td><td class="r">~$30</td><td class="r"><strong>~$107.000</strong></td></tr>
+</table>
+
+<h3>Etapa 1 — Crecimiento (10 a 40 proyectos)</h3>
+<table>
+  <tr><th>Rubro</th><th>Detalle</th><th class="r">USD/mes</th><th class="r">COP/mes</th></tr>
+  <tr><td>VPS aplicación</td><td>4 vCPU / 8 GB (más réplicas de actores concurrentes)</td><td class="r">$48,00</td><td class="r">$172.200</td></tr>
+  <tr><td>Postgres gestionado</td><td>Control plane PostgreSQL (requisito multi-tenant)</td><td class="r">$15,00</td><td class="r">$53.800</td></tr>
+  <tr><td>Backups + object storage</td><td>Snapshots + Spaces/B2 para respaldos externos</td><td class="r">$14,60</td><td class="r">$52.400</td></tr>
+  <tr><td>Email transaccional</td><td>Resend plan pago (facturas, alertas)</td><td class="r">$20,00</td><td class="r">$71.800</td></tr>
+  <tr><td>Monitoreo</td><td>Grafana Cloud / Better Stack tier bajo</td><td class="r">$10,00</td><td class="r">$35.900</td></tr>
+  <tr><td>Dominio</td><td></td><td class="r">$1,10</td><td class="r">$3.900</td></tr>
+  <tr class="total"><td colspan="2">Total etapa crecimiento</td><td class="r">~$109</td><td class="r"><strong>~$390.000</strong></td></tr>
+</table>
+
+<h3>Etapa 2 — Escala (40 a 150 proyectos)</h3>
+<table>
+  <tr><th>Rubro</th><th>Detalle</th><th class="r">USD/mes</th><th class="r">COP/mes</th></tr>
+  <tr><td>2× nodos aplicación</td><td>Redundancia: una caída no tumba a todos los clientes</td><td class="r">$96,00</td><td class="r">$344.500</td></tr>
+  <tr><td>Load balancer</td><td></td><td class="r">$12,00</td><td class="r">$43.100</td></tr>
+  <tr><td>Postgres gestionado HA</td><td>Con réplica standby</td><td class="r">$60,00</td><td class="r">$215.300</td></tr>
+  <tr><td>Almacenamiento series de tiempo</td><td>InfluxDB/discos para clientes sin BD propia</td><td class="r">$40,00</td><td class="r">$143.500</td></tr>
+  <tr><td>Backups + storage</td><td></td><td class="r">$20,00</td><td class="r">$71.800</td></tr>
+  <tr><td>Email + monitoreo</td><td></td><td class="r">$40,00</td><td class="r">$143.500</td></tr>
+  <tr class="total"><td colspan="2">Total etapa escala</td><td class="r">~$268</td><td class="r"><strong>~$962.000</strong></td></tr>
+</table>
+
+<h3>Costo de servir y margen por franja</h3>
+<p>Costo marginal estimado por proyecto (cómputo + almacenamiento + pasarela), ya en régimen (etapa 1–2):</p>
+<table>
+  <tr><th>Franja</th><th class="r">Precio canal</th><th class="r">Pasarela Wompi (~3,4%)*</th><th class="r">Infra marginal est.</th><th class="r">Margen bruto</th><th class="r">% margen</th></tr>
+  <tr><td>Proyecto S</td><td class="r">$99.000</td><td class="r">−$3.400</td><td class="r">−$5.000</td><td class="r">$90.600</td><td class="r"><strong>92%</strong></td></tr>
+  <tr><td>Proyecto M</td><td class="r">$279.000</td><td class="r">−$9.600</td><td class="r">−$12.000</td><td class="r">$257.400</td><td class="r"><strong>92%</strong></td></tr>
+  <tr><td>Proyecto L</td><td class="r">$699.000</td><td class="r">−$24.000</td><td class="r">−$35.000</td><td class="r">$640.000</td><td class="r"><strong>92%</strong></td></tr>
+</table>
+<p class="footnote">*Wompi modelo agregador: 2,65% + $700/transacción + IVA 19% sobre la comisión ≈ 3,4% efectivo en estos montos. Con cobro anual o débito recurrente bancario el costo baja. La infraestructura marginal es estimación propia basada en el volumen de mensajes por franja (500k msgs/mes ≈ 0,2 msg/segundo promedio — carga trivial para el pipeline Rust).</p>
+
+<h2><span class="num">7.</span>Pagos y facturación en Colombia</h2>
+<table>
+  <tr><th>Opción</th><th>Costo</th><th>Para iot bee</th></tr>
+  <tr><td><strong>Wompi</strong> (Bancolombia)</td><td>2,65% + $700 + IVA por transacción (agregador), sin fijo mensual</td><td><span class="pill ok">Recomendado</span> para cobrar en COP a clientes locales; integración por API/link de pago</td></tr>
+  <tr><td><strong>PayU</strong></td><td>~3,49% por transacción exitosa</td><td>Alternativa con cobros recurrentes automáticos nativos</td></tr>
+  <tr><td><strong>Stripe</strong> (actual en el código)</td><td>Stripe no opera para entidades constituidas en Colombia; requiere LLC en EE.UU. (Stripe Atlas ~US$500 una vez)</td><td><span class="pill part">Mantener</span> para clientes que paguen en USD (otros países LATAM, multinacionales); no sirve como pasarela local</td></tr>
+  <tr><td><strong>dLocal</strong></td><td>Negociado</td><td>Solo cuando vendan en varios países LATAM a la vez — no para empezar</td></tr>
+  <tr><td><strong>Facturación electrónica DIAN</strong></td><td><strong>$0</strong> con el servicio "Facturación Gratuita DIAN" (web, documentos ilimitados)</td><td>Obligatoria para toda persona jurídica que venda servicios; el costo de cumplimiento es cercano a cero</td></tr>
+</table>
+<div class="card warn">
+  <p style="margin:0"><strong>Implicación para el producto:</strong> el billing Stripe ya construido queda para cobros internacionales en USD, pero <strong>el primer cliente colombiano se cobra con Wompi/PayU + factura DIAN</strong>. La activación manual de licencias (que ya existe en la plataforma) permite arrancar facturando por fuera mientras se integra la pasarela local. Recuerden: los precios se cotizan <strong>+ IVA 19%</strong>, y en B2B los clientes aplican retención en la fuente — confirmen las tarifas de retención con un contador antes de la primera factura, porque afecta el flujo de caja.</p>
+</div>
+
+<h2><span class="num">8.</span>Adquisición de clientes: escenarios a 24 meses</h2>
+<h3>El CAC en este modelo</h3>
+<ul>
+  <li><strong>Canal (integradores):</strong> ganar un integrador cuesta demos + visitas + acompañamiento ≈ $1–3M COP de tiempo y viáticos. Pero cada integrador trae 5–20 proyectos → <strong>CAC efectivo por proyecto: $100.000–300.000 COP</strong> (se recupera en 1–3 mensualidades).</li>
+  <li><strong>Directo:</strong> la referencia LATAM para SaaS B2B es ~US$700 (~$2,5M COP) por cliente <span class="pill miss">fuente débil</span>. Coherente con la regla práctica: la venta directa solo se justifica en proyectos M/L.</li>
+  <li><strong>El arma de venta es la demo con hardware real</strong> (sensor Milesight publicando en vivo → tabla Postgres del cliente). Costo de adquisición principal: tiempo de ustedes dos.</li>
+</ul>
+
+<h3>Tres escenarios de crecimiento</h3>
+<table>
+  <tr><th>Escenario</th><th>Supuesto comercial</th><th class="r">Proyectos al mes 24</th><th class="r">MRR mes 24 (COP)</th></tr>
+  <tr><td>🔴 <strong>Pesimista</strong></td><td>Solo el distribuidor Milesight; crece a 6 proyectos (4S + 2M)</td><td class="r">6</td><td class="r">$954.000</td></tr>
+  <tr><td>🟡 <strong>Base</strong></td><td>3 integradores + 1 cliente directo; 24 proyectos (14S + 8M + 2L)</td><td class="r">24</td><td class="r">$5.000.000</td></tr>
+  <tr><td>🟢 <strong>Optimista</strong></td><td>6 integradores + 3 directos; 60 proyectos (30S + 22M + 8L)</td><td class="r">60</td><td class="r">$14.700.000</td></tr>
+</table>
+
+<div class="chart-box">
+  <h4>MRR proyectado a 24 meses vs. líneas de costos (millones de COP/mes)</h4>
+  <svg viewBox="0 0 800 330" width="100%" style="max-width:800px">
+    <line x1="40" y1="290" x2="760" y2="290" stroke="#2a2f3a" stroke-width="1"/>
+    <line x1="40" y1="203" x2="760" y2="203" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="40" y1="117" x2="760" y2="117" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <line x1="40" y1="30" x2="760" y2="30" stroke="#2a2f3a" stroke-width="1" stroke-dasharray="2,4"/>
+    <text x="34" y="294" fill="#9aa3b2" font-size="11" text-anchor="end">0</text>
+    <text x="34" y="207" fill="#9aa3b2" font-size="11" text-anchor="end">5M</text>
+    <text x="34" y="121" fill="#9aa3b2" font-size="11" text-anchor="end">10M</text>
+    <text x="34" y="34" fill="#9aa3b2" font-size="11" text-anchor="end">15M</text>
+    <text x="40" y="310" fill="#9aa3b2" font-size="11">mes 0</text>
+    <text x="220" y="310" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 6</text>
+    <text x="400" y="310" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 12</text>
+    <text x="580" y="310" fill="#9aa3b2" font-size="11" text-anchor="middle">mes 18</text>
+    <text x="760" y="310" fill="#9aa3b2" font-size="11" text-anchor="end">mes 24</text>
+    <line x1="40" y1="99" x2="760" y2="99" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="6,5"/>
+    <text x="755" y="92" fill="#c084fc" font-size="11" text-anchor="end">infra + 2 sueldos de $5M ≈ $11M</text>
+    <polyline points="40,288 220,288 220,283 490,283 490,273 760,273" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6,5"/>
+    <text x="755" y="266" fill="#60a5fa" font-size="11" text-anchor="end">solo infraestructura</text>
+    <polyline points="40,290 130,285 220,281 400,278 580,275 760,273" fill="none" stroke="#f87171" stroke-width="2.5"/>
+    <polyline points="40,290 130,281 220,269 400,247 580,224 760,203" fill="none" stroke="#f5b82e" stroke-width="2.5"/>
+    <polyline points="40,290 130,276 220,255 400,195 580,125 760,35" fill="none" stroke="#4ade80" stroke-width="2.5"/>
+    <circle cx="760" cy="273" r="4" fill="#f87171"/>
+    <circle cx="760" cy="203" r="4" fill="#f5b82e"/>
+    <circle cx="760" cy="35" r="4" fill="#4ade80"/>
+  </svg>
+  <div class="legend">
+    <span class="opt">Optimista ($14,7M)</span>
+    <span class="base">Base ($5,0M)</span>
+    <span class="pes">Pesimista ($0,95M)</span>
+    <span class="infra">Costos de infraestructura</span>
+    <span class="sueldos">Umbral 2 sueldos</span>
+  </div>
+  <p class="footnote">Lectura: en los tres escenarios el MRR cruza la línea de infraestructura antes del mes 6 — el negocio nunca pierde plata en costos directos. La línea morada (pagarles a ustedes dos) solo se cruza en el escenario optimista, cerca del mes 20. En el escenario base, al mes 24 hay ~$5M/mes: un muy buen ingreso adicional, no dos salarios completos. Sumen los setup fees ($5,4–10,8M por conector nuevo) que no aparecen en el MRR.</p>
+</div>
+
+<h2><span class="num">9.</span>Punto de equilibrio: las tres metas</h2>
+<table>
+  <tr><th>Meta</th><th class="r">MRR necesario</th><th class="r">Proyectos equivalentes*</th><th>Cuándo (escenario base)</th></tr>
+  <tr><td><strong>1. Cubrir infraestructura</strong></td><td class="r">~$110.000–390.000</td><td class="r">2–4</td><td><span class="check">✓</span> Mes 2–4 (con el primer cliente)</td></tr>
+  <tr><td><strong>2. Un sueldo de $5M</strong> (uno se dedica full-time)</td><td class="r">~$5.500.000</td><td class="r">~25</td><td>Mes 22–26</td></tr>
+  <tr><td><strong>3. Dos sueldos de $5M</strong></td><td class="r">~$11.000.000</td><td class="r">~45</td><td>Mes 30+ (base) / mes 20 (optimista)</td></tr>
+</table>
+<p class="footnote">*Mezcla típica 60% S / 30% M / 10% L ≈ $240.000 COP promedio por proyecto. Los setup fees adelantan estas fechas: 4 conectores vendidos en el primer año ≈ $25–40M COP adicionales de una vez.</p>
+<div class="card accent">
+  <p style="margin:0"><strong>La implicación honesta:</strong> este negocio no exige renunciar a nada para arrancar (costos fijos de $110.000/mes los cubre el primer cliente) y tampoco da para vivir de él antes del año 2. El camino racional: mantener ingresos actuales, dedicarle noches/fines de semana financiados por el setup fee del primer cliente, y que <strong>la decisión de dedicación full-time la dispare una métrica, no el entusiasmo</strong>: cuando el MRR sostenga 6 meses seguidos por encima de $5,5M, uno de los dos se pasa de tiempo completo.</p>
+</div>
+
+<h2><span class="num">10.</span>Condiciones de viabilidad — GO / NO-GO</h2>
+<h3>Checklist GO (si todo esto se cumple, el negocio es viable)</h3>
+<ul>
+  <li><span class="check">✓</span> <strong>Mes 0–2:</strong> el distribuidor Milesight firma el piloto a ≥$99.000 COP/proyecto + setup fee ≥$5,4M. <em>Si no paga ni el cliente con la necesidad más urgente y la relación más cercana, el precio o la propuesta están mal.</em></li>
+  <li><span class="check">✓</span> <strong>Mes 6:</strong> el piloto está en producción con sus 3 equipos y el integrador cotizó iot bee en al menos 2 propuestas a clientes finales suyos.</li>
+  <li><span class="check">✓</span> <strong>Mes 9:</strong> hay un segundo integrador pagando (probado: el modelo no depende de una sola relación personal).</li>
+  <li><span class="check">✓</span> <strong>Mes 12:</strong> MRR ≥ $1.500.000 COP (≈7 proyectos) y churn de proyectos &lt;5%/mes.</li>
+</ul>
+<h3>Criterios de corte (NO-GO honesto)</h3>
+<ul>
+  <li><span class="cross">✗</span> Si a los <strong>6 meses</strong> el primer cliente no paga la mensualidad acordada → parar y repensar, no "regalar tres meses más".</li>
+  <li><span class="cross">✗</span> Si a los <strong>12 meses</strong> no existe el segundo integrador pagando → el canal no escala en Colombia; pivotar a venta directa en un vertical (cadena de frío portuaria es el candidato natural en Barranquilla) o congelar.</li>
+  <li><span class="cross">✗</span> Si los integradores solo quieren pagar por proyecto <em>cuando su cliente final les paga</em> (riesgo trasladado a ustedes) → exigir mínimos: todo proyecto desplegado factura, esté o no facturando el integrador.</li>
+</ul>
+
+<h2><span class="num">11.</span>Riesgos principales</h2>
+<table>
+  <tr><th>Riesgo</th><th>Probabilidad</th><th>Mitigación</th></tr>
+  <tr><td>Dependencia de un solo integrador los primeros meses</td><td><span class="pill part">Alta</span></td><td>Caso de estudio público desde el día 1; el gremio de distribuidores Milesight/Dragino se conoce — pedir 2 referidos como parte del precio fundador</td></tr>
+  <tr><td>ThingsBoard gratis self-hosted como competencia</td><td><span class="pill part">Media</span></td><td>Vender lo que ThingsBoard gratis no da: cero operación, soporte en español, factura DIAN, datos en la BD del cliente</td></tr>
+  <tr><td>Devaluación del COP encarece la infra (cobrada en USD)</td><td><span class="pill info">Media</span></td><td>La infra es &lt;8% del MRR en régimen — incluso una TRM a $4.500 no rompe el margen; revisar precios anualmente</td></tr>
+  <tr><td>Trabajo gratis disfrazado ("hazme este conector y después vemos")</td><td><span class="pill miss">Alta</span></td><td>Regla inquebrantable: conector nuevo = setup fee. Sin excepciones, ni con amigos</td></tr>
+  <tr><td>Conflicto de interés de Mane (consultor del mismo cliente)</td><td><span class="pill part">Media</span></td><td>Contrato de iot bee como empresa, separado de cualquier contrato personal de Mane; IP siempre de iot bee</td></tr>
+  <tr><td>Multi-tenant compartido sin aislamiento reforzado</td><td><span class="pill miss">Alta si se ignora</span></td><td>Endurecimiento del control plane PostgreSQL antes de escalar</td></tr>
+</table>
+
+<h2><span class="num">12.</span>Fuentes</h2>
+<ul style="font-size:13.5px">
+  <li><span class="pill ok">Verificado 10-jun</span> <a href="https://ubidots.com/pricing">Ubidots — Pricing</a> · <a href="https://thingsboard.io/pricing/">ThingsBoard — Pricing</a> · <a href="https://datacake.co/pricing">Datacake — Pricing</a> · <a href="https://tago.io/pricing">TagoIO — Pricing</a></li>
+  <li><span class="pill ok">Verificado 10-jun</span> <a href="https://www.noticiascaracol.com/economia/precio-del-dolar-en-colombia-hoy-martes-9-de-junio-de-2026-trm-se-mantiene-en-3-588-09-so35">TRM 9-jun-2026: $3.588,09 (Noticias Caracol / Superfinanciera)</a> · <a href="https://www.banrep.gov.co/es/glosario/tasa-cambio-trm">Banco de la República — TRM</a></li>
+  <li><span class="pill ok">Verificado 10-jun</span> <a href="https://wompi.com/es/co/planes-tarifas/">Wompi — Planes y tarifas</a> · <a href="https://soporte.wompi.co/hc/es-419/articles/360020957133">Wompi — Detalle de tarifas (2,65% + $700 + IVA)</a></li>
+  <li><span class="pill part">Primaria sin re-verificar</span> <a href="https://www.dian.gov.co/impuestos/factura-electronica/como-hacerlo/Paginas/ser-facturador-electronico.aspx">DIAN — Facturación electrónica gratuita</a> · <a href="https://www.alegra.com/colombia/contabilidad/precios/">Alegra — Precios Colombia</a> · <a href="https://loggro.com/pymes/planes/">Loggro — Planes pymes</a></li>
+  <li><span class="pill info">Contexto</span> <a href="https://cristiantala.com/pasarelas-de-pago-en-latam-2026-la-guia-que-necesitas-antes-de-cobrar-tu-primer-dolar/">Pasarelas de pago LATAM 2026</a> · <a href="https://btodigital.com/pasarelas-pago-colombia-comparativa-guia-negocio/">Comparativa pasarelas Colombia</a> · <a href="https://stripe.com/global">Stripe — Disponibilidad global</a> · <a href="https://bismark.net.co/como-avanzan-redes-lpwan/">Redes LPWAN en Colombia</a> · <a href="https://cidei.net/soluciones-iot-con-lorawan-agro-apicultura-ciudades/">CIDEI — Proyectos LoRaWAN Colombia</a> · <a href="https://betterstack.com/community/guides/web-servers/digitalocean-vs-hetzner/">DigitalOcean vs Hetzner (precios VPS)</a></li>
+  <li><span class="pill miss">Débil</span> <a href="https://latamclick.com/pymes/costo-de-adquisicion-de-cliente-promedio-en-b2b-latinoamerica-2025">CAC B2B LATAM</a> · <a href="https://ecosistemastartup.com/saas-2026-cac-de-us702-vs-construccion-barata-con-ia/">CAC SaaS ~US$702</a></li>
+</ul>
+
+</div>
+</body>
+</html>
