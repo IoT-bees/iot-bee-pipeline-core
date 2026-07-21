@@ -1,7 +1,7 @@
 "use client";
 import { use, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowLeft, Eye, LayoutGrid } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Eye, Info, LayoutGrid } from "lucide-react";
 
 import { Panel } from "@/components/ui/Panel";
 import { Pill } from "@/components/ui/Pill";
@@ -23,7 +23,14 @@ import { usePipelineStatusAll } from "@/lib/hooks/usePipelineStatusAll";
 import { useLicenseStatus } from "@/lib/hooks/useLicense";
 import { fmtId, formatDateTime } from "@/lib/fmt";
 import { summarizeFlowTelemetry } from "@/lib/flowTelemetry";
-import { isActiveReplica, pipelineStatusLabel, toPillState } from "@/lib/status";
+import { describeReplicaError } from "@/lib/replicaError";
+import {
+  isActiveReplica,
+  isDegraded,
+  isHealthy,
+  pipelineStatusLabel,
+  toPillState,
+} from "@/lib/status";
 import styles from "./page.module.css";
 
 function ReplicaCard({
@@ -42,7 +49,8 @@ function ReplicaCard({
   const previousActivity = useRef(lastProcessedAt);
   const [pulseVersion, setPulseVersion] = useState(0);
   const [now, setNow] = useState(() => Date.now());
-  const operational = isActiveReplica(status);
+  const healthy = isHealthy(status);
+  const degraded = isDegraded(status);
 
   useEffect(() => {
     if (lastProcessedAt && lastProcessedAt !== previousActivity.current) {
@@ -64,7 +72,7 @@ function ReplicaCard({
         </span>
         <div className="min-w-0 flex-1 pt-1">
           <p className="font-mono text-[14px] text-[var(--color-fg-0)]">Réplica #{id}</p>
-          <p className={`mt-1 inline-flex items-center gap-1.5 text-[15px] font-bold ${operational ? "text-[var(--color-online)]" : "text-[var(--color-fg-3)]"}`}>
+          <p className={`mt-1 inline-flex items-center gap-1.5 text-[15px] font-bold ${healthy ? "text-[var(--color-online)]" : degraded ? "text-[var(--color-danger)]" : "text-[var(--color-fg-3)]"}`}>
             <span className="h-2 w-2 rounded-full bg-current" />
             {pipelineStatusLabel(status)}
           </p>
@@ -212,11 +220,12 @@ export default function PipelineDetailPage({
   const { id } = use(params);
   const pid = Number(id);
   const pipelineQ = usePipeline(pid);
+  const statusQuery = usePipelineStatusAll();
   const {
     data: allStatus,
     isPending: statusPending,
     isError: statusError,
-  } = usePipelineStatusAll();
+  } = statusQuery;
 
   const updateGroup = useUpdatePipelineGroup(pid);
   const updateReplicas = useUpdatePipelineReplicas(pid);
@@ -258,6 +267,7 @@ export default function PipelineDetailPage({
   const statusUnavailable = statusError || (!statusPending && !general);
   const statusReady = !statusPending && !statusUnavailable;
   const firstReplicaError = statusReady ? replicas.find((r) => r.last_error)?.last_error : undefined;
+  const replicaError = describeReplicaError(firstReplicaError);
   const activeReplicaCount = statusReady ? replicas.filter((r) =>
     isActiveReplica(r.status),
   ).length : 0;
@@ -284,7 +294,13 @@ export default function PipelineDetailPage({
               Volver
             </Button>
           </Link>
-          <PipelineActions id={p.id} name={p.name} status={general} />
+          <PipelineActions
+            id={p.id}
+            name={p.name}
+            status={general}
+            onVerifyStatus={() => void statusQuery.refetch()}
+            verifyingStatus={statusQuery.isFetching}
+          />
         </div>
       </div>
       <p className="text-sm text-[var(--color-fg-3)] mb-4">
@@ -292,8 +308,30 @@ export default function PipelineDetailPage({
       </p>
 
       {statusUnavailable && (
-        <Panel className="mb-4">
-          <div role="status" aria-live="polite">El estado operativo no está disponible. Espera un momento antes de tomar decisiones sobre las réplicas o las métricas.</div>
+        <Panel
+          className="mb-4"
+          style={{
+            borderColor: "#38bdf8",
+            backgroundColor:
+              "color-mix(in srgb, #38bdf8 10%, var(--color-bg-panel))",
+          }}
+        >
+          <div role="status" aria-live="polite" className="flex items-start gap-3">
+            <Info
+              size={20}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-sky-400"
+            />
+            <div>
+              <p className="text-[14px] font-semibold text-sky-400 mb-1">
+                Información de estado
+              </p>
+              <p className="text-[13px] text-[var(--color-fg-2)]">
+                El estado operativo no está disponible. Espera un momento antes
+                de tomar decisiones sobre las réplicas o las métricas.
+              </p>
+            </div>
+          </div>
         </Panel>
       )}
 
@@ -342,15 +380,25 @@ export default function PipelineDetailPage({
       </div>
 
       {(isDegraded || firstReplicaError) && (
-        <Panel className="border-[var(--color-danger)] mb-4">
-          <div className="text-[14px] text-[var(--color-danger)] mb-2">
-            PROYECTO CON DEGRADACIÓN
-          </div>
-          <p className="text-[13px] text-[var(--color-fg-2)] mb-3 whitespace-pre-wrap break-all">
-            {firstReplicaError ?? "Una o más réplicas presentan degradación."}
-          </p>
-          <div className="text-[11px] text-[var(--color-fg-4)]">
-            Revisa los registros del backend: <code>RUST_LOG=iot_bee=debug</code>
+        <Panel className="border-[var(--color-danger)] mb-4" role="alert">
+          <div className="flex gap-3">
+            <AlertTriangle
+              size={20}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-[var(--color-danger)]"
+            />
+            <div>
+              <h3 className="text-[14px] font-semibold text-[var(--color-danger)] mb-1">
+                {replicaError.title}
+              </h3>
+              <p className="text-[13px] text-[var(--color-fg-2)] mb-2">
+                {replicaError.description}
+              </p>
+              <p className="text-[13px] text-[var(--color-fg-2)]">
+                <span className="font-semibold">Qué hacer:</span>{" "}
+                {replicaError.recommendation}
+              </p>
+            </div>
           </div>
         </Panel>
       )}
@@ -425,6 +473,7 @@ export default function PipelineDetailPage({
           const r = replicas.find((x) => x.replica_id === selectedReplicaId);
           if (!r) return null;
           const replicaTelemetry = summarizeFlowTelemetry([r]);
+          const replicaError = describeReplicaError(r.last_error);
           return (
             <div className="p-6 sm:p-7">
               <div className="flex items-center justify-between mb-5 gap-3">
@@ -464,11 +513,23 @@ export default function PipelineDetailPage({
               {r.last_error && (
                 <div className="border border-[var(--color-danger)] p-4 rounded-[2px] mb-4">
                   <div className="text-[13px] font-semibold text-[var(--color-danger)] mb-1">
-                    ÚLTIMO ERROR
+                    {replicaError.title}
                   </div>
-                  <p className="text-[14px] font-mono whitespace-pre-wrap break-all text-[var(--color-fg-2)]">
-                    {r.last_error}
+                  <p className="text-[14px] text-[var(--color-fg-2)] mb-2">
+                    {replicaError.description}
                   </p>
+                  <p className="text-[13px] text-[var(--color-fg-2)]">
+                    <span className="font-semibold">Qué hacer:</span>{" "}
+                    {replicaError.recommendation}
+                  </p>
+                  <div className="mt-3 border-t border-[var(--color-border-subtle)] pt-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-fg-3)] mb-1">
+                      Detalle técnico
+                    </div>
+                    <p className="text-[12px] font-mono whitespace-pre-wrap break-all text-[var(--color-fg-2)]">
+                      {r.last_error}
+                    </p>
+                  </div>
                 </div>
               )}
               <div className="flex justify-end">
