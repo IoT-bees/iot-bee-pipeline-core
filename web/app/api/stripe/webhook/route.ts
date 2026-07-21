@@ -92,7 +92,7 @@ export async function POST(req: Request) {
   const rawPayload = await req.text();
   try {
     verifyStripeSignature(rawPayload, req.headers.get("stripe-signature"));
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "invalid Stripe webhook" }, { status: 400 });
   }
 

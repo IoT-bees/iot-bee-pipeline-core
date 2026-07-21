@@ -89,8 +89,7 @@ export default function BillingPage() {
     setRefreshAttempted(true);
     setRefreshingBilling(true);
     fetch("/api/stripe/refresh", { method: "POST" })
-      .then(async (res) => {
-        const body = await res.json().catch(() => null);
+      .then((res) => {
         if (!res.ok) throw new Error("No se pudo actualizar la facturación.");
       })
       .then(() => refetch())

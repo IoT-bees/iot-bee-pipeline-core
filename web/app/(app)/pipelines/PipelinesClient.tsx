@@ -20,14 +20,13 @@ import { fmtId } from "@/lib/fmt";
 import { isActiveReplica, pipelineStatusLabel, toPillState } from "@/lib/status";
 import type { Pipeline, PipelineStatus } from "@/lib/api/types";
 
-const PIPELINE_STATES = ["HEALTHY", "DEGRADED", "IDLE", "STOPPED"] as const;
 const PIPELINE_STATE_OPTIONS = [
   { value: "HEALTHY", label: "operativo" },
   { value: "DEGRADED", label: "con incidencias" },
   { value: "IDLE", label: "en espera" },
   { value: "STOPPED", label: "detenido" },
 ] as const;
-type PipelineStateFilter = (typeof PIPELINE_STATES)[number];
+type PipelineStateFilter = (typeof PIPELINE_STATE_OPTIONS)[number]["value"];
 
 function countActiveReplicas(status?: PipelineStatus): number | undefined {
   if (!status) return undefined;
