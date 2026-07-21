@@ -33,6 +33,29 @@ describe("PipelineActions", () => {
     expect(screen.queryByRole("button", { name: /iniciar|detener/i })).not.toBeInTheDocument();
   });
 
+  it("can hide the unavailable-status action from compact lists", () => {
+    render(<PipelineActions id={42} name="telemetría" hideUnknownAction />);
+
+    expect(
+      screen.queryByRole("button", { name: "Comprobando estado" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("allows status verification when a callback is provided", () => {
+    const verifyStatus = vi.fn();
+    render(
+      <PipelineActions
+        id={42}
+        name="telemetría"
+        onVerifyStatus={verifyStatus}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Verificar" }));
+
+    expect(verifyStatus).toHaveBeenCalledOnce();
+  });
+
   it("requires a second explicit confirmation before stopping a running project", () => {
     render(<PipelineActions id={42} name="telemetría" status="Healthy" />);
 

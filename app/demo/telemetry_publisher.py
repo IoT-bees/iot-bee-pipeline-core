@@ -16,7 +16,9 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 
-RABBITMQ_PUBLISH_URL = "http://rabbitmq:15672/api/exchanges/%2F/amq.default/publish"
+# En Render Free los servicios de demo comparten contenedor; loopback evita
+# depender de aliases DNS que no existen fuera de Docker Compose.
+RABBITMQ_PUBLISH_URL = "http://127.0.0.1:15672/api/exchanges/%2F/amq.default/publish"
 ROUTING_KEY = "iot_bees.demo.telemetry"
 PUBLISHED: list[dict[str, object]] = []
 MAX_EVENTS = 100

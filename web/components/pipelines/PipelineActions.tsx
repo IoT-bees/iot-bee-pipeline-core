@@ -13,6 +13,9 @@ interface PipelineActionsProps {
   status?: string;
   onDelete?: (id: number, name: string) => void;
   disabled?: boolean;
+  hideUnknownAction?: boolean;
+  onVerifyStatus?: () => void;
+  verifyingStatus?: boolean;
 }
 
 function PipelineActionsBase({
@@ -21,6 +24,9 @@ function PipelineActionsBase({
   status,
   onDelete,
   disabled,
+  hideUnknownAction,
+  onVerifyStatus,
+  verifyingStatus,
 }: PipelineActionsProps) {
   const start = useStartPipeline();
   const stop = useStopPipeline();
@@ -49,10 +55,22 @@ function PipelineActionsBase({
 
   return (
     <>
-      {!statusKnown ? (
-        <Button variant="ghost" size="sm" disabled title="Comprobando el estado operativo">
-          Comprobando estado
-        </Button>
+      {!statusKnown && !hideUnknownAction ? (
+        onVerifyStatus ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled || verifyingStatus}
+            title="Actualizar el estado operativo"
+            onClick={onVerifyStatus}
+          >
+            {verifyingStatus ? "Verificando..." : "Verificar"}
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" disabled title="Comprobando el estado operativo">
+            Comprobando estado
+          </Button>
+        )
       ) : running ? (
         <Button variant="danger" size="sm" disabled={disabled} title={disabled ? "Solo consulta" : undefined} onClick={requestStop}>
           ■ Detener
