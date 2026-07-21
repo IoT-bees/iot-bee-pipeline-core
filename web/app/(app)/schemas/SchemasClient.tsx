@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { ListChecks, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { DeleteResourceDialog } from "@/components/ui/DeleteResourceDialog";
@@ -45,12 +45,14 @@ export function SchemasClient({ initialData }: { initialData?: ValidationSchema[
             Define los campos y reglas de tus proyectos.
           </p>
         </div>
-        <Link href="/schemas/new" className="shrink-0">
-          <Button variant="primary" className="w-full gap-2 sm:w-auto">
-            <Plus size={16} aria-hidden="true" />
-            Crear definición
-          </Button>
-        </Link>
+        {all.length > 0 && (
+          <Link href="/schemas/new" className="shrink-0">
+            <Button variant="primary" className="w-full gap-2 sm:w-auto">
+              <Plus size={16} aria-hidden="true" />
+              Crear definición
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="mt-8">
@@ -67,15 +69,20 @@ export function SchemasClient({ initialData }: { initialData?: ValidationSchema[
           </Button>
         </Panel>
       ) : all.length === 0 ? (
-        <Panel tone="accent" className="max-w-[640px] py-6">
-          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">Crea tu primera definición</h2>
-          <p className="mt-1 max-w-[520px] text-[14px] leading-6 text-[var(--color-fg-2)]">
-            Agrupa los campos y reglas que reutilizarán tus proyectos. Puedes empezar con un ejemplo y ajustarlo después.
+        <Panel className="mx-auto flex min-h-[260px] max-w-2xl flex-col items-center justify-center px-6 text-center">
+          <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
+            <ListChecks size={22} aria-hidden="true" />
+          </div>
+          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
+            Crea las reglas que validarán tus datos
+          </h2>
+          <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
+            Define los campos y las validaciones que reutilizarán tus proyectos.
           </p>
-          <Link href="/schemas/new" className="mt-4 inline-flex">
-            <Button variant="primary" className="gap-2">
+          <Link href="/schemas/new" className="mt-5">
+            <Button variant="primary" className="min-h-11 gap-2">
               <Plus size={16} aria-hidden="true" />
-              Crear definición
+              Crear la primera definición
             </Button>
           </Link>
         </Panel>

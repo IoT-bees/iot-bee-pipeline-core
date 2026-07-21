@@ -85,7 +85,9 @@ export function StoresClient({ initialData }: { initialData?: DataStore[] }) {
           <div className="mb-4 grid size-12 place-items-center rounded-full border border-[var(--color-accent)] bg-[var(--color-bg-elev)] text-[var(--color-accent-strong)]">
             <Wifi size={22} aria-hidden="true" />
           </div>
-          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">Aún no has creado destinos</h2>
+          <h2 className="text-[18px] font-semibold text-[var(--color-fg-0)]">
+            Crea el destino de tus datos validados
+          </h2>
           <p className="mt-2 max-w-md text-[14px] leading-6 text-[var(--color-fg-2)]">
             Crea uno para indicar dónde se almacenarán o enviarán los datos validados de tus proyectos.
           </p>
