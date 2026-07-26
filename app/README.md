@@ -219,25 +219,19 @@ make run
 The server starts at `http://127.0.0.1:8080`.  
 Swagger UI is available at `http://127.0.0.1:8080/swagger-ui/`.
 
-### Production: Render + Vercel
+### Producción: EC2 + Vercel
 
-The repository root includes `render.yaml`, which creates the `iot-bee-api`
-web service and its PostgreSQL database. The API automatically uses Render's
-`PORT` variable while keeping `API_PORT` for local development.
+La API, PostgreSQL y RabbitMQ se ejecutan como contenedores en una única EC2.
+La configuración de producción está en `deploy/production/`; Caddy publica
+`https://api.iotbees.com` y mantiene el certificado HTTPS. Los datos de los
+contenedores se guardan en el volumen persistente de la instancia.
 
-1. In Render, select **New + → Blueprint** and choose this repository.
-2. Before creating the service, provide `JWT_SECRET` (at least 32 random
-   characters), `ADMIN_PASSWORD`, `ADMIN_EMAIL`, `ADMIN_NAME`, and
-   `CORS_ORIGINS`. Set `CORS_ORIGINS` to the production Vercel origin, for
-   example `https://app.example.com` (without a trailing slash).
-3. Wait for the health check at `/health` to return `{"status":"ok"}`. The
-   database migrations run automatically on startup.
-4. In Vercel, set `BACKEND_API_URL` to the HTTPS URL assigned by Render, then
-   redeploy the web application. Also set `AUTH_COOKIE_SECURE=1`.
+En Vercel, configura `BACKEND_API_URL=https://api.iotbees.com`,
+`NEXT_PUBLIC_SITE_URL=https://iotbees.com` y `AUTH_COOKIE_SECURE=1`, y luego
+vuelve a desplegar la aplicación web.
 
-If Stripe is enabled, set the same strong `STRIPE_SYNC_SECRET` in both Render
-and Vercel. Issue an admin JWT from the production API and set it as
-`SERVICE_ADMIN_TOKEN` only in Vercel.
+Si Stripe está habilitado, configura los secretos de Stripe en la EC2 y las
+variables necesarias para el frontend únicamente en Vercel.
 
 ### Desarrollo con Docker
 
