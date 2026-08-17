@@ -15,6 +15,9 @@
 web/.env.local
 web/.env.*.local
 
+# Node (root devDependencies + web/)
+node_modules/
+
 # IDE
 .vscode/
 .idea/
