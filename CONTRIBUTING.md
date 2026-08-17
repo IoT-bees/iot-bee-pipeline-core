@@ -4,17 +4,28 @@ Thank you for contributing! This guide explains our workflow so the team stays a
 
 ---
 
-## Workflow: Trunk-Based Development
+## Workflow: GitFlow simplificado
 
-We use **trunk-based development**. The `main` branch is always in a releasable state.
+Usamos un flujo de dos ramas permanentes:
 
-### Rules
+```
+feature/mi-feature  →  dev  →  main (producción)
+```
 
-- `main` is the trunk — **never commit directly to it**
-- Feature branches must be **short-lived** (1–2 days max)
-- All changes go through a **Pull Request** with at least **1 approval**
-- PRs are merged using **Squash merge** to keep a linear history
-- If a branch lives more than 2 days, use **feature flags** instead of long-lived branches
+### Ramas permanentes
+
+| Rama | Propósito |
+|------|-----------|
+| `main` | Producción — siempre estable, solo recibe merges desde `dev` |
+| `dev` | Última versión estable de desarrollo — base para todas las features |
+
+### Reglas
+
+- **Nunca** hagas commit directo a `main` ni a `dev`
+- Las feature branches salen de `dev` y vuelven a `dev` via PR
+- `dev` → `main` es un PR de release, requiere aprobación
+- Las feature branches deben ser **cortas** (1–2 días max)
+- PRs se mergean con **Squash merge** para mantener historial lineal
 
 ### Branch naming
 
@@ -66,27 +77,35 @@ Use crate names as scopes: `domain`, `application`, `infrastructure`, `adapters`
 
 ## Pull Request Process
 
-1. **Create a short-lived branch** from `main`
+### Feature → dev
+
+1. **Crea una branch desde `dev`**
    ```bash
-   git checkout main && git pull
-   git checkout -b feat/my-feature
+   git checkout dev && git pull
+   git checkout -b feat/mi-feature
    ```
 
-2. **Make small, focused commits** following Conventional Commits
+2. **Haz commits pequeños y enfocados** siguiendo Conventional Commits
 
-3. **Keep your branch up to date** with `main` using rebase (not merge)
+3. **Mantén tu branch actualizada** con `dev` via rebase
    ```bash
    git fetch origin
-   git rebase origin/main
+   git rebase origin/dev
    ```
 
-4. **Open a PR** against `main` with a clear title and description
-   - Title must follow Conventional Commits format
-   - Describe *what* and *why*, not *how*
+4. **Abre un PR contra `dev`** con título en formato Conventional Commits
+   - Describe *qué* y *por qué*, no *cómo*
 
-5. **Request a review** — at least 1 approval is required
+5. **Requiere 1 aprobación** antes de mergear
 
-6. **Squash merge** — the PR author or reviewer squashes on merge
+6. **Squash merge** al mergear
+
+### dev → main (release)
+
+1. Abre un PR de `dev` → `main`
+2. El título sigue el formato: `release: vX.Y.Z`
+3. Requiere aprobación del equipo
+4. Squash merge
 
 ---
 
